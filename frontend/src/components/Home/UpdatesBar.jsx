@@ -24,10 +24,10 @@ function UpdateBar() {
             if (response.ok) {
                 setAllUpdates(data);
             } else {
-                alert("Failed to fetch updates.");
+                console.error("Failed to fetch updates.");
             }
         } catch (err) {
-            alert(err.message);
+            console.error(err.message);
         }
     }
 
@@ -44,8 +44,13 @@ function UpdateBar() {
         }
     }
 
-    const unviewedUpdates = allUpdates.filter(update => !viewedUpdates.includes(update.id))
-    const viewedOnly = allUpdates.filter(update => viewedUpdates.includes(update.id))
+    const unviewedUpdates = allUpdates
+        .filter(update => !viewedUpdates.includes(update.id))
+        .sort((a, b) => new Date(b.created_on) - new Date(a.created_on));
+
+    const viewedOnly = allUpdates
+        .filter(update => viewedUpdates.includes(update.id))
+        .sort((a, b) => new Date(b.created_on) - new Date(a.created_on));
 
     return (
         <div className="relative pb-4 flex flex-col items-center h-full w-1/2 min-w-[290px]">
@@ -75,10 +80,10 @@ function UpdateBar() {
 
                 {viewedOnly.length > 0 && (
                     <button
-                        className="mt-4 w-fit bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+                        className="mt-4 w-fit bg-btncol hover:bg-btncol/90 text-white py-2 px-4 rounded"
                         onClick={() => setShowViewed(!showViewed)}
                     >
-                        {showViewed ? "Hide Viewed Updates" : "View More Updates"}
+                        {showViewed ? "Hide Viewed Updates" : "View old Updates"}
                     </button>
                 )}
             </div>

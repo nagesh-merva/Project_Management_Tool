@@ -30,7 +30,7 @@ function Activeproject() {
             }
         }
         catch (err) {
-            alert(err)
+            console.error(err)
         }
     }
 

@@ -1,3 +1,5 @@
+import AddTaskButton from "./Home/AddTaskBtn"
+import AddUpdateButton from "./Home/AddUpdateBtn"
 
 function Message() {
    return (
@@ -7,8 +9,8 @@ function Message() {
             <p className="opacity-40 text-sm">Dashboard For Managing  Projects And Tasks</p>
          </div>
          <div className="space-x-4">
-            <button className=" mt-1 px-6 py-2 text-nowrap bg-btncol rounded-3xl h-10 font-bold text-white hover:scale-95 hover:bg-btncol/80 transition-all shadow-xl"> Add Task</button>
-            <button className=" mt-1 px-6 py-2 text-nowrap bg-btncol rounded-3xl h-10 font-bold text-white hover:scale-95 hover:bg-btncol/80 transition-all shadow-xl"> Add Update</button>
+            <AddTaskButton />
+            <AddUpdateButton />
          </div>
       </div>
    )

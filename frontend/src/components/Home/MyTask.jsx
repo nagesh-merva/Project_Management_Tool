@@ -6,10 +6,9 @@ function MyTask() {
     const [showPopup, setShowPopup] = useState(false)
     const [selectedTask, setSelectedTask] = useState(null)
     const emp = JSON.parse(localStorage.getItem("emp"))
-    const emp_id = emp?.emp_id;
+    const emp_id = emp?.emp_id
 
     useEffect(() => {
-        // console.log("useEffect")
         GetTasks()
     }, [])
 
@@ -19,30 +18,28 @@ function MyTask() {
             const response = await fetch(`http://127.0.0.1:8000/get-tasks?emp_id=${emp.emp_id}`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
-
             })
 
             const data = await response.json()
             if (response.status === 200 || response.status === 201) {
-                // sessionStorage.setItem("task", data.tasks);
                 setTask(data)
             }
-            console.log(data)
+            // console.log(data)
         }
         catch (err) {
-            alert(err)
+            console.error(err)
         }
     }
 
     const handleTaskClick = (task) => {
-        setSelectedTask(task);
-        setShowPopup(true);
-    };
+        setSelectedTask(task)
+        setShowPopup(true)
+    }
 
     const handleCommentSubmit = async (e) => {
-        e.preventDefault();
-        const comment_text = e.target.elements.comment.value;
-        const task_id = selectedTask?.task_id;
+        e.preventDefault()
+        const comment_text = e.target.elements.comment.value
+        const task_id = selectedTask?.task_id
 
         if (comment_text && emp_id) {
             try {
@@ -56,31 +53,33 @@ function MyTask() {
                         task_id: task_id,
                         comment_text: comment_text
                     }),
-                });
+                })
 
                 if (response.ok) {
                     const newComment = {
                         emp_id: emp_id,
                         comment: comment_text,
                         commented_on: new Date().toISOString(),
-                    };
+                    }
                     setSelectedTask(prev => ({
                         ...prev,
                         comments: [...prev.comments, newComment],
-                    }));
+                    }))
                     e.target.reset();
-                    alert("Comment updated successfully");
+                    alert("Comment updated successfully")
                 } else {
-                    alert("Failed to Add comment");
+                    alert("Failed to Add comment")
                 }
             } catch (error) {
-                alert("Error Adding Comment: " + error.message);
+                alert("Error Adding Comment: " + error.message)
             }
         }
     }
 
+    const sortedTasks = tasks.sort((a, b) => new Date(b.deadline) - new Date(a.deadline))
+
     const handleMarkDone = async (task_id) => {
-        if (!emp_id) return alert("Employee not found");
+        if (!emp_id) return alert("Employee not found")
 
         try {
             const response = await fetch("http://127.0.0.1:8000/update-task-status", {
@@ -93,25 +92,39 @@ function MyTask() {
                     task_id: task_id,
                     status: "done",
                 }),
-            });
+            })
 
             if (response.ok) {
-                // Update the member's status in selectedTask
                 setSelectedTask(prev => ({
                     ...prev,
                     members_assigned: prev.members_assigned.map(m =>
                         m.emp_id === emp_id ? { ...m, status: "done" } : m
                     ),
-                }));
-                alert("Status updated successfully");
+                }))
+                alert("Status updated successfully")
             } else {
-                alert("Failed to update status");
+                alert("Failed to update status")
             }
         } catch (error) {
-            alert("Error updating status: " + error.message);
+            alert("Error updating status: " + error.message)
         }
-    };
+    }
 
+    const getDeadlineColor = (deadline) => {
+        const now = new Date();
+        const dl = new Date(deadline);
+        const diffMs = dl - now;
+        const diffHours = diffMs / (1000 * 60 * 60);
+
+        if (diffMs < 0) {
+            return "bg-red-200";
+        } else if (diffHours <= 6) {
+            return "bg-red-200"
+        } else if (diffHours <= 48) {
+            return "bg-yellow-100"
+        }
+        return ""
+    }
 
     return (
         <>
@@ -119,8 +132,13 @@ function MyTask() {
                 <h1 className="absolute -left-12 top-1/2 -translate-y-1/2 w-fit font-bold -rotate-90">My Tasks</h1>
                 <div className="bg-white w-full h-full rounded-2xl drop-shadow-xl overflow-y-scroll custom-scrollbar">
                     <h1 className="w-full pl-10 pt-2">{tasks.length} ongoing task</h1>
-                    {tasks && tasks.map((task, index) => (
-                        <Task key={index} taskData={task} OnclickTask={handleTaskClick} />
+                    {sortedTasks && sortedTasks.map((task, index) => (
+                        <div
+                            key={index}
+                            className={`rounded mb-2 mx-4 ${getDeadlineColor(task.deadline)}`}
+                        >
+                            <Task taskData={task} OnclickTask={handleTaskClick} />
+                        </div>
                     ))}
                 </div>
             </div>
