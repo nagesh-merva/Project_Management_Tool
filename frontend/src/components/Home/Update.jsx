@@ -1,3 +1,5 @@
+import { useState } from "react"
+
 const UpdateDiv = ({ update, onView, isViewed }) => {
     const { title, brief, update_by, link, created_on } = update
 
@@ -6,7 +8,7 @@ const UpdateDiv = ({ update, onView, isViewed }) => {
         if (link) window.open(link, "_blank")
     }
 
-    console.log(update_by)
+    const [hovered, setHovered] = useState(false)
 
     return (
         <div
@@ -19,9 +21,17 @@ const UpdateDiv = ({ update, onView, isViewed }) => {
                 <p className="text-xs text-gray-500 mt-1">{new Date(created_on).toLocaleString()}</p>
             </div>
             <div
-                className="aspect-square h-4/5 rounded-full bg-btncol/50 border-2 border-gray-400 text-xl font-bold flex justify-center items-center"
+                className={`flex items-center justify-center relative transition-all duration-200 ease-in-out
+                    ${hovered ? "w-32 px-3 py-2 bg-btncol/80" : "w-10 h-10 bg-btncol/50"}
+                    rounded-full border-2 border-gray-400 cursor-pointer`}
+                onMouseEnter={() => setHovered(true)}
+                onMouseLeave={() => setHovered(false)}
             >
-                {update_by[0]}
+                {hovered ? (
+                    <span className="text-sm font-bold text-gray-800 truncate">{update_by.emp_name}</span>
+                ) : (
+                    <span className="text-xl font-bold text-gray-800">{update_by.emp_name[0]}</span>
+                )}
             </div>
         </div>
     )

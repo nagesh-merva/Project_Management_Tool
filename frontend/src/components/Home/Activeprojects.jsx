@@ -35,12 +35,18 @@ function Activeproject() {
     }
 
     return (
-        <div className=" h-full w-2/3">
-            <h1 className="pb-1 pl-2 font-bold">Active Projects</h1>
-            <div className="bg-white grid grid-cols-2 gap-4 w-full h-5/6 rounded-2xl drop-shadow-xl p-4 overflow-y-scroll custom-scrollbar">
-                {activeProj.map((activeProj, index) => (
-                    <Actives key={index} project={activeProj} />
-                ))}
+        <div className=" md:w-7/12 lg:w-3/5 md:h-4/5 lg:h-full flex flex-col">
+            <h1 className="pb-2 pl-2 font-bold text-lg md:text-xl lg:text-2xl">Active Projects</h1>
+            <div className="bg-white grid grid-cols-1 lg:grid-cols-2 gap-4 w-full h-full rounded-2xl shadow-lg p-4 overflow-y-auto custom-scrollbar">
+                {activeProj.length === 0 ? (
+                    <div className="col-span-full text-center text-gray-500 py-8">
+                        No active projects found.
+                    </div>
+                ) : (
+                    activeProj.map((activeProj, index) => (
+                        <Actives key={index} project={activeProj} />
+                    ))
+                )}
             </div>
         </div>
     )

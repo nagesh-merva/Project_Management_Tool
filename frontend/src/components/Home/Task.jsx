@@ -29,7 +29,7 @@ const Task = ({ taskData, OnclickTask }) => {
             className="cursor-pointer h-auto w-full place-self-center flex p-4 hover:bg-gray-100 transition"
         >
             <div className="h-10 w-11 place-self-center mx-4 bg-blue-300 rounded-full flex items-center justify-center text-white font-bold">
-                {created_by[0]}
+                {created_by.emp_name[0]}
             </div>
             <div className="place-self-start w-full">
                 <h1 className="text-md font-semibold">{title}</h1>
