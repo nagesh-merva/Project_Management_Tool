@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 from pydantic import BaseModel
 from bson import ObjectId
-from jose import JWTError, jwt
+from jose import JWTError, jwt # type: ignore
 from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
@@ -20,7 +20,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Change to specific domains in production
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -30,13 +30,10 @@ app.add_middleware(
 client = AsyncIOMotorClient(os.environ.get("MONGODB_URL"))
 db = client.ProjectManagementTool
 
-SECRET_KEY = os.environ.get("SECRET_KEY")  # Replace with a strong key and keep it safe
+SECRET_KEY = os.environ.get("SECRET_KEY")  
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 12
 
-# Dummy in-memory password storage for example
-# You should use proper hashing and validation later
-password_store = {}
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
@@ -163,7 +160,15 @@ async def get_updates(emp_id: str):
     })
     updates = []
     async for update in updates_cursor:
+        emp = await db.Employees.find_one({"emp_id": update["update_by"]}, {"password": 0})
+        
+        updateBy = {
+            "emp_id": emp["emp_id"],
+            "emp_name": emp["emp_name"],
+            "role": emp["role"]
+        }
         update["_id"] = str(update["_id"])
+        update["update_by"] = updateBy
         updates.append(update)
 
     return updates
@@ -195,7 +200,25 @@ async def get_tasks(emp_id: str):
     tasks = []
     async for task in tasks_cursor:
         task["_id"] = str(task["_id"])
-        if task["status"] != "done" :
+        created_by = await db.Employees.find_one({"emp_id":task["created_by"]}, {"password": 0})
+        emps = []
+        for member in task["members_assigned"]:
+            emp_id = member["emp_id"] if isinstance(member, dict) and "emp_id" in member else member
+            emp = await db.Employees.find_one({"emp_id": emp_id}, {"password": 0})
+            if emp:
+                emps.append({
+                    "emp_id": emp["emp_id"],
+                    "status": member.get("status"),
+                    "emp_name": emp["emp_name"],
+                    "role": emp["role"]
+                })
+        task["members_assigned"] = emps
+        task["created_by"] = {
+                "emp_id":created_by["emp_id"],
+                "emp_name":created_by["emp_name"],
+                "role":created_by["role"]
+            }
+        if task["status"] != "done":
             tasks.append(task)
 
     return tasks
@@ -218,7 +241,7 @@ async def add_task(task_data: dict):
     # Format members_assigned to include individual status
     task_data["members_assigned"] = [{"emp_id": emp_id, "status": "assigned"} for emp_id in task_data["members_assigned"]]
 
-    # Initialize comments if not provided
+    # Initialize comments 
     if "comments" not in task_data:
         task_data["comments"] = []
 
@@ -260,13 +283,13 @@ async def update_task_status(update: UpdateTask):
 @app.put("/add-comment")
 async def add_comment(comment:AddComment):
     task_id = comment.task_id
-    emp_id = comment.emp_id 
+    emp_name = comment.emp_name
     comment_text = comment.comment_text
-    if not emp_id or not task_id or not comment_text:
+    if not emp_name or not task_id or not comment_text:
         raise HTTPException(status_code=400, detail="Employee ID, Task ID, and comment text are required.")
     
     comment = {
-        "emp_id": emp_id,
+        "emp_name": emp_name,
         "comment": comment_text,
         "commented_on": datetime.utcnow()
     }
@@ -281,14 +304,14 @@ async def add_comment(comment:AddComment):
 
     return {"message": "Comment added successfully.", "task_id": task_id}
 
-# ================= get projects ====================
+# ================= get all projects - only for admin role ====================
 @app.get("/get-projects")
 async def get_projects():
     projects_cursor = db.Projects.find({})
     projects = []
 
     async for project in projects_cursor:
-        project["_id"] = str(project["_id"])  # Convert ObjectId for JSON compatibility
+        project["_id"] = str(project["_id"])  
 
         projects.append({
             "project_id": project["project_id"],
@@ -304,6 +327,35 @@ async def get_projects():
         })
 
     return projects
+
+# ================= get projects by emp_id ====================
+@app.get("/get-project-empid")
+async def get_projects_byid(emp_id:str):
+    if not emp_id:
+        raise HTTPException(status_code=400, detail="Employee ID is required.")
+    projects_cursor = db.Projects.find({
+        "team_members.emp_id": emp_id
+    })
+    projects = []
+
+    async for project in projects_cursor:
+        project["_id"] = str(project["_id"])  
+
+        projects.append({
+            "project_id": project["project_id"],
+            "project_name": project["project_name"],
+            "current_phase": project["current_phase"],
+            "progress":project["progress"],
+            "status": project["status"],
+            "descp": project["descp"],
+            "start_date": project["start_date"],
+            "deadline": project["deadline"],
+            "team_members": project["team_members"],
+            "quick_links": project["quick_links"]
+        })
+
+    return projects
+
 
 # ================= Add new Project ====================
 
@@ -321,7 +373,7 @@ async def add_project(project: Project):
 
     return {"message": "Project added successfully.", "project_id": random_id}
 
-#================= Get Full single project details
+#================= Get Full single project details ============================
 @app.get("/get-project")
 async def get_project(project_id: str):
     if project_id is None:
@@ -332,9 +384,10 @@ async def get_project(project_id: str):
     if not project:
         raise HTTPException(status_code=404, detail="Project not found.")
 
-    project["_id"] = str(project["_id"])  # Convert ObjectId for JSON compatibility
+    project["_id"] = str(project["_id"])
     return project
 
+#================= Get active project by emp_id  ============================
 @app.get("/get-active-projects")
 async def get_active_projects(emp_id: str):
     if not emp_id:
@@ -348,7 +401,7 @@ async def get_active_projects(emp_id: str):
 
     active_projects = []
     async for project in projects_cursor:
-        project["_id"] = str(project["_id"])  # Convert ObjectId for JSON serialization
+        project["_id"] = str(project["_id"])  
 
         active_projects.append({
             "project_id": project["project_id"],

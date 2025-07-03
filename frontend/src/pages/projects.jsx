@@ -1,14 +1,18 @@
 import Navigation from "../components/Navigation/Navigation"
 import Header from "../components/header"
 
-import Projectcomponent from "../components/Projects/projectcomponent"
+import ProjectsDashboard from "../components/Projects/ProjectsDashboard"
+
 function ProjectsPage() {
+
     return (
-        <div className="relative h-max w-full overflow-hidden flex flex-col bg-[#EAEAEA]">
+        <div className="relative h-full w-full flex flex-col bg-gray-100 min-w-[800px]">
             <Navigation />
-            <Header />
-            <div className="w-5/6 h-full mt-24 flex place-self-end">
-                <Projectcomponent />
+            <div className="w-full md:w-[87%] h-full pt-20 flex place-self-end justify-center">
+                <Header />
+                <div className="md:pl-10 w-full h-full">
+                    <ProjectsDashboard />
+                </div>
             </div>
         </div>
     )

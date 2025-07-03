@@ -27,7 +27,7 @@ class PriorityLevel(str, Enum):
     low = "low"
 
 class Comment(BaseModel):
-    emp_id: str
+    emp_name: str
     comment: str
     commented_on: datetime = datetime.utcnow()
 
@@ -51,5 +51,5 @@ class UpdateTask (BaseModel):
     
 class AddComment(BaseModel):
     task_id: str
-    emp_id: str
+    emp_name: str
     comment_text: str
