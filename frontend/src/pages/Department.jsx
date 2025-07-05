@@ -1,14 +1,16 @@
+import { useState } from "react"
 import Navigation from "../components/Navigation/Navigation"
 import Header from "../components/header"
 import { Menu, X } from "lucide-react"
-import ProjectsDashboard from "../components/Projects/ProjectsDashboard"
-import { useState } from "react"
+import Employees from "../components/Departments/Emplooyees"
+import { useMainContext } from "../context/MainContext"
 
-function ProjectsPage() {
+export default function Department() {
     const [navOpen, setNavOpen] = useState(false)
+    const { selectedDepartment } = useMainContext()
 
     return (
-        <div className="relative h-full w-full flex flex-col bg-gray-100 min-w-[800px]">
+        <div className="relative h-full min-h-screen w-full flex flex-col bg-gray-100 min-w-[800px]">
             <button
                 className="fixed top-4 left-4 z-50 md:hidden bg-white p-2 rounded shadow"
                 onClick={() => setNavOpen(!navOpen)}
@@ -22,10 +24,10 @@ function ProjectsPage() {
             </button>
             <div
                 className={`
-                    fixed top-0 left-0 h-full z-40 transition-transform duration-300
-                    ${navOpen ? "translate-x-0" : "-translate-x-full"}
-                    md:fixed md:top-0 md:left-0 md:h-full md:w-64 md:z-40 md:translate-x-0 md:block
-                `}
+                                fixed top-0 left-0 h-full z-40 transition-transform duration-300
+                                ${navOpen ? "translate-x-0" : "-translate-x-full"}
+                                md:fixed md:top-0 md:left-0 md:h-full md:w-64 md:z-40 md:translate-x-0 md:block
+                            `}
                 style={{ width: "100%" }}
             >
                 <Navigation />
@@ -38,12 +40,10 @@ function ProjectsPage() {
             )}
             <div className="w-full md:w-[87%] h-full pt-20 flex place-self-end justify-center transition-all duration-300">
                 <Header />
-                <div className="md:px-10 w-full h-full">
-                    <ProjectsDashboard />
+                <div className="px-10 w-full h-full">
+                    <Employees selectedDepartment={selectedDepartment} />
                 </div>
             </div>
         </div>
     )
 }
-
-export default ProjectsPage

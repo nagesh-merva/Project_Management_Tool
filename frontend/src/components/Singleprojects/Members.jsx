@@ -1,4 +1,4 @@
-const Memberss = ({ name, profile, role, dept }) => {
+const Members = ({ name, profile, role, dept }) => {
     return (
         <div className="h-auto w-full place-self-center flex p-4 ">
             <img src={profile} alt="" className="h-10 w-10 place-self-end mx-4 bg-blue-300 p-3 rounded-full" />
@@ -12,4 +12,5 @@ const Memberss = ({ name, profile, role, dept }) => {
         </div>
     )
 }
-export default Memberss
+
+export default Members

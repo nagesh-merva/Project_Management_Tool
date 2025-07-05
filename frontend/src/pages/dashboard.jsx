@@ -25,10 +25,10 @@ export default function Dashboard() {
             </button>
             <div
                 className={`
-                    fixed top-0 left-0 h-full z-40 transition-transform duration-300
-                    ${navOpen ? "translate-x-0" : "-translate-x-full"}
-                    md:relative md:translate-x-0 md:block
-                `}
+                                fixed top-0 left-0 h-full z-40 transition-transform duration-300
+                                ${navOpen ? "translate-x-0" : "-translate-x-full"}
+                                md:fixed md:top-0 md:left-0 md:h-full md:w-64 md:z-40 md:translate-x-0 md:block
+                            `}
                 style={{ width: "100%" }}
             >
                 <Navigation />
@@ -42,7 +42,7 @@ export default function Dashboard() {
 
             <div className="w-full md:w-[87%] h-full pt-20 flex place-self-end justify-center transition-all duration-300">
                 <Header />
-                <div className="pl-10 w-full h-full">
+                <div className="pl-10 pr-7 w-full h-full">
                     <Message />
                     <div className="md:flex h-fit md:h-[40%] w-full space-x-3 md:space-x-10">
                         <MyTask />

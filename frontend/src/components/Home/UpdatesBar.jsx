@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react"
 import UpdateDiv from "./Update"
-import { Loader } from "lucide-react"
 import Loading from "../Loading"
 
 function UpdateBar() {
     const [allUpdates, setAllUpdates] = useState([])
     const [showViewed, setShowViewed] = useState(false)
-    const [viewedUpdates, setViewedUpdates] = useState([])
+    const [viewedUpdates, setViewedUpdates] = useState(() => JSON.parse(localStorage.getItem("viewedUpdates")) || [])
     const [loading, setLoading] = useState(false)
 
     const emp = JSON.parse(localStorage.getItem("emp"))
@@ -65,7 +64,7 @@ function UpdateBar() {
                 {loading ? (
                     <Loading />
                 ) : (
-                    <div>
+                    <div className="w-full px-3 flex flex-col items-center space-y-1">
                         {unviewedUpdates.length > 0 ? (
                             unviewedUpdates.map((update, index) => (
                                 <UpdateDiv

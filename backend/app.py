@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from motor.motor_asyncio import AsyncIOMotorClient
-from models.dept import Employee, Department, PerformanceMetrics , EmployeeSummary,EmployeeResponse
+from models.dept import Employee, Department, PerformanceMetrics , EmployeeSummary,EmployeeResponse,EmployeesByDeptResponse
 from models.updatesAndtask import  UpdateTask,AddComment
 from models.project import Project
 from fastapi.middleware.cors import CORSMiddleware
@@ -87,12 +87,13 @@ async def get_all_employees():
 
 
 # ================= Get all Employees by Department ====================
-@app.get("/employees", response_model=List[EmployeeSummary])
-async def get_employees_by_department(dept_id: Optional[str] = None):
-    if dept_id is None:
-        raise HTTPException(status_code=400, detail="Department ID is required.")
+@app.get("/employees-bydept", response_model=EmployeesByDeptResponse)
+async def get_employees_by_department(dept: str):
+    if dept is None:
+        raise HTTPException(status_code=400, detail="Department is required.")
 
-    employees_cursor = db.Employees.find({"emp_dept": dept_id})
+    department = await db.Departments.find_one({"dept_id": dept})
+    employees_cursor = db.Employees.find({"emp_dept": dept})
     employees = []
     async for emp in employees_cursor:
         employees.append(
@@ -100,10 +101,10 @@ async def get_employees_by_department(dept_id: Optional[str] = None):
                 emp_id=emp["emp_id"],
                 emp_name=emp["emp_name"],
                 role=emp["role"],
-                performance_metrics=emp["performance_metrics"]
+                performance_metrics=PerformanceMetrics(**emp.get("performance_metrics", {}))
             )
         )
-    return employees
+    return EmployeesByDeptResponse(employees=employees, details=Department(**department) if department else None)
 
 # ================= Add Employee to Department ====================
 from datetime import datetime, date

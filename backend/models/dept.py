@@ -82,3 +82,7 @@ class EmployeeSummary(BaseModel):
     emp_name: str
     role: str
     performance_metrics: PerformanceMetrics
+    
+class EmployeesByDeptResponse(BaseModel):
+    employees: List[EmployeeSummary]
+    details: Optional[Department]
