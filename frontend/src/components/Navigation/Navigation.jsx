@@ -78,7 +78,7 @@ export default function Navigation() {
     }
 
     return (
-        <div className="flex flex-col items-center py-10 pr-8 w-full md:w-[13%] h-svh fixed left-0 bg-[#1E1E1E] rounded-r-[43px] shadow-2xl">
+        <div className="flex flex-col items-center py-10 pr-8 w-full md:w-full h-svh fixed left-0 bg-[#1E1E1E] rounded-r-[43px] shadow-2xl">
             <img src="/logo.png" alt="logo" className="h-fit w-28 pb-5" />
             <div className="flex flex-col space-y-2 text-md font-sans font-semibold text-white">
                 {Navlinks.map((link, index) => (

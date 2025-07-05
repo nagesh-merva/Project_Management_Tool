@@ -27,7 +27,7 @@ const Employees = ({ selectedDepartment }) => {
             if (response.status === 201 || response.status === 200) {
                 setEmployees(data.employees)
                 setDetails(data.details)
-                console.table(data)
+                // console.table(data)
             }
         } catch (err) {
             console.error(err)
@@ -121,7 +121,7 @@ const Employees = ({ selectedDepartment }) => {
                         <h2 className="text-xl font-bold text-gray-700 mb-4 flex items-center gap-2">
                             <FaUsers className="text-blue-500" /> Employees
                         </h2>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             {employeesData && employeesData.length > 0 ? (
                                 employeesData.map((emp, index) => (
                                     <EmployeeCard key={emp.emp_id || index} employee={emp} dept={selectedDepartment} />
