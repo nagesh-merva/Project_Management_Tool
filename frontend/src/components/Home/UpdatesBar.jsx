@@ -13,6 +13,7 @@ function UpdateBar() {
 
     useEffect(() => {
         GetUpdates()
+
     }, [])
 
     const GetUpdates = async () => {

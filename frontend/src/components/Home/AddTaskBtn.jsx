@@ -1,10 +1,11 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import PopupForm from "./PopUpForm"
+import { useMainContext } from "../../context/MainContext"
 
 const AddTaskButton = () => {
     const [showPopup, setShowPopup] = useState(false)
-
-    const fields = [
+    const { allEmps } = useMainContext()
+    const [fields, setFields] = useState([
         {
             name: "title",
             type: "text"
@@ -23,14 +24,34 @@ const AddTaskButton = () => {
         },
         {
             name: "members_assigned",
-            type: "select"
+            type: "select",
+            fields: []
         },
         {
             name: "proj_id",
             type: "text",
             optional: true
         }
-    ]
+    ])
+
+    useEffect(() => {
+        // console.table(allEmps)
+        setEmployees()
+    }, [])
+
+    const setEmployees = () => {
+        const selectOptions = allEmps.map(emp => ({
+            name: `${emp.emp_id} - ${emp.emp_name} - ${emp.role}`,
+            value: emp.emp_id
+        }))
+        setFields(prevFields =>
+            prevFields.map(field =>
+                field.name === "members_assigned"
+                    ? { ...field, fields: selectOptions }
+                    : field
+            )
+        )
+    }
 
     return (
         <>

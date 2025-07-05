@@ -1,28 +1,7 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess }) {
     const [formData, setFormData] = useState({})
-    const [employees, setEmployees] = useState([])
-
-    useEffect(() => {
-        if (isVisible) {
-            fetchEmployees()
-        }
-    }, [isVisible])
-
-    const fetchEmployees = async () => {
-        try {
-            const response = await fetch('http://127.0.0.1:8000/all-employees')
-            const data = await response.json()
-            if (response.ok) {
-                setEmployees(data)
-            } else {
-                alert("Failed to fetch employees")
-            }
-        } catch (err) {
-            alert(err.message)
-        }
-    }
 
     const handleChange = (e) => {
         const { name, value } = e.target
@@ -36,15 +15,14 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
 
     const validateTo = (to) => {
         if (Array.isArray(to) && to.includes("all")) {
-            return ["all"];
+            return ["all"]
         }
-        return to;
+        return to
     }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         const emp = JSON.parse(localStorage.getItem("emp"))
-        // Add all id fields from fields array
         const newFormData = { ...formData }
         fields.forEach(f => {
             if (f.type === "id") {
@@ -89,13 +67,26 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     {fields.map(field => {
-                        if (field.type === "id") return null // skip rendering id fields
+                        if (field.type === "id") return null
 
                         if (field.type === "text") {
                             return (
                                 <input
                                     key={field.name}
                                     type="text"
+                                    name={field.name}
+                                    required={!field.optional}
+                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
+                                    onChange={handleChange}
+                                    className="border p-2 rounded"
+                                />
+                            )
+                        }
+                        if (field.type === "number") {
+                            return (
+                                <input
+                                    key={field.name}
+                                    type="number"
                                     name={field.name}
                                     required={!field.optional}
                                     placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
@@ -119,7 +110,7 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                         if (field.type === "date") {
                             return (
                                 <label>
-                                    Deadline<br />
+                                    {field.name}<br />
                                     <input
                                         key={field.name}
                                         type="datetime-local"
@@ -145,11 +136,11 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                             value={formData[field.name] || []}
                                         >
                                             {field.name === "to" && (
-                                                <option value="all">All</option>
+                                                <option key={"all"} value="all">All</option>
                                             )}
-                                            {employees.map((emp, idx) => (
-                                                <option key={idx} value={emp.emp_id}>
-                                                    {emp.emp_id} - {emp.emp_name || emp.name} - {emp.role}
+                                            {field.fields.map((field, idx) => (
+                                                <option key={idx} value={field.value}>
+                                                    {field.name}
                                                 </option>
                                             ))}
                                         </select>
@@ -157,7 +148,7 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                             <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" d="M7 10l5 5 5-5" /></svg>
                                         </span>
                                     </div>
-                                    <div className="text-xs text-gray-500 mt-1">Hold Ctrl (Windows) or Cmd (Mac) to select multiple employees.</div>
+                                    <div className="text-xs text-gray-500 mt-1">Hold Ctrl (Windows) or Cmd (Mac) to select multiple options Where Ever necesarry.</div>
                                 </div>
                             )
                         }

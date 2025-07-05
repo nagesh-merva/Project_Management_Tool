@@ -1,10 +1,11 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import PopupForm from "./PopUpForm"
+import { useMainContext } from "../../context/MainContext"
 
 const AddUpdateButton = () => {
     const [showPopup, setShowPopup] = useState(false)
-
-    const fields = [
+    const { allEmps } = useMainContext()
+    const [fields, setFields] = useState([
         {
             name: "title",
             type: "text"
@@ -19,14 +20,34 @@ const AddUpdateButton = () => {
         },
         {
             name: "to",
-            type: "select"
+            type: "select",
+            fields: []
         },
         {
             name: "link",
             type: "text",
             optional: true
         }
-    ]
+    ])
+
+    useEffect(() => {
+        // console.table(allEmps)
+        setEmployees()
+    }, [])
+
+    const setEmployees = () => {
+        const selectOptions = allEmps.map(emp => ({
+            name: `${emp.emp_id} - ${emp.emp_name} - ${emp.role}`,
+            value: emp.emp_id
+        }))
+        setFields(prevFields =>
+            prevFields.map(field =>
+                field.name === "to"
+                    ? { ...field, fields: selectOptions }
+                    : field
+            )
+        )
+    }
 
     return (
         <>

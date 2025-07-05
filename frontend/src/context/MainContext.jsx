@@ -11,6 +11,12 @@ export const MainProvider = ({ children }) => {
         return stored ? JSON.parse(stored) : null
     })
 
+    // All Employees
+    const [allEmps, setEmps] = useState(() => {
+        const stored = localStorage.getItem("all-emps")
+        return stored ? JSON.parse(stored) : null
+    })
+
     // Selected Department
     const [selectedDepartment, setDepart] = useState(() => {
         const stored = sessionStorage.getItem("selectedDepartment")
@@ -30,6 +36,16 @@ export const MainProvider = ({ children }) => {
         }
     }
 
+    // Sync all-emps to localStorage
+    const setAllEmployees = (empObj) => {
+        setEmps(empObj)
+        if (empObj) {
+            localStorage.setItem("all-emps", JSON.stringify(empObj))
+        } else {
+            localStorage.removeItem("all-emps")
+        }
+    }
+
     // Logout function
     const logout = () => {
         setEmp(null)
@@ -44,12 +60,30 @@ export const MainProvider = ({ children }) => {
         }
     }
 
+    const fetchEmployees = async () => {
+        try {
+            const response = await fetch('http://127.0.0.1:8000/all-employees')
+            const data = await response.json()
+            if (response.ok) {
+                setAllEmployees(data)
+            } else {
+                alert("Failed to fetch employees")
+            }
+        } catch (err) {
+            alert(err.message)
+        }
+    }
+
+    useEffect(() => {
+        fetchEmployees()
+    }, [])
 
     return (
         <MainContext.Provider
             value={{
                 emp,
                 setEmp,
+                allEmps,
                 logout,
                 loading,
                 setLoading,

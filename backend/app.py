@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from motor.motor_asyncio import AsyncIOMotorClient
-from models.dept import Employee, Department, PerformanceMetrics , EmployeeSummary,EmployeeResponse,EmployeesByDeptResponse
+from models.dept import Employee, Department, PerformanceMetrics ,EmployeeInput, EmployeeSummary,EmployeeResponse,EmployeesByDeptResponse
 from models.updatesAndtask import  UpdateTask,AddComment
 from models.project import Project
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,7 +9,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 from bson import ObjectId
 from jose import JWTError, jwt # type: ignore
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta,date
 import os
 from dotenv import load_dotenv
 import random
@@ -107,17 +107,36 @@ async def get_employees_by_department(dept: str):
     return EmployeesByDeptResponse(employees=employees, details=Department(**department) if department else None)
 
 # ================= Add Employee to Department ====================
-from datetime import datetime, date
-
 @app.post("/add-employee")
-async def add_employee(employee: Employee):
+async def add_employee(employee_input: EmployeeInput):
     while True:
         random_id = f"EMP{random.randint(1000, 9999)}"
         existing_employee = await db.Employees.find_one({"emp_id": random_id})
         if not existing_employee:
-            break 
+            break
 
-    employee.emp_id = random_id  # Assign the generated ID
+    employee = Employee(
+        emp_id=random_id,
+        emp_name=employee_input.emp_name,
+        emp_dept=employee_input.emp_dept,
+        role=employee_input.role,
+        email=employee_input.email,
+        password=employee_input.password,
+        address=employee_input.address,
+        contact=employee_input.contact,
+        joined_on=employee_input.joined_on,
+        hired_by=employee_input.hired_by,
+        salary_monthly=employee_input.salary_monthly,
+        bonus=0.0,
+        salary_account=[],
+        performance_metrics={"completed_projects": 0, "ratings": 0, "remarks": ""},
+        status="Active",
+        leaves_taken=0,
+        current_projects=[],
+        emergency_contact=employee_input.emergency_contact,
+        bank_account_number=employee_input.bank_account_number,
+        bank_ifsc=employee_input.bank_ifsc
+    )
 
     employee_dict = employee.dict()
 
@@ -132,8 +151,6 @@ async def add_employee(employee: Employee):
     )
 
     return {"message": "Employee added successfully.", "assigned_emp_id": employee.emp_id}
-
-
 
 # ================= Get Single Employee Details ====================
 @app.get("/employee", response_model=EmployeeResponse)

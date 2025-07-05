@@ -57,6 +57,21 @@ class Employee(BaseModel):
     bank_account_number: Optional[str] = None
     bank_ifsc: Optional[str] = None
 
+class EmployeeInput(BaseModel):
+    emp_name: str
+    emp_dept: str
+    role: str
+    email: EmailStr
+    password: str
+    address: str
+    contact: str
+    joined_on: date
+    hired_by: str
+    salary_monthly: float
+    emergency_contact: Optional[str] = None
+    bank_account_number: Optional[str] = None
+    bank_ifsc: Optional[str] = None
+    
 class EmployeeResponse(BaseModel):
     emp_id: str
     emp_name: str
