@@ -44,6 +44,9 @@ const Departments = [
     {
         name: "Maintenance",
     },
+    {
+        name: "Admin"
+    }
 ]
 
 const policies = [

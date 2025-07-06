@@ -11,6 +11,11 @@ export const MainProvider = ({ children }) => {
         return stored ? JSON.parse(stored) : null
     })
 
+    const [loggedIn, setLoggedIn] = useState(() => {
+        const stored = localStorage.getItem("logged")
+        return stored ? JSON.parse(stored) : { logged: false, token: null }
+    })
+
     // All Employees
     const [allEmps, setEmps] = useState(() => {
         const stored = localStorage.getItem("all-emps")
@@ -36,6 +41,13 @@ export const MainProvider = ({ children }) => {
         }
     }
 
+    // sync loggedin to localStorage
+    const LogIn = (token) => {
+        const data = { logged: true, token: token }
+        setLoggedIn(data)
+        localStorage.setItem("logged", JSON.stringify(data))
+    }
+
     // Sync all-emps to localStorage
     const setAllEmployees = (empObj) => {
         setEmps(empObj)
@@ -50,6 +62,7 @@ export const MainProvider = ({ children }) => {
     const logout = () => {
         setEmp(null)
         localStorage.removeItem("emp")
+        localStorage.removeItem("logged")
         window.location.href = "/"
     }
 
@@ -88,7 +101,9 @@ export const MainProvider = ({ children }) => {
                 loading,
                 setLoading,
                 selectedDepartment,
-                setDepartment
+                setDepartment,
+                loggedIn,
+                LogIn
             }}
         >
             {children}

@@ -58,13 +58,12 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
         access_token = create_access_token(
             data={"sub": emp_id}
         )
-        return {
+        return {"emp":{
             "emp_id": employee.get("emp_id"),
             "emp_name": employee.get("emp_name"),
             "emp_dept": employee.get("emp_dept"),
-            "role": employee.get("role"),
-            "token": access_token,
-            "token_type": "bearer"
+            "role": employee.get("role")
+        }  , "token":access_token
         }
 
     raise HTTPException(status_code=401, detail="Invalid credentials")
