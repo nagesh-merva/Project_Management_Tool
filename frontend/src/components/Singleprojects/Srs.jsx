@@ -1,6 +1,6 @@
 function Srs() {
     return (
-        <div className="ml-10 mr-6 w-full h-fit rounded-lg bg-gray-50 drop-shadow-xl mb-5">
+        <div className="ml-10 mr-6  h-fit rounded-lg bg-gray-50 drop-shadow-xl mb-5">
             <div className="ml-6 flex  ">
                 <img src="/icons/srss.png" alt="" className="h-6 w-6 my-4 " />
                 <p className="my-4 ml-3 font-semibold">SRS And Requirments</p>
