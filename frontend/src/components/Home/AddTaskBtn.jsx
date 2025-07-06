@@ -25,6 +25,7 @@ const AddTaskButton = () => {
         {
             name: "members_assigned",
             type: "select",
+            multi: true,
             fields: []
         },
         {

@@ -10,6 +10,7 @@ const employeeFields = [
     { name: "emp_name", type: "text" },
     {
         name: "emp_dept", type: "select",
+        multi: false,
         fields: [
             {
                 name: "Development",
@@ -30,7 +31,7 @@ const employeeFields = [
         ]
     },
     { name: "role", type: "text" },
-    { name: "email", type: "text" },
+    { name: "email", type: "email" },
     { name: "password", type: "text" },
     { name: "address", type: "text" },
     { name: "contact", type: "text" },

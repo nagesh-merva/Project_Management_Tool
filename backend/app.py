@@ -129,7 +129,7 @@ async def add_employee(employee_input: EmployeeInput):
         salary_monthly=employee_input.salary_monthly,
         bonus=0.0,
         salary_account=[],
-        performance_metrics={"completed_projects": 0, "ratings": 0, "remarks": ""},
+        performance_metrics=PerformanceMetrics(completed_projects=0, ratings=0, remarks=""),
         status="Active",
         leaves_taken=0,
         current_projects=[],
