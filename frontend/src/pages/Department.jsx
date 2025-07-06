@@ -63,7 +63,7 @@ export default function Department() {
                 {navOpen ? <X size={32} /> : <Menu size={32} />}
             </button>
 
-            <div className={`fixed top-0 left-0 h-full transition-transform duration-300 ${navOpen ? "translate-x-0" : "-translate-x-full"} md:fixed md:top-0 md:left-0 md:h-full md:w-[13%] md:z-40 md:translate-x-0 md:block`} >
+            <div className={`fixed top-0 left-0 h-full transition-transform duration-300 ${navOpen ? "translate-x-0" : "-translate-x-full"} hidden md:fixed md:top-0 md:left-0 md:h-full md:w-[13%] md:z-40 md:translate-x-0 md:block`} >
                 <Navigation />
             </div>
 

@@ -10,9 +10,42 @@ import Template from "../components/Singleprojects/Template"
 import Financial from "../components/Singleprojects/Financial"
 import Breakdownss from "../components/Singleprojects/Breakdowns"
 import { Menu, X } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useParams } from "react-router-dom"
+import Loading from "../components/Loading"
 function Singleproject() {
     const [navOpen, setNavOpen] = useState(false)
+    const [loading, setLoading] = useState(false)
+    const [projectDetails, setProjectDetails] = useState({})
+    const { id } = useParams()
+
+
+    useEffect(() => {
+        GetFullProj()
+    }, [])
+
+    const GetFullProj = async () => {
+        setLoading(true)
+        try {
+            const response = await fetch(`http://127.0.0.1:8000/get-project?project_id=${id}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+            })
+
+            const data = await response.json()
+            if (response.status === 200 || response.status === 201) {
+                setProjectDetails(data)
+            }
+        } catch (err) {
+            console.error(err)
+        }
+        finally {
+            setTimeout(() => {
+                setLoading(false)
+            }, 1000)
+        }
+    }
+
     return (
 
         <div className="relative h-full w-full flex flex-col bg-gray-100 min-w-[800px]">
@@ -29,10 +62,10 @@ function Singleproject() {
             </button>
             <div
                 className={`
-                                        fixed top-0 left-0 h-full z-40 transition-transform duration-300
-                                        ${navOpen ? "translate-x-0" : "-translate-x-full"}
-                                        md:fixed md:top-0 md:left-0 md:h-full md:w-[13%] md:z-40 md:translate-x-0 md:block
-                                    `}
+                            fixed top-0 left-0 h-full z-40 transition-transform duration-300
+                            ${navOpen ? "translate-x-0" : "-translate-x-full"}
+                            md:fixed md:top-0 md:left-0 md:h-full md:w-[13%] md:z-40 md:translate-x-0 hidden md:block
+                        `}
             >
                 <Navigation />
             </div>
@@ -43,25 +76,29 @@ function Singleproject() {
                 />
             )}
 
-            <div className="w-full md:w-[87%] h-full mt-20 pt-20 flex flex-col place-self-end justify-center transition-all duration-300">
-                <Header />
-                <Brief />
-                <div className="w-fit mr-6 h-full flex ml-10 my-5">
-                    <Teammember />
-                    <Features />
-                </div>
-                <Srs />
-                <Quick />
-                <Maintenance />
-                <Template />
-                <Financial />
-                <Breakdownss />
+            <div className="w-full min-h-screen md:w-[87%] h-full pt-20 px-5 flex flex-col place-self-end justify-center transition-all duration-300">
+                {loading ? (
+                    <Loading />
+                ) : (
+                    <>
+                        <Header />
+                        <div className="w-full h-full space-y-5">
+                            <Brief clientDetails={projectDetails.client_details} projBrief={projectDetails.descp} status={projectDetails.status} start={projectDetails.start_date} deadline={projectDetails.deadline} />
+                            <div className="w-full h-80 flex ">
+                                <Teammember members={projectDetails.team_members} />
+                                <Features features={projectDetails.features} />
+                            </div>
+                            <Srs srs={projectDetails.srs} />
+                            <Quick />
+                            <Maintenance />
+                            <Template />
+                            <Financial />
+                            <Breakdownss />
+                        </div>
+                    </>
+                )}
             </div>
-
-
         </div>
-
-
     )
 }
 

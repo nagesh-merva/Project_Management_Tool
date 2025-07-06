@@ -25,7 +25,7 @@ function App() {
         <Route index path="/" element={<Homepage />} />
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
-        <Route path="/singleproject" element={<ProtectedRoute><Singleproject /></ProtectedRoute>} />
+        <Route path="/singleproject/:id" element={<ProtectedRoute><Singleproject /></ProtectedRoute>} />
         <Route path="/departments" element={<ProtectedRoute><Department /></ProtectedRoute>} />
         <Route path="/departments/:id" element={<ProtectedRoute><SingleEmployee /></ProtectedRoute>} />
       </Routes>

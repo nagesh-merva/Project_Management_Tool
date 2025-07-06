@@ -1,90 +1,40 @@
-import { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
-const Teammem = [
-    {
-        profile: "/icons/face.png",
-        name: "Nagesh Merva",
-        role: " Backend Developer",
-        Dep: "Department : Admin"
-    },
-    {
-        profile: "/icons/face.png",
-        name: "Pratham Naik",
-        role: " Frontend Developer",
-        Dep: "Department : Dev"
-    },
-    {
-        profile: "/icons/face.png",
-        name: "Prayag Naik",
-        role: " Frontend developer",
-        Dep: "Department : Dev"
-    },
-    {
-        profile: "/icons/face.png",
-        name: "Shankar",
-        role: " Frontend developer",
-        Dep: "Department : Dev"
-    },
-]
-const AddMembers = [
-    {
-        type: "checkbox",
-        label: "Project Manager",
-        value: "projectManager",
-    },
-    {
-        type: "checkbox",
-        label: "Frontend Developer",
-        value: "frontendDeveloper",
-    },
-    {
-        type: "select",
-        title: "Members",
-        label: "Members",
-        value: "members",
-        options: [
-            { value: "member1", label: "Member 1" },
-            { value: "member2", label: "Member 2" },
-            { value: "member3", label: "Member 3" },
-        ],
-    },
-    {
-        type: "button",
-        do: "Save Feature Information"
-    }
-]
-
-import Memberss from "./Members"
-function Teammember() {
-    const [List, setList] = useState([])
-    const navigate = useNavigate()
-    const FetchData = () => {
-        const response = Teammem
-        setList(response)
-    }
-
-    useEffect(() => {
-        FetchData()
-    }, [])
+import Member from "./Member"
+import { Users } from "lucide-react"
+const Teammember = ({ members }) => {
 
     const Addmem = () => {
-        navigate("/view", { state: { fields: AddMembers, title: "Add Member", subtitle: "Add All details" } })
+        // navigate("/view", { state: { fields: AddMembers, title: "Add Member", subtitle: "Add All details" } })
     }
 
-    console.log(List)
-
     return (
-        <div className="w-3/5 aspect-[4/2] bg-gray-50 rounded-xl drop-shadow-xl overflow-y-scroll custom-scrollbar">
-            <div className="flex justify-between">
-                <h1 className="font-semibold mt-3 mb-1 mx-5">Team Member</h1>
-                <button onClick={Addmem} className="mx-6 mt-4 mb-1 flex items-center bg-blue-700 rounded-3xl text-sm text-nowrap h-6 w-16 text-white hover:scale-95 hover:bg-btncol/80 transition-all shadow-xl font-normal">
-                    <h1 className="ml-4 font-semibold">ADD</h1>
+        <div className="w-2/5 h-auto  bg-gray-50 rounded-xl shadow-xl overflow-y-scroll custom-scrollbar p-4">
+            <div className="flex justify-between items-center mb-4">
+                <div className="px-2 flex space-x-3">
+                    <Users color="#FF911B" className="h-5 w-5 " />
+                    <h1 className="font-semibold text-base">Team Members</h1>
+                </div>
+                <button onClick={Addmem} className="flex items-center bg-blue-700 rounded-full text-sm h-8 px-4 text-white hover:scale-95 transition-all shadow-lg">
+                    <h1>Add</h1>
                 </button>
             </div>
-            {List.map((members, index) => (
-                <Memberss key={index} name={members.name} profile={members.profile} role={members.role} dept={members.Dep} />
-            ))}
+            <div className="space-y-3">
+                {members?.length > 0 ? (
+                    members.map((member, index) => (
+                        <Member
+                            key={index}
+                            name={member.name}
+                            id={member.emp_id}
+                            role={member.role}
+                            dept={member.dept}
+                            profile={member.profile}
+                        />
+                    ))
+                ) : (
+                    <p className="text-gray-500 text-center mt-10">No team members assigned yet.</p>
+                )}
+            </div>
         </div>
     )
 }
+
 export default Teammember
