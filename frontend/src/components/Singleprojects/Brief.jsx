@@ -40,7 +40,7 @@ function Brief() {
         navigate("/view", { state: { fields: Portfolio, title: "Crob Portfolio Website" } })
     }
     return (
-        <div className="ml-10 mr-6 w-full h-fit rounded-lg bg-gray-50 drop-shadow-xl">
+        <div className="ml-10 mr-6 w-fit h-fit rounded-lg bg-gray-50 drop-shadow-xl">
             <div className="flex justify-between">
                 <div className="flex ">
                     <h1 className="mx-4 my-3 font-semibold">CROB Portfolio Website</h1>
