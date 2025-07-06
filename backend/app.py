@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends,Body
 from fastapi.security import OAuth2PasswordRequestForm
 from motor.motor_asyncio import AsyncIOMotorClient
 from models.dept import Employee, Department, PerformanceMetrics ,EmployeeInput, EmployeeSummary,EmployeeResponse,EmployeesByDeptResponse
@@ -13,6 +13,7 @@ from datetime import datetime, timedelta,date
 import os
 from dotenv import load_dotenv
 import random
+
 
 load_dotenv()
 
@@ -163,6 +164,25 @@ async def get_employee(emp_id: Optional[str] = None):
         raise HTTPException(status_code=404, detail="Employee not found.")
     return employee
 
+# ================== Update Employee Details =======================
+@app.put("/employee/update")
+async def update_employee(emp_id: str, data: dict = Body(...)):
+    if not emp_id or not data:
+        raise HTTPException(status_code=400, detail="Employee ID and update data are required.")
+
+    # print(data)
+    if "emp_id" in data:
+        data.pop("emp_id")
+
+    result = await db.Employees.update_one(
+        {"emp_id": emp_id},
+        {"$set": data}
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Employee not found.")
+
+    return {"message": "Employee updated successfully.", "emp_id": emp_id}
 
 # ================= Get All Updates ====================
 @app.get("/get-updates")
