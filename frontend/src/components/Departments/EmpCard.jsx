@@ -5,7 +5,7 @@ const EmployeeCard = ({ employee, dept }) => {
     const navigate = useNavigate()
 
     const ViewEmployee = (id) => {
-        let route = "/department/" + id
+        let route = "/departments/" + id
         navigate(route)
     }
     return (

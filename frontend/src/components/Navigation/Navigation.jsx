@@ -1,32 +1,33 @@
 import React from "react"
 import { useNavigate } from "react-router-dom"
 import { useMainContext } from "../../context/MainContext"
+import { Home, PanelsTopLeft, Users, ClipboardPlus, Handshake } from "lucide-react"
 
 const Navlinks = [
     {
         name: "Home",
         link: "/dashboard",
-        icon: "./icons/home.png"
+        icon: <Home />
     },
     {
         name: "Projects",
         link: "/projects",
-        icon: "./icons/project.png"
+        icon: <PanelsTopLeft />
     },
     {
         name: "Team",
         link: "/team",
-        icon: "./icons/team.png"
+        icon: <Users />
     },
     {
         name: "Clients",
         link: "/clients",
-        icon: "./icons/client.png"
+        icon: <Handshake />
     },
     {
         name: "Reports",
         link: "/reports",
-        icon: "./icons/report.png"
+        icon: <ClipboardPlus />
     },
 ]
 
@@ -82,7 +83,7 @@ export default function Navigation() {
             <img src="/logo.png" alt="logo" className="h-fit w-28 pb-5" />
             <div className="flex flex-col space-y-2 text-md font-sans font-semibold text-white">
                 {Navlinks.map((link, index) => (
-                    <a key={index} onClick={() => Goto(link.link)} className="flex space-x-3 hover:text-gray-300 hover:scale-95 transition-all cursor-pointer"><img src={link.icon} className="h-6 w-fit " /><p>{link.name}</p></a>
+                    <a key={index} onClick={() => Goto(link.link)} className="flex space-x-3 hover:text-gray-300 hover:scale-95 transition-all cursor-pointer">{link.icon}<p>{link.name}</p></a>
                 ))}
                 <h1 className="border-b-2 border-indigo-700 pt-5">Departments</h1>
                 {Departments.map((link, index) => (

@@ -1,8 +1,13 @@
 import { useState } from "react"
 import { useMainContext } from "../context/MainContext"
+import { useParams } from "react-router-dom"
+import { Menu, X } from "lucide-react"
+import Header from "../components/header"
+import Navigation from "../components/Navigation/Navigation"
 
 
-const SingleEmployee = ({ id }) => {
+export default function SingleEmployee() {
+    const { id } = useParams()
     const [navOpen, setNavOpen] = useState(false)
     const { selectedDepartment } = useMainContext()
 
@@ -39,5 +44,3 @@ const SingleEmployee = ({ id }) => {
         </div>
     )
 }
-
-export default SingleEmployee

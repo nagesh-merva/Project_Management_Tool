@@ -8,11 +8,6 @@ import Department from "./pages/Department"
 import SingleEmployee from "./pages/SingleEmployee"
 import { MainProvider } from "./context/MainContext"
 
-function SingleEmployeeWithId() {
-  const { id } = useParams()
-  return <SingleEmployee id={id} />
-}
-
 function App() {
   return (
     <div className="md:flex justify-center items-center h-full w-full ">
@@ -23,7 +18,7 @@ function App() {
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/singleproject" element={<Singleproject />} />
           <Route path="/departments" element={<Department />} />
-          <Route path="/departments/:id" element={<SingleEmployeeWithId />} />
+          <Route path="/departments/:id" element={<SingleEmployee />} />
         </Routes>
       </MainProvider>
     </div>
