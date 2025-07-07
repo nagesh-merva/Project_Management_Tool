@@ -21,7 +21,8 @@ const AddUpdateButton = () => {
         {
             name: "to",
             type: "select",
-            fields: []
+            fields: [],
+            multi: true
         },
         {
             name: "link",

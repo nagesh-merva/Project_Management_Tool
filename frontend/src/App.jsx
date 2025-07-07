@@ -1,25 +1,34 @@
-import React from "react"
-import { Routes, Route } from "react-router-dom"
+import React, { useState } from "react"
+import { Routes, Route, useParams, Navigate } from "react-router-dom"
 import Homepage from "./pages/Index"
 import Dashboard from "./pages/Dashboard"
 import ProjectsPage from "./pages/Projects"
 import Singleproject from "./pages/Singleproject"
 import Department from "./pages/Department"
-import { MainProvider } from "./context/MainContext"
+import SingleEmployee from "./pages/SingleEmployee"
+import { useMainContext } from "./context/MainContext"
+
+function ProtectedRoute({ children }) {
+  const { loggedIn } = useMainContext()
+  if (!loggedIn.logged) {
+    return <Navigate to="/" replace />
+  }
+
+  return children
+}
 
 function App() {
 
   return (
     <div className="md:flex justify-center items-center h-full w-full ">
-      <MainProvider >
-        <Routes>
-          <Route index path="/" element={<Homepage />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/projects" element={<ProjectsPage />} />
-          <Route path="/singleproject" element={<Singleproject />} />
-          <Route path="/departments" element={<Department />} />
-        </Routes>
-      </MainProvider>
+      <Routes>
+        <Route index path="/" element={<Homepage />} />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
+        <Route path="/singleproject/:id" element={<ProtectedRoute><Singleproject /></ProtectedRoute>} />
+        <Route path="/departments" element={<ProtectedRoute><Department /></ProtectedRoute>} />
+        <Route path="/departments/:id" element={<ProtectedRoute><SingleEmployee /></ProtectedRoute>} />
+      </Routes>
     </div>
   )
 }

@@ -1,75 +1,36 @@
 import { useNavigate } from "react-router-dom"
-const Feature = [
-    {
-        feature: "User Authentication",
-        desc: "A complete redesign of the existing e-commerce platform ...",
-    },
-    {
-        feature: "User Authentication",
-        desc: "Enhancing the payment system with new providers and improved UI.",
-    },
-    {
-        feature: "User Authentication",
-        desc: "Optimizing load times and database queries for better performance.",
-    },
-];
+import Newfeatures from "./Newfeatures"
+import { PanelLeftOpen } from "lucide-react"
 
-const AddFeatures = [
-    {
-        type: "text",
-        label: "Feature",
-        title: "Feature Name",
-        value: "featureName",
-    },
-    {
-        type: "textarea",
-        label: "Brief / TODO",
-        title: "Brief / TODO",
-        value: "featureDescription",
-    },
-    {
-        type: "date",
-        label: "Due Date",
-        title: "Due Date",
-        value: "dueDate",
-    },
-    {
-        type: "select",
-        label: "Members",
-        title: "Add Members",
-        value: "members",
-        options: [
-            { value: "member1", label: "Member 1" },
-            { value: "member2", label: "Member 2" },
-            { value: "member3", label: "Member 3" },
-        ],
-    },
-    {
-        type: "button",
-        do: "Save Feature Information"
-    }
-]
-import Newfeatures from "./Newfeatures";
-function Features() {
-    const navigate = useNavigate();
+const Features = ({ features }) => {
+    const navigate = useNavigate()
+
     const Addfeat = () => {
         navigate("/view", { state: { fields: AddFeatures, title: "Feature Information", subtitle: "Enter All details" } })
     }
+
+    const handleVerifyUpdate = (featureId) => {
+        console.log(`Feature ${featureId} verified.`)
+        // Optional: You can refetch or update parent state here if needed
+    }
+
     return (
-        <div className="w-2/5 ml-8 aspect-3/4 bg-gray-50 rounded-xl drop-shadow-xl overflow-y-scroll custom-scrollbar">
-            <div className=" flex justify-between">
-                <div className="mt-4 ml-7 flex">
-                    <img src="./icons/files.png" alt="" className="h-4 w-5 mt-1 " />
-                    <p className="ml-3 font-semibold text-base">Features to Develop</p>
+        <div className="w-3/5 ml-5 h-auto bg-gray-50 rounded-xl drop-shadow-xl overflow-y-scroll custom-scrollbar p-4">
+            <div className="flex justify-between mb-4">
+                <div className="px-5 flex items-center">
+                    <PanelLeftOpen color="#6347FF" className="h-5 w-5 mr-3" />
+                    <p className="font-semibold text-base">Features to Develop</p>
                 </div>
-                <button onClick={Addfeat} className=" mx-6 mt-4 mb-1 flex items-center bg-blue-700 rounded-3xl text-sm text-nowrap h-6 w-16 text-white hover:scale-95 hover:bg-btncol/80 transition-all shadow-xl font-normal ">
-                    <h1 className="ml-4 font-semibold">ADD</h1>
+                <button onClick={Addfeat} className="flex items-center bg-blue-700 rounded-3xl text-sm h-7 px-4 text-white hover:scale-95 hover:bg-blue-600 transition-all shadow font-normal">
+                    <h1>Add</h1>
                 </button>
             </div>
-            {Feature.map((feat, index) => (
-                <Newfeatures key={index} feature={feat.feature} dsc={feat.desc} />
+
+            {features && features.map((feat, index) => (
+                <Newfeatures key={index} feature={feat} onVerify={handleVerifyUpdate} />
             ))}
         </div>
     )
 }
+
 export default Features

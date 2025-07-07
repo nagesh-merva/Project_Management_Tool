@@ -1,6 +1,6 @@
 from typing import List, Optional
 from pydantic import BaseModel, EmailStr
-from datetime import date
+from datetime import date, datetime
 
 
 # Salary Transaction Record
@@ -44,7 +44,7 @@ class Employee(BaseModel):
     password: str
     address: str
     contact: str
-    joined_on: date
+    joined_on: datetime
     hired_by: str  # Recruiter/Manager Name
     salary_monthly: float
     bonus: Optional[float] = 0.0
@@ -65,7 +65,7 @@ class EmployeeInput(BaseModel):
     password: str
     address: str
     contact: str
-    joined_on: date
+    joined_on: datetime
     hired_by: str
     salary_monthly: float
     emergency_contact: Optional[str] = None

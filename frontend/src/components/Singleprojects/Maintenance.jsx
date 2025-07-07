@@ -1,39 +1,80 @@
-function Maintenance() {
+import {
+    ArrowDownToLine,
+    Database,
+    GitBranch,
+    Newspaper,
+    Server
+} from "lucide-react"
+
+const Maintenance = ({ MaintObj, HostingObj }) => {
+    const getIconForHost = (text) => {
+        const lowerText = text?.toLowerCase() || ""
+        if (lowerText.includes("backend")) return <Server className="w-4 h-4" />
+        if (lowerText.includes("frontend")) return <GitBranch className="w-4 h-4" />
+        if (lowerText.includes("database")) return <Database className="w-4 h-4" />
+        return <Server className="w-4 h-4" />
+    };
 
     return (
-        <div className="h-[565px] w-[429px]  ml-10  mt-5 rounded-xl border-1 border-gray-300 bg-white shadow-2xl">
-            <h1 className="  font-semibold text-2xl flex pl-10 gap-2"> <img src="/issues.png " className="h-[24px] w-[24px] mt-2"></img>Issues And Maintenance</h1>
-            <h1 className="text-xl ml-6 mt-3 font-semibold">Maintenance</h1>
-            <div className="grid grid-rows-3 gap-4 ml-6 mt-2  ">
-                <div className="w-[375.5px] h-[51px] bg-maintenance  rounded-lg flex  items-center justify-between pl-2">
-                    <h1 className="text-md"> Maintenence Report  <p className="text-sm text-paracolor">Weekly Maintenance Report</p></h1>
-                    <button className=" mr-3  hover:opacity-70 text-download flex underline"> <img src="/download.png"></img>Download</button>
-                </div>
-                <div className="w-[375.5px] h-[51px] bg-maintenance  rounded-lg flex  items-center justify-between pl-2">
-                    <h1 className="text-md"> Maintenence Report  <p className="text-sm text-paracolor">Weekly Maintenance Report</p></h1>
-                    <button className=" mr-3  hover:opacity-70 text-download flex underline"> <img src="/download.png"></img>Download</button>
-                </div>
-                <div className="w-[375.5px] h-[51px] bg-maintenance  rounded-lg flex  items-center justify-between pl-2">
-                    <h1 className="text-md"> Maintenence Report  <p className="text-sm text-paracolor">Weekly Maintenance Report</p></h1>
-                    <button className=" mr-3  hover:opacity-70 text-download flex underline"> <img src="/download.png"></img>Download</button>
-                </div>
-
-
+        <div className="relative w-2/5 md:w-1/3 h-auto p-4 flex flex-col rounded-xl border border-gray-300 bg-white shadow-lg">
+            <div className="flex gap-2 items-center mb-2">
+                <Server color="#0C098C" fill="#FDDC5C" className="h-5 w-7" />
+                <h1 className="font-semibold text-base">Issues and Maintenance </h1>
             </div>
-            <button className="w-[370.75px] h-[42px] bg-quickbtn rounded-xl text-white flex  gap-4 text-lg pl-20  font-semibold mb-4 ml-6 mt-3  hover:scale-95 hover:bg-btncol/80 transition-all pt-2"><img src="/addupdate.png" className="w-[24px] h-[24px] ml-7 " /> Add New</button>
-            <h1 className="text-xl font-semibold ml-6">Hosting Details</h1>
-            <div className="w-[375.5px] h-[165px] bg-maintenance ml-6 rounded-lg mt-3 pl-3 ">
-                <h1 className="font-semibold text-lg  pt-2">Render</h1>
-                <p className="text-paracolor text-sm ">Backend hosting</p>
-                <div className="grid grid-rows-3 gap-3 mt-2">
 
-                    <a className="flex items-center gap-1 text-download hover:underline"> <img src="/production.png" className="h-[16px] w-[16px]"></img>Production Environment</a>
-                    <a className="flex items-center gap-1 text-download  hover:underline"> <img src="/staging.png" className="h-[16px] w-[16px]" ></img>Staging Environment</a>
-                    <a className="flex items-center gap-1 text-download  hover:underline"><img src="/database.png" className="h-[16px] w-[16px]"></img>Database</a>
-                </div>
-
+            <h1 className="text-md px-2 mt-3 font-semibold">Maintenance</h1>
+            <div className="px-2 flex flex-col gap-4 mt-2">
+                {MaintObj?.map((item, idx) => (
+                    <div
+                        key={item.id || idx}
+                        className="w-full h-auto min-h-[51px] bg-maintenance rounded-lg flex items-center justify-between py-1.5 px-3"
+                    >
+                        <div>
+                            <h1 className="text-md">
+                                {item.title}
+                                <p className="text-[10px] text-paracolor">{item.descp}</p>
+                            </h1>
+                        </div>
+                        <a
+                            href={item.doc_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className=" hover:opacity-70 text-download flex items-center"
+                        >
+                            <ArrowDownToLine color="#6347FF" className="h-5 w-7" />
+                            Download
+                        </a>
+                    </div>
+                ))}
             </div>
-        </div >
+
+            <button className="w-2/3 h-auto my-3 py-1 bg-quickbtn rounded-xl text-white flex items-center justify-center text-lg font-semibold place-self-center hover:scale-95 hover:bg-btncol/80 transition-all">
+                <Newspaper color="#FFFFFF" className="w-5 h-5 mx-1.5" /> Add New
+            </button>
+
+            <div className="w-full h-auto p-4 bg-maintenance rounded-lg">
+                <h1 className="font-semibold text-lg">Hosting Details</h1>
+                <p className="text-paracolor text-sm">Primary Servers, Databases , Content Delivery Network</p>
+                <div className="grid grid-rows-auto gap-3 mt-3">
+                    {HostingObj?.map((host, idx) => (
+                        <a
+                            key={idx}
+                            href={host.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-download hover:underline"
+                        >
+                            {getIconForHost(`${host.title} ${host.link}`)}
+                            <div className="px-1.5">
+                                <h6>{host.title}</h6>
+                                <p className="text-sm text-gray-500">{host.descp}</p>
+                            </div>
+                        </a>
+                    ))}
+                </div>
+            </div>
+        </div>
     )
 }
+
 export default Maintenance

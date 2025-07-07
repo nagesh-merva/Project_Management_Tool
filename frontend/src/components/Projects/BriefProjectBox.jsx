@@ -1,7 +1,8 @@
 import { PenTool, SquareDashedBottomCode, Globe } from "lucide-react"
-
+import { useNavigate } from "react-router-dom"
 const BriefProjectBox = ({ project }) => {
     const {
+        project_id,
         project_name,
         progress,
         current_phase,
@@ -11,10 +12,14 @@ const BriefProjectBox = ({ project }) => {
         team_members,
         quick_links
     } = project
-
+    const navigate = useNavigate()
     const currentEmp = JSON.parse(localStorage.getItem("emp"))
     const currentMember = team_members.find(member => member.emp_id === currentEmp.emp_id)
     const role = currentMember?.role || "N/A"
+
+    const viewFull = () => {
+        navigate(`/singleproject/${project_id}`)
+    }
 
     return (
         <div className="relative w-full h-full flex flex-col border-2 border-black p-3 md:p-4 rounded-lg shadow-md bg-white transition-all">
@@ -51,11 +56,9 @@ const BriefProjectBox = ({ project }) => {
             <p className="text-sm text-gray-700 break-words mb-8">{`Description: ${descp}`}</p>
             <div className="absolute bottom-2 right-2 flex items-center justify-between">
                 <div className="flex place-self-end">
-                    <a href={quick_links.view_pull_project} target="_blank" rel="noopener noreferrer">
-                        <button className="p-1 rounded-lg hover:bg-gray-100/50 hover:scale-105 transition-all">
-                            <PenTool color="#6347FF" className="h-6 w-full" />
-                        </button>
-                    </a>
+                    <button onClick={viewFull} className="p-1 rounded-lg hover:bg-gray-100/50 hover:scale-105 transition-all">
+                        <PenTool color="#6347FF" className="h-6 w-full" />
+                    </button>
                     <div className="w-px h-6 bg-black"></div>
                     <a href={quick_links.code_resource_base} target="_blank" rel="noopener noreferrer">
                         <button className="p-1 rounded-lg hover:bg-gray-100/50 hover:scale-105 transition-all">

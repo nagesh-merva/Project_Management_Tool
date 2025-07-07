@@ -1,38 +1,37 @@
-
-
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
+import { useMainContext } from "../context/MainContext"
 
 function Login() {
+    const { LogIn, loggedIn } = useMainContext()
     const navigate = useNavigate()
     const [name, setname] = useState("")
     const [password, setpassword] = useState("")
-    console.log(name)
 
     useEffect(() => {
-        if (sessionStorage.getItem("token")) {
-            navigate("/dashboard")
+        if (loggedIn.logged) {
+            navigate("/dashboard", { replace: true })
         }
-    }, [navigate])
+    }, [loggedIn.logged])
 
     const SubmitLogin = async (e) => {
         e.preventDefault();
-    
+
         const formData = new FormData();
         formData.append("username", name);
         formData.append("password", password);
-    
+
         try {
             const response = await fetch("http://127.0.0.1:8000/login", {
                 method: "POST",
                 body: formData,
             });
-    
+
             const data = await response.json();
-    
+
             if (response.status === 201 || response.status === 200) {
-                localStorage.setItem("emp",JSON.stringify(data));
-                // console.log("Token:", data.token);
+                localStorage.setItem("emp", JSON.stringify(data.emp));
+                LogIn(data.token)
                 navigate("/dashboard");
             } else if (response.status === 401) {
                 alert("Invalid Credentials");

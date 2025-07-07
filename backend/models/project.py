@@ -40,11 +40,12 @@ class Feature(BaseModel):
     descp: str
     status: str
     created_by: str
-    assigned_to: AssignedMember
+    tasks : List[str]
+    verifiend: bool
 
 
 class SRS(BaseModel):
-    key_req: str
+    key_req: List[str]
     srs_doc_link: Optional[str] = None
 
 

@@ -8,22 +8,27 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
         setFormData({ ...formData, [name]: value })
     }
 
-    const handleMultiSelect = (e, name) => {
-        const options = Array.from(e.target.selectedOptions).map(opt => opt.value)
-        setFormData({ ...formData, [name]: options })
+    const handleSelectChange = (e, name, isMulti) => {
+        if (isMulti) {
+            const options = Array.from(e.target.selectedOptions).map(opt => opt.value)
+            setFormData({ ...formData, [name]: options })
+        } else {
+            setFormData({ ...formData, [name]: e.target.value })
+        }
     }
 
-    const validateTo = (to) => {
-        if (Array.isArray(to) && to.includes("all")) {
+    const validateTo = (field) => {
+        if (Array.isArray(field) && field.includes("all")) {
             return ["all"]
         }
-        return to
+        return field
     }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         const emp = JSON.parse(localStorage.getItem("emp"))
         const newFormData = { ...formData }
+
         fields.forEach(f => {
             if (f.type === "id") {
                 newFormData[f.name] = emp.emp_id
@@ -31,7 +36,19 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
             if (f.name === "to") {
                 newFormData[f.name] = validateTo(newFormData[f.name])
             }
+            if (f.type === "number" && newFormData[f.name] !== undefined) {
+                const val = newFormData[f.name];
+                if (val === "" || val === null) {
+                    newFormData[f.name] = null;
+                } else if (val.toString().includes(".")) {
+                    newFormData[f.name] = parseFloat(val);
+                } else {
+                    newFormData[f.name] = parseInt(val, 10);
+                }
+            }
         })
+
+        console.table(newFormData)
         try {
             const response = await fetch(endpoint, {
                 method: 'POST',
@@ -82,6 +99,21 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                 />
                             )
                         }
+
+                        if (field.type === "email") {
+                            return (
+                                <input
+                                    key={field.name}
+                                    type="email"
+                                    name={field.name}
+                                    required={!field.optional}
+                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
+                                    onChange={handleChange}
+                                    className="border p-2 rounded"
+                                />
+                            )
+                        }
+
                         if (field.type === "number") {
                             return (
                                 <input
@@ -95,6 +127,7 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                 />
                             )
                         }
+
                         if (field.type === "textarea") {
                             return (
                                 <textarea
@@ -107,12 +140,12 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                 />
                             )
                         }
+
                         if (field.type === "date") {
                             return (
-                                <label>
-                                    {field.name}<br />
+                                <label key={field.name} className="font-medium">
+                                    {field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}:<br />
                                     <input
-                                        key={field.name}
                                         type="datetime-local"
                                         name={field.name}
                                         required={!field.optional}
@@ -122,6 +155,7 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                 </label>
                             )
                         }
+
                         if (field.type === "select") {
                             return (
                                 <div key={field.name}>
@@ -130,17 +164,17 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                     </label>
                                     <div className="relative">
                                         <select
-                                            multiple
-                                            onChange={e => handleMultiSelect(e, field.name)}
-                                            className="border p-2 rounded w-full min-h-[100px] bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400 scrollbar-thin scrollbar-thumb-blue-300"
-                                            value={formData[field.name] || []}
+                                            multiple={field.multi}
+                                            onChange={e => handleSelectChange(e, field.name, field.multi)}
+                                            className={`border p-2 rounded w-full ${field.multi ? 'min-h-[100px]' : ''} bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400 scrollbar-thin scrollbar-thumb-blue-300`}
+                                            value={formData[field.name] || (field.multi ? [] : '')}
                                         >
                                             {field.name === "to" && (
-                                                <option key={"all"} value="all">All</option>
+                                                <option key="all" value="all">All</option>
                                             )}
-                                            {field.fields.map((field, idx) => (
-                                                <option key={idx} value={field.value}>
-                                                    {field.name}
+                                            {field.fields.map((option, idx) => (
+                                                <option key={idx} value={option.value}>
+                                                    {option.name}
                                                 </option>
                                             ))}
                                         </select>
@@ -148,10 +182,11 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                             <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" d="M7 10l5 5 5-5" /></svg>
                                         </span>
                                     </div>
-                                    <div className="text-xs text-gray-500 mt-1">Hold Ctrl (Windows) or Cmd (Mac) to select multiple options Where Ever necesarry.</div>
+                                    {field.multi && <div className="text-xs text-gray-500 mt-1">Hold Ctrl (Windows) or Cmd (Mac) to select multiple options.</div>}
                                 </div>
                             )
                         }
+
                         return null
                     })}
 

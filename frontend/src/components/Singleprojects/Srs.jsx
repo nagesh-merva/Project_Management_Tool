@@ -1,27 +1,31 @@
-function Srs() {
+import { Files } from "lucide-react"
+
+const Srs = ({ srs }) => {
+    // console.log(srs)
+
     return (
-        <div className="ml-10 mr-6 w-full h-fit rounded-lg bg-gray-50 drop-shadow-xl mb-5">
-            <div className="ml-6 flex  ">
-                <img src="/icons/srss.png" alt="" className="h-6 w-6 my-4 " />
-                <p className="my-4 ml-3 font-semibold">SRS And Requirments</p>
+        <div className="h-fit rounded-xl bg-gray-50 drop-shadow-xl mb-6 p-6">
+            <div className="flex items-center mb-4">
+                <Files color="#0C098C" fill="#79EE8D" className="h-7 w-7" />
+                <p className="ml-3 text-lg font-bold text-gray-800">SRS & Requirements</p>
             </div>
-            <div className="h-3/4 w-[96%] bg-blue-100 mx-6 rounded-xl">
-                <p className="ml-8 mb-4 pt-3 font-semibold text-base">Key Requirments</p>
-                <div className="ml-9 pb-3">
-                    <li>Centralize project information, including milestones, documents, and assignments.</li>
-                    <li>Enable team management, assigning roles, and monitoring workloads.</li>
-                    <li>Provide bug tracking and reporting mechanisms.</li>
-                    <li>Monitor website health metrics post-deployment.</li>
-                    <li>Generate detailed analytics and reports for project status and team performance.</li>
-                    <li>Ensure seamless communication with real-time notifications and updates.</li>
-                </div>
+            <div className="w-[96%] bg-blue-50 mx-auto rounded-xl p-5 mb-4 border border-blue-200">
+                <p className="font-semibold text-base text-blue-800 mb-3">Key Requirements</p>
+                <ul className="list-disc ml-6 space-y-2 text-gray-700 text-sm">
+                    {srs?.key_req && srs.key_req.map((req, index) => (
+                        <li key={index}>{req}</li>
+                    ))}
+                </ul>
             </div>
-            <div className="flex justify-center ">
-                <button className="mx-6 my-4 flex items-center bg-violet-500 rounded-3xl text-xl text-nowrap h-12 w-52 text-white hover:scale-95 hover:bg-btncol/80 transition-all shadow-xl font-normal">
-                    <h1 className="mx-9 font-semibold">VIEW FULL SRS</h1>
-                </button>
+            <div className="flex justify-center">
+                <a href={srs?.srs_doc_link} target="_blank" rel="noopener noreferrer">
+                    <button className="flex items-center bg-violet-600 rounded-full text-base h-12 px-8 text-white hover:scale-95 hover:bg-violet-700 transition-all shadow-lg font-medium">
+                        View Full SRS
+                    </button>
+                </a>
             </div>
         </div>
     )
 }
+
 export default Srs

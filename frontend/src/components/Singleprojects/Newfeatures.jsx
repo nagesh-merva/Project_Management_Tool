@@ -1,13 +1,65 @@
-const Newfeatures = ({ feature, dsc }) => {
+import { useState } from "react"
+import { ChevronDown, ChevronUp, CheckSquare, Square } from "lucide-react"
+
+const Newfeatures = ({ feature, onVerify }) => {
+    const [isOpen, setIsOpen] = useState(false)
+    const [isVerified, setIsVerified] = useState(feature.verified)
+
+    const handleVerify = async () => {
+        if (isVerified) return
+
+        try {
+            const response = await fetch('http://127.0.0.1:8000/feature/verify', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: feature.id })
+            })
+
+            if (response.ok) {
+                setIsVerified(true)
+                onVerify(feature.id)
+            } else {
+                alert('Verification failed')
+            }
+        } catch (err) {
+            alert('Error: ' + err.message)
+        }
+    }
+
     return (
-        <div className="h-1/4 w-auto my-2 mx-3 rounded-lg border-2 border-gray-400 flex ">
-            <input id="one" type="checkbox" value="" className="w-4 h-4 m-8 mr-0 dark:ring-offset-gray-800 focus:ring-2 " />
-            <label for="one" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"></label>
-            <div className="ml-7 mr-4">
-                <p className="text-base font-sans font-semibold ">{feature}</p>
-                <p className="text-base font-sans font-thin text-gray-500 mb-2">{dsc}</p>
+        <div className="my-3 mx-4 p-4 bg-white rounded-xl border border-gray-300 shadow-sm hover:shadow-md transition cursor-pointer">
+            <div className="flex justify-between items-center" onClick={() => setIsOpen(!isOpen)}>
+                <div className="flex items-start gap-4">
+                    <div onClick={(e) => { e.stopPropagation(); handleVerify(); }}>
+                        {isVerified ? (
+                            <CheckSquare className="text-green-600 h-5 w-5" />
+                        ) : (
+                            <Square className="text-gray-600 h-5 w-5 hover:text-blue-500" />
+                        )}
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-800">{feature.title}</h3>
+                        <p className="text-sm text-gray-500">{feature.descp}</p>
+                        <p className="text-xs text-gray-400 mt-1">Created by: {feature.created_by}</p>
+                    </div>
+                </div>
+                {isOpen ? <ChevronUp className="text-gray-500" /> : <ChevronDown className="text-gray-500" />}
             </div>
+
+            {isOpen && (
+                <div className="mt-3 ml-7">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-1">Associated Tasks:</h4>
+                    {feature.tasks.length > 0 ? (
+                        feature.tasks.map((taskId, index) => (
+                            <p key={index} className="text-sm text-gray-600">- {taskId}</p>
+                        ))
+                    ) : (
+                        <p className="text-sm text-gray-400">No associated tasks</p>
+                    )}
+                </div>
+            )}
         </div>
     )
 }
+
 export default Newfeatures
