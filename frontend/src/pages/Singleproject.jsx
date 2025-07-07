@@ -3,10 +3,10 @@ import Header from "../components/header"
 import Brief from "../components/Singleprojects/Brief"
 import Teammember from "../components/Singleprojects/Teammembers"
 import Features from "../components/Singleprojects/Features"
-import Quick from "../components/Singleprojects/QuickActions"
+import QuickActions from "../components/Singleprojects/QuickActions"
 import Srs from "../components/Singleprojects/Srs"
 import Maintenance from "../components/Singleprojects/Maintenance"
-import Template from "../components/Singleprojects/Template"
+import Templates from "../components/Singleprojects/Templates"
 import Financial from "../components/Singleprojects/Financial"
 import Breakdownss from "../components/Singleprojects/Breakdowns"
 import { Menu, X } from "lucide-react"
@@ -89,9 +89,9 @@ function Singleproject() {
                                 <Features features={projectDetails.features} />
                             </div>
                             <Srs srs={projectDetails.srs} />
-                            <Quick />
-                            <Maintenance />
-                            <Template />
+                            <QuickActions links={projectDetails.links} />
+                            <Maintenance HostingObj={projectDetails.hosting_details} MaintObj={projectDetails.issues_and_maintenance_reports} />
+                            <Templates templates={projectDetails.templates} />
                             <Financial />
                             <Breakdownss />
                         </div>

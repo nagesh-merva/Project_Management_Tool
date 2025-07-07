@@ -9,7 +9,7 @@ const NewBreak = ({ head, par }) => {
                 </h1>
             </div>
 
-            <hi className="font-bold text-xl p-4">₹ 1200,000 </hi>
+            <h1 className="font-bold text-xl p-4">₹ 1200,000 </h1>
 
         </div>
 
