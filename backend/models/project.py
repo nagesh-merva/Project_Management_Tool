@@ -143,3 +143,13 @@ class Project(BaseModel):
     # Restricted Data
     financial_data: Optional[FinancialData] = None
     performance_metrics: Optional[PerformanceMetrics] = None
+
+
+class AddProjectRequest(BaseModel):
+    project_name: str
+    status: ProjectStatus
+    descp: str
+    start_date: datetime
+    deadline: datetime
+    team_members: List[TeamMember]
+    client_details: ClientDetails

@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from motor.motor_asyncio import AsyncIOMotorClient
 from models.dept import Employee, Department, PerformanceMetrics ,EmployeeInput, EmployeeSummary,EmployeeResponse,EmployeesByDeptResponse
 from models.updatesAndtask import  UpdateTask,AddComment
-from models.project import Project
+from models.project import Project,AddProjectRequest ,QuickLinks ,SRS
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 from pydantic import BaseModel
@@ -228,7 +228,7 @@ async def add_update(update_data: dict):
 async def get_tasks(emp_id: str):
     if emp_id is None:
         raise HTTPException(status_code=400, detail="Employee ID is required.")
-    
+    # bug - tasks status if is done must not be sent
     tasks_cursor = db.Tasks.find({
         "members_assigned": {
             "$elemMatch": {"emp_id": emp_id}
@@ -395,9 +395,8 @@ async def get_projects_byid(emp_id:str):
 
 
 # ================= Add new Project ====================
-
 @app.post("/add-project")
-async def add_project(project: Project):
+async def add_project(project_data: AddProjectRequest):
     # Auto-generate unique Project ID
     while True:
         random_id = f"PRJ{random.randint(1000, 9999)}"
@@ -405,10 +404,33 @@ async def add_project(project: Project):
         if not existing_project:
             break
 
-    project.project_id = random_id
-    await db.Projects.insert_one(project.dict())
+    # Build the complete project object with default values
+    project = Project(
+        project_id=random_id,
+        project_name=project_data.project_name,
+        current_phase="Initiation",
+        status='active',
+        descp=project_data.descp,
+        start_date=project_data.start_date,
+        deadline=project_data.deadline,
+        progress=0,
+        team_members=project_data.team_members,
+        quick_links=QuickLinks(),
+        client_details=project_data.client_details,
+        features=[],
+        srs=SRS(key_req=[]),
+        project_status=[],
+        issues_and_maintenance_reports=[],
+        hosting_details=[],
+        templates=[],
+        links=[],
+        financial_data=None,
+        performance_metrics=None
+    )
 
+    await db.Projects.insert_one(project.dict())
     return {"message": "Project added successfully.", "project_id": random_id}
+
 
 #================= Get Full single project details ============================
 @app.get("/get-project")

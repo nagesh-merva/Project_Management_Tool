@@ -1,4 +1,9 @@
 /_pycache_
 models/_pycache_
 .env
-# venv
+venv
+venv/_pycache_
+venv/include
+venv/Lib
+venv/scripts
+venv/pyenv.cfg
