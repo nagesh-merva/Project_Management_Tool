@@ -74,7 +74,7 @@ const QuickActions = ({ links }) => {
     ]
 
     return (
-        <div className="h-fit w-2/5 md:w-1/3 grid gap-2 bg-gray-50 rounded-lg shadow-lg p-4">
+        <div className="h-fit w-full grid gap-2 bg-gray-50 rounded-lg shadow-lg p-4">
             <div className="flex gap-2 items-center mb-2">
                 <FastForward className="h-5 w-7" />
                 <h1 className="font-semibold text-base">Quick Actions</h1>

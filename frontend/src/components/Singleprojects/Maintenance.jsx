@@ -16,7 +16,7 @@ const Maintenance = ({ MaintObj, HostingObj }) => {
     };
 
     return (
-        <div className="relative w-2/5 md:w-1/3 h-auto p-4 flex flex-col rounded-xl border border-gray-300 bg-white shadow-lg">
+        <div className="relative w-full h-auto p-4 flex flex-col rounded-xl border border-gray-300 bg-white shadow-lg">
             <div className="flex gap-2 items-center mb-2">
                 <Server color="#0C098C" fill="#FDDC5C" className="h-5 w-7" />
                 <h1 className="font-semibold text-base">Issues and Maintenance </h1>

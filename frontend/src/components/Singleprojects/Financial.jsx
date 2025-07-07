@@ -1,6 +1,6 @@
 import { useState } from "react"
 import Newfin from "./FinanceDataBox"
-import { Calculator, LucideLandmark, TableRowsSplit, TrendingUp, TrendingDown } from "lucide-react"
+import { Calculator, LucideLandmark, TableRowsSplit, TrendingUp, TrendingDown, ChartColumn } from "lucide-react"
 import CostBreakdowns from "./CostBreakdowns"
 import SpenditureTable from "./SpenditureTable"
 
@@ -59,7 +59,7 @@ const Financial = ({ FinancialData }) => {
             <CostBreakdowns Breakdowns={FinancialData?.cost_breakdown} />
 
             <div className="w-full h-fit flex items-center mt-10 gap-1">
-                <TableRowsSplit color="#0E02EB" className="w-5 h-5" />
+                <ChartColumn color="#0E02EB" className="w-5 h-5" />
                 <h1 className="font-semibold text-base">Spenditure Analysis</h1>
             </div>
 

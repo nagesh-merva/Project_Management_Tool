@@ -8,11 +8,11 @@ import Srs from "../components/Singleprojects/Srs"
 import Maintenance from "../components/Singleprojects/Maintenance"
 import Templates from "../components/Singleprojects/Templates"
 import Financial from "../components/Singleprojects/Financial"
-import Breakdownss from "../components/Singleprojects/CostBreakdowns"
 import { Menu, X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import Loading from "../components/Loading"
+import ProjectProgressChart from "../components/Singleprojects/ProjectProgressChart"
 
 function Singleproject() {
     const [navOpen, setNavOpen] = useState(false)
@@ -46,6 +46,8 @@ function Singleproject() {
             }, 1000)
         }
     }
+
+    console.log(projectDetails.project_status)
 
     return (
 
@@ -90,11 +92,15 @@ function Singleproject() {
                                 <Features features={projectDetails.features} />
                             </div>
                             <Srs srs={projectDetails.srs} />
-                            <QuickActions links={projectDetails.links} />
-                            <Maintenance HostingObj={projectDetails.hosting_details} MaintObj={projectDetails.issues_and_maintenance_reports} />
+                            <div className="w-full h-auto flex space-x-5">
+                                <div className="h-fit w-2/5 md:w-1/3 space-y-5">
+                                    <QuickActions links={projectDetails.links} />
+                                    <Maintenance HostingObj={projectDetails.hosting_details} MaintObj={projectDetails.issues_and_maintenance_reports} />
+                                </div>
+                                <ProjectProgressChart projectPhases={projectDetails.project_status} />
+                            </div>
                             <Templates templates={projectDetails.templates} />
                             <Financial FinancialData={projectDetails.financial_data} />
-                            {/* <Breakdownss /> */}
                         </div>
                     </>
                 )}
