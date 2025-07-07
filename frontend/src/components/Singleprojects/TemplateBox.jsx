@@ -8,9 +8,9 @@ const TemplateBox = ({ head, par, download, fillTemplate }) => {
             </div>
             <div className="flex   justify-center gap-1 mr-2  items-center p-2">
                 <img src="/Fill.png" className="w-[27.17px] h-[24px]" ></img>
-                <button className="text-download  hover:underline mr-3 "> Fill Template </button>
+                <button onClick={fillTemplate} className="text-download  hover:underline mr-3 "> Fill Template </button>
                 <img src="/download.png" className="w-[27.17px] h-[24px]" ></img>
-                <button onClick={() => download} className="text-download hover:underline "> Download </button>
+                <button onClick={download} className="text-download hover:underline "> Download </button>
             </div>
         </div>
 

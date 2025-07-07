@@ -1,7 +1,7 @@
 import { Files } from "lucide-react"
 
 const Srs = ({ srs }) => {
-    console.log(srs)
+    // console.log(srs)
 
     return (
         <div className="h-fit rounded-xl bg-gray-50 drop-shadow-xl mb-6 p-6">

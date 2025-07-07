@@ -8,11 +8,12 @@ import Srs from "../components/Singleprojects/Srs"
 import Maintenance from "../components/Singleprojects/Maintenance"
 import Templates from "../components/Singleprojects/Templates"
 import Financial from "../components/Singleprojects/Financial"
-import Breakdownss from "../components/Singleprojects/Breakdowns"
+import Breakdownss from "../components/Singleprojects/CostBreakdowns"
 import { Menu, X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import Loading from "../components/Loading"
+
 function Singleproject() {
     const [navOpen, setNavOpen] = useState(false)
     const [loading, setLoading] = useState(false)
@@ -92,8 +93,8 @@ function Singleproject() {
                             <QuickActions links={projectDetails.links} />
                             <Maintenance HostingObj={projectDetails.hosting_details} MaintObj={projectDetails.issues_and_maintenance_reports} />
                             <Templates templates={projectDetails.templates} />
-                            <Financial />
-                            <Breakdownss />
+                            <Financial FinancialData={projectDetails.financial_data} />
+                            {/* <Breakdownss /> */}
                         </div>
                     </>
                 )}
