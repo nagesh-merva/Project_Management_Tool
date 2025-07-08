@@ -22,9 +22,9 @@ function ProjectsPage() {
             </button>
             <div
                 className={`
-                    fixed top-0 left-0 h-full z-40 transition-transform duration-300
+                    fixed top-0 left-0 h-full w-[30%] z-40 transition-transform duration-300
                     ${navOpen ? "translate-x-0" : "-translate-x-full"}
-                    md:fixed md:top-0 md:left-0 md:h-full md:w-[13%] md:z-40 md:translate-x-0 hidden md:block
+                    md:fixed md:top-0 md:left-0 md:h-full md:w-[13%] md:z-40 md:translate-x-0  md:block
                 `}
             >
                 <Navigation />

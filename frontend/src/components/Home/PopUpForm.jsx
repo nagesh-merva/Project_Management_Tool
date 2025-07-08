@@ -93,7 +93,12 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                     type="text"
                                     name={field.name}
                                     required={!field.optional}
-                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
+                                    placeholder={
+                                        field.name
+                                            .replace(/_/g, " ")
+                                            .replace(/\b\w/g, l => l.toUpperCase()) +
+                                        (field.optional === false ? "*" : "")
+                                    }
                                     onChange={handleChange}
                                     className="border p-2 rounded"
                                 />
@@ -107,7 +112,7 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                     type="email"
                                     name={field.name}
                                     required={!field.optional}
-                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
+                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) + "*"}
                                     onChange={handleChange}
                                     className="border p-2 rounded"
                                 />
@@ -121,7 +126,7 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                     type="number"
                                     name={field.name}
                                     required={!field.optional}
-                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
+                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) + "*"}
                                     onChange={handleChange}
                                     className="border p-2 rounded"
                                 />
@@ -134,7 +139,7 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                     key={field.name}
                                     name={field.name}
                                     required={!field.optional}
-                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
+                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) + "*"}
                                     onChange={handleChange}
                                     className="border p-2 rounded resize-none"
                                 />

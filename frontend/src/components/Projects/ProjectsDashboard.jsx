@@ -18,7 +18,8 @@ export default function ProjectsDashboard() {
     const [fields, setFields] = useState([
         {
             name: "project_name",
-            type: "text"
+            type: "text",
+            optional: false
         },
         {
             name: "descp",
@@ -176,7 +177,7 @@ export default function ProjectsDashboard() {
             <PopupForm
                 isVisible={showPopup}
                 onClose={() => setShowPopup(false)}
-                formTitle="Add New Update"
+                formTitle="Add New Project"
                 endpoint="http://127.0.0.1:8000/add-project"
                 fields={fields}
             />

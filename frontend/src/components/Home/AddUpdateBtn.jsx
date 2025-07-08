@@ -8,7 +8,8 @@ const AddUpdateButton = () => {
     const [fields, setFields] = useState([
         {
             name: "title",
-            type: "text"
+            type: "text",
+            optional: false
         },
         {
             name: "brief",
