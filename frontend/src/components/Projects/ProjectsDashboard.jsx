@@ -9,6 +9,7 @@ export default function ProjectsDashboard() {
     const [activeProjs, setActiveProjs] = useState([])
     const [issuedProjs, setIssuedProjs] = useState([])
     const [completedProjs, setCompltProjs] = useState([])
+    const [allClients, setAllClients] = useState([])
     const [loading, setLoading] = useState(false)
     const [showPopup, setShowPopup] = useState(false)
     const emp = JSON.parse(localStorage.getItem("emp"))
@@ -46,9 +47,43 @@ export default function ProjectsDashboard() {
     ])
 
     useEffect(() => {
-        GetProjects()
-        setEmployees()
+        const fetchAllData = async () => {
+            setLoading(true)
+            await GetProjects()
+            await getAllClients()
+            setEmployees()
+            setLoading(false)
+        }
+
+        fetchAllData()
     }, [])
+
+    const getAllClients = async () => {
+        try {
+            const response = await fetch("http://127.0.0.1:8000/clients/briefs", {
+                method: "GET",
+            })
+
+            const data = await response.json()
+
+            if (response.ok) {
+                setAllClients(data)
+                const selectOptions = data.map(client => ({
+                    name: `${client.client_id} - ${client.name} - ${client.domain}`,
+                    value: client.client_id
+                }))
+                setFields(prevFields =>
+                    prevFields.map(field =>
+                        field.name === "client_details"
+                            ? { ...field, fields: selectOptions }
+                            : field
+                    )
+                )
+            }
+        } catch (err) {
+            alert("Error: " + err.message)
+        }
+    }
 
     const setEmployees = () => {
         const selectOptions = allEmps.map(emp => ({
@@ -57,7 +92,7 @@ export default function ProjectsDashboard() {
         }))
         setFields(prevFields =>
             prevFields.map(field =>
-                field.name === "members_assigned"
+                field.name === "team_members"
                     ? { ...field, fields: selectOptions }
                     : field
             )
@@ -65,7 +100,6 @@ export default function ProjectsDashboard() {
     }
 
     const GetProjects = async () => {
-        setLoading(true)
         try {
             const response = await fetch(`http://127.0.0.1:8000/get-project-empid?emp_id=${emp.emp_id}`, {
                 method: 'GET',
@@ -96,11 +130,6 @@ export default function ProjectsDashboard() {
         catch (err) {
             console.error(err)
         }
-        finally {
-            setTimeout(() => {
-                setLoading(false)
-            }, 1000)
-        }
     }
 
     // console.table(completedProjs[0])
@@ -113,7 +142,7 @@ export default function ProjectsDashboard() {
                     </div>
                 ) : (
                     <>
-                        <button className="absolute right-5 top-5 px-5 py-1.5 bg-btncol rounded-full flex items-center justify-center text-white hover:scale-95 transition-transform"><Plus /> New Project</button>
+                        <button onClick={() => setShowPopup(true)} className="absolute right-5 top-5 px-5 py-1.5 bg-btncol rounded-full flex items-center justify-center text-white hover:scale-95 transition-transform"><Plus /> <p className="hidden lg:block">New Project</p></button>
                         <h2 className="pb-1 pl-2 font-bold ">Active Projects</h2>
                         <div className="w-full mb-5 px-5 h-0.5 bg-gray-400 rounded-full"></div>
                         <section className="mb-10 overflow-x-scroll custom-scrollbar">

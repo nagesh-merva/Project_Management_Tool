@@ -58,9 +58,9 @@ const Actives = ({ project }) => {
             <div className="absolute bottom-2 right-2 flex items-center justify-between">
                 <div className="flex place-self-end">
                     <button onClick={viewFull} target="_blank" rel="noopener noreferrer">
-                        <button className="p-1 rounded-lg hover:bg-gray-100/50 hover:scale-105 transition-all">
+                        <div className="p-1 rounded-lg hover:bg-gray-100/50 hover:scale-105 transition-all">
                             <PenTool color="#6347FF" className="h-6 w-full" />
-                        </button>
+                        </div>
                     </button>
                     <div className="w-px h-6 bg-black"></div>
                     <a href={quick_links.code_resource_base} target="_blank" rel="noopener noreferrer">

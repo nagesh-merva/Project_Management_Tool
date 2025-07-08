@@ -4,6 +4,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from models.dept import Employee, Department, PerformanceMetrics ,EmployeeInput, EmployeeSummary,EmployeeResponse,EmployeesByDeptResponse
 from models.updatesAndtask import  UpdateTask,AddComment
 from models.project import Project,AddProjectRequest ,QuickLinks ,SRS
+from models.clients import Client, ClientMetrics, ClientDocuments, ContactPerson, ClientEngagement ,BasicClientInput
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 from pydantic import BaseModel
@@ -397,12 +398,26 @@ async def get_projects_byid(emp_id:str):
 # ================= Add new Project ====================
 @app.post("/add-project")
 async def add_project(project_data: AddProjectRequest):
+    
     # Auto-generate unique Project ID
     while True:
         random_id = f"PRJ{random.randint(1000, 9999)}"
         existing_project = await db.Projects.find_one({"project_id": random_id})
         if not existing_project:
             break
+        
+    client_data = await db.Clients.find_one({"client_id": project_data.client_details})
+    member_objs = []
+    for emp_id in project_data.team_members:
+        emp = await db.Employees.find_one({"emp_id": emp_id})
+        if emp:
+            member_objs.append({
+                "emp_id": emp["emp_id"],
+                "name": emp["emp_name"],
+                "role": emp["role"],
+                'dept':emp["emp_dept"]
+            })
+    client_details = {"name": client_data["name"],"logo": client_data["logo_url"],"domain": client_data["industry"]}
 
     # Build the complete project object with default values
     project = Project(
@@ -414,9 +429,9 @@ async def add_project(project_data: AddProjectRequest):
         start_date=project_data.start_date,
         deadline=project_data.deadline,
         progress=0,
-        team_members=project_data.team_members,
+        team_members=member_objs,
         quick_links=QuickLinks(),
-        client_details=project_data.client_details,
+        client_details=client_details,
         features=[],
         srs=SRS(key_req=[]),
         project_status=[],
@@ -476,3 +491,78 @@ async def get_active_projects(emp_id: str):
         })
 
     return active_projects
+
+
+# ============= Get all Clients briefs =================
+@app.get("/clients/briefs")
+async def get_all_client_briefs():
+    clients = await db.Clients.find().to_list(1000)
+    brief_list = [{
+        "client_id": c["client_id"],
+        "name": c["name"],
+        "logo_url": c.get("logo_url"),
+        "domain": c.get("industry")
+    } for c in clients]
+
+    return brief_list
+
+# ============= Get all Clients details =================
+@app.get("/clients")
+async def get_all_clients():
+    clients = await db.Clients.find().to_list(1000)
+    return clients
+
+
+# ============= Get particular Clients details =================
+@app.get("/client/alldetails")
+async def get_all_details_client(client_id: str):
+    if not client_id:
+        raise HTTPException(status_code=400, detail="Client ID is required.")
+    
+    client = await db.Clients.find_one({"client_id": client_id},{"_id":0})
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found.")
+    
+    return client
+
+# ============= Add new client =================
+@app.post("/clients/add")
+async def add_new_client(data: BasicClientInput):
+    while True:
+        random_id = f"CLT{random.randint(1000, 9999)}"
+        existing = await db.Clients.find_one({"client_id": random_id})
+        if not existing:
+            break
+
+    client_data = Client(
+        client_id=random_id,
+        name=data.name,
+        brand_name=data.brand_name,
+        logo_url=data.logo_url,
+        type=data.type,
+        industry=data.industry,
+        location=data.location,
+        website=data.website,
+        business_id=data.business_id,
+
+        primary_contact=ContactPerson(
+            name=data.contact_name,
+            email=data.contact_email,
+            phone=data.contact_phone,
+            designation=None,
+            linkedin=None
+        ),
+
+        engagement=ClientEngagement(
+            joined_date=datetime.utcnow(),
+            source=None,
+            onboarding_notes=None,
+            tags=[]
+        ),
+
+        documents=ClientDocuments(), 
+        metrics=ClientMetrics() 
+    )
+
+    await db.Clients.insert_one(client_data.dict())
+    return {"message": "Client added successfully", "client_id": random_id}
