@@ -1,12 +1,14 @@
+import { use } from "react"
 import { useState } from "react"
-
+import { useParams } from "react-router-dom"
 function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess }) {
     const [formData, setFormData] = useState({})
-
+    const { id } = useParams()
     const handleChange = (e) => {
         const { name, value } = e.target
         setFormData({ ...formData, [name]: value })
     }
+    console.log(id)
 
     const handleSelectChange = (e, name, isMulti) => {
         if (isMulti) {
@@ -32,6 +34,9 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
         fields.forEach(f => {
             if (f.type === "id") {
                 newFormData[f.name] = emp.emp_id
+            }
+            if (f.name === "project_id") {
+                newFormData[f.name] = id
             }
             if (f.name === "to") {
                 newFormData[f.name] = validateTo(newFormData[f.name])
