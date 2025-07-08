@@ -27,8 +27,8 @@ class QuickLinks(BaseModel):
 
 class ClientDetails(BaseModel):
     name: str
-    descript: str
-    brief: str
+    logo: Optional[str] = None
+    domain: Optional[str] = None
 
 class AssignedMember(BaseModel):
     emp_id: str
@@ -147,9 +147,8 @@ class Project(BaseModel):
 
 class AddProjectRequest(BaseModel):
     project_name: str
-    status: ProjectStatus
     descp: str
     start_date: datetime
     deadline: datetime
-    team_members: List[TeamMember]
-    client_details: ClientDetails
+    team_members: List[str]
+    client_details: str

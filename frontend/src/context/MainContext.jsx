@@ -18,7 +18,7 @@ export const MainProvider = ({ children }) => {
 
     // All Employees
     const [allEmps, setEmps] = useState(() => {
-        const stored = localStorage.getItem("all-emps")
+        const stored = sessionStorage.getItem("all-emps")
         return stored ? JSON.parse(stored) : null
     })
 
@@ -88,7 +88,12 @@ export const MainProvider = ({ children }) => {
     }
 
     useEffect(() => {
-        fetchEmployees()
+        const cached = sessionStorage.getItem("all-emps")
+        if (cached) {
+            setAllEmployees(JSON.parse(cached))
+        } else {
+            fetchEmployees()
+        }
     }, [])
 
     return (
