@@ -50,7 +50,7 @@ function Singleproject() {
     console.log(projectDetails.project_status)
 
     return (
-        <div className="relative h-screen w-full flex flex-col bg-gray-100 min-w-[800px]">
+        <div className="relative h-full w-full flex flex-col bg-gray-100 min-w-[800px]">
             <button
                 className="fixed top-4 left-4 z-50 md:hidden bg-white p-2 rounded shadow"
                 onClick={() => setNavOpen(!navOpen)}

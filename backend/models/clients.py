@@ -15,12 +15,12 @@ class ContactPerson(BaseModel):
     name: str
     designation: Optional[str]
     email: EmailStr
-    phone: str
+    phone: int
     linkedin: Optional[str]
 
 
 class ClientEngagement(BaseModel):
-    joined_date: datetime
+    joined_date :datetime
     source: Optional[str]  #  LinkedIn, Referral
     onboarding_notes: Optional[str]
     tags: List[str] = []  #  ["priority", "recurring"]
@@ -55,8 +55,7 @@ class Client(BaseModel):
     industry: Optional[str]
     location: Optional[str]
     website: Optional[str]
-    business_id: Optional[str]
-
+    gst_id: Optional[str]
     primary_contact: ContactPerson
     engagement: ClientEngagement
     documents: Optional[ClientDocuments]
@@ -69,9 +68,9 @@ class BasicClientInput(BaseModel):
     type: str  # Should match the ClientType enum
     industry: Optional[str]
     location: Optional[str]
-    website: Optional[str]
-    business_id: Optional[str]
-
+    website: Optional[str] = None
+    gst_id: Optional[str]
     contact_name: str
     contact_email: EmailStr
     contact_phone: str
+    source :str

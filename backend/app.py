@@ -501,7 +501,8 @@ async def get_all_client_briefs():
         "client_id": c["client_id"],
         "name": c["name"],
         "logo_url": c.get("logo_url"),
-        "domain": c.get("industry")
+        "domain": c.get("industry"),
+        "type" : c.get("type")
     } for c in clients]
 
     return brief_list
@@ -514,7 +515,7 @@ async def get_all_clients():
 
 
 # ============= Get particular Clients details =================
-@app.get("/client/alldetails")
+@app.get("/client/alldetails",response_model=Client)
 async def get_all_details_client(client_id: str):
     if not client_id:
         raise HTTPException(status_code=400, detail="Client ID is required.")
@@ -542,6 +543,7 @@ async def add_new_client(data: BasicClientInput):
         type=data.type,
         industry=data.industry,
         location=data.location,
+        joined_date = datetime.now(),
         website=data.website,
         business_id=data.business_id,
 
@@ -555,7 +557,7 @@ async def add_new_client(data: BasicClientInput):
 
         engagement=ClientEngagement(
             joined_date=datetime.utcnow(),
-            source=None,
+            source=data.source,
             onboarding_notes=None,
             tags=[]
         ),
