@@ -718,25 +718,25 @@ async def manage_hosting_links(data: dict):
                 "hosting_details.title": title
             },
             {
-                "$set": {"links.$.link": link,"links.$.descp":descp}
+                "$set": {"hosting_details.$.link": link,"hosting_details.$.descp":descp}
             }
         )
 
         if updated.modified_count == 0:
             raise HTTPException(status_code=400, detail="Link not updated.")
         
-        return {"message": f"Link '{title}' updated in project {project_id}."}
+        return {"message": f"Quick Action Link '{title}' updated in project {project_id}."}
 
     else:
         added = await db.Projects.update_one(
             {"project_id": project_id},
-            {"$push": {"links": {"title": title, "link": link,"descp":descp}}}
+            {"$push": {"hosting_details": {"title": title, "link": link,"descp":descp}}}
         )
 
         if added.modified_count == 0:
             raise HTTPException(status_code=404, detail="Project not found or link not added.")
 
-        return {"message": f"New link '{title}' added to project {project_id}."}
+        return {"message": f"New Quick Action link '{title}' added to project {project_id}."}
 
 # ============= Get all Clients briefs =================
 @app.get("/clients/briefs")
