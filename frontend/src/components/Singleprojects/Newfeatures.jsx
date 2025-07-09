@@ -1,23 +1,22 @@
 import { useState } from "react"
 import { ChevronDown, ChevronUp, CheckSquare, Square } from "lucide-react"
-
-const Newfeatures = ({ feature, onVerify }) => {
+import { useParams } from "react-router-dom"
+const Newfeatures = ({ feature }) => {
     const [isOpen, setIsOpen] = useState(false)
     const [isVerified, setIsVerified] = useState(feature.verified)
-
+    const { id } = useParams()
     const handleVerify = async () => {
         if (isVerified) return
-
+        console.log('Verifying feature:', feature.id, 'for project:', id)
         try {
-            const response = await fetch('http://127.0.0.1:8000/feature/verify', {
-                method: 'PUT',
+            const response = await fetch('http://127.0.0.1:8000/verify-feature', {
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: feature.id })
+                body: JSON.stringify({ feature_id: feature.id, project_id: id })
             })
 
             if (response.ok) {
                 setIsVerified(true)
-                onVerify(feature.id)
             } else {
                 alert('Verification failed')
             }
