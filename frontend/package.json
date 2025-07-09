@@ -10,11 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-<<<<<<< HEAD
-    "file-saver": "^2.0.5",
-=======
     "date-fns": "^4.1.0",
->>>>>>> 6ad9c7dde7067695e1767c838caf0b092a9813b1
     "lucide": "^0.473.0",
     "lucide-react": "^0.473.0",
     "react": "^18.3.1",

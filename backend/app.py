@@ -492,6 +492,251 @@ async def get_active_projects(emp_id: str):
 
     return active_projects
 
+#================= Edit Project Brief details by project_id  ============================
+@app.post("/edit-project-brief")
+async def edit_project_brief(data: dict):
+    project_id = data.get("project_id")
+    if not project_id:
+        raise HTTPException(status_code=400, detail="Project ID is required.")
+
+    update_fields = {}
+
+    if "descp" in data and data["descp"]:
+        update_fields["descp"] = data["descp"]
+    if "deadline" in data and data["deadline"]:
+        update_fields["deadline"] = data["deadline"]
+    if "status" in data and data["status"]:
+        update_fields["status"] = data["status"]
+
+    if not update_fields:
+        raise HTTPException(status_code=400, detail="No valid fields provided to update.")
+
+    updated = await db.Projects.update_one(
+        {"project_id": project_id},
+        {"$set": update_fields}
+    )
+
+    if updated.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Project not found or no changes made.")
+
+    return {"message": "Project brief updated successfully."}
+
+#================= Add new Team members by project_id  ============================
+@app.post("/add-team-member")
+async def add_teammember(data: dict):
+    project_id = data.get("project_id")
+    emp_id = data.get("team_members")
+
+    if not project_id or not emp_id:
+        raise HTTPException(status_code=400, detail="Both project_id and emp_id are required.")
+
+    emp = await db.Employees.find_one({"emp_id": emp_id})
+    if not emp:
+        raise HTTPException(status_code=404, detail="Employee not found.")
+    
+    team_member_data = {
+        "emp_id": emp["emp_id"],
+        "name": emp["emp_name"],
+        "role": emp["role"],
+        "dept": emp["emp_dept"]
+    }
+
+    updated = await db.Projects.update_one(
+        {"project_id": project_id},
+        {"$addToSet": {"team_members": team_member_data}}
+    )
+
+    if updated.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Project not found or employee already on the team.")
+
+    return {"message": f"{team_member_data['name']} added to project {project_id}."}
+
+#================= Add new Feature by project_id  ============================
+@app.post("/add-feature")
+async def add_feature(data: dict):
+    project_id = data.get("project_id")
+    if not project_id:
+        raise HTTPException(status_code=400, detail="project_id is required.")
+
+    while True:
+        random_id = f"FT{random.randint(1000, 9999)}"
+        project = await db.Projects.find_one(
+            {"project_id": project_id, "features.id": random_id},
+            {"_id": 1}
+        )
+        if not project:
+            break
+
+    
+    feature_data = {
+        "id": random_id,
+        "title": data.get("title"),
+        "descp": data.get("descp"),
+        "status": "in progress",
+        "created_by": data.get("created_by"),
+        "verified":False,
+        "tasks":[]
+    }
+
+    updated = await db.Projects.update_one(
+        {"project_id": data["project_id"]},
+        {"$addToSet": {"features": feature_data}}
+    )
+
+    if updated.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Project not found or feature not added.")
+
+    return {"message": f"{data['title']} added to project {data["project_id"]}."}
+
+#================= update verification of Feature  ============================
+@app.post("/verify-feature")
+async def verify_feature(data: dict):
+    project_id = data.get("project_id")
+    feature_id = data.get("feature_id")
+
+    if not project_id or not feature_id:
+        raise HTTPException(status_code=400, detail="Both project_id and feature_id are required.")
+
+    project = await db.Projects.find_one({"project_id": project_id})
+
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found.")
+
+    features = project.get("features", [])
+
+    if not isinstance(features, list):
+        raise HTTPException(status_code=500, detail="Invalid structure: features must be a list.")
+
+    feature_index = None
+    for i, feature in enumerate(features):
+        if isinstance(feature, dict) and feature.get("id") == feature_id:
+            feature_index = i
+            break
+
+    if feature_index is None:
+        raise HTTPException(status_code=404, detail="Feature not found in the project.")
+
+    update_path = f"features.{feature_index}.verified"
+    update_result = await db.Projects.update_one(
+        {"project_id": project_id},
+        {"$set": {update_path: True}}
+    )
+
+    if update_result.modified_count == 0:
+        raise HTTPException(status_code=400, detail="Feature verification update failed.")
+
+    return {"message": f"Feature {feature_id} marked as verified in project {project_id}."}
+
+
+#================= Add new key_req to srs by project_id  ============================
+@app.post("/add-key-req")
+async def add_key_req(data: dict):
+    project_id = data.get("project_id")
+    req = data.get("srs_key_req")
+    srs_link = data.get("srs_link")
+
+    if not project_id or not req:
+        raise HTTPException(status_code=400, detail="Both project_id and requirement are required.")
+
+    query = {"project_id": project_id}
+    update_query = {
+        "$addToSet": {"srs.key_req": req}
+    }
+
+    if srs_link:
+        update_query["$set"] = {"srs.srs_doc_link": srs_link}
+
+    updated = await db.Projects.update_one(query, update_query)
+
+    if updated.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Project not found or requirement not added.")
+
+    return {"message": f"'{req}' added to project {project_id}."}
+
+#================= Add new key_req to srs by project_id  ============================
+@app.post("/manage-quick-actions")
+async def manage_quick_links(data: dict):
+    project_id = data.get("project_id")
+    link_name = data.get("linkname")
+    link_url = data.get("link")
+
+    if not project_id or not link_name or not link_url:
+        raise HTTPException(status_code=400, detail="project_id, linkname, and link are required.")
+    
+    link_exists = await db.Projects.find_one({
+        "project_id": project_id,
+        "links.label": link_name
+    })
+
+    if link_exists:
+        updated = await db.Projects.update_one(
+            {
+                "project_id": project_id,
+                "links.label": link_name
+            },
+            {
+                "$set": {"links.$.link": link_url}
+            }
+        )
+
+        if updated.modified_count == 0:
+            raise HTTPException(status_code=400, detail="Link not updated.")
+        
+        return {"message": f"Link '{link_name}' updated in project {project_id}."}
+
+    else:
+        added = await db.Projects.update_one(
+            {"project_id": project_id},
+            {"$push": {"links": {"label": link_name, "link": link_url}}}
+        )
+
+        if added.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Project not found or link not added.")
+
+        return {"message": f"New link '{link_name}' added to project {project_id}."}
+
+#================= manage hosting details by project_id  ============================
+@app.post("/manage-hostings")
+async def manage_hosting_links(data: dict):
+    project_id = data.get("project_id")
+    title = data.get("title")
+    link = data.get("link")
+    descp = data.get("descp")
+
+    if not project_id or not title or not link or not descp:
+        raise HTTPException(status_code=400, detail="project_id, title,descp, and link are required.")
+    
+    link_exists = await db.Projects.find_one({
+        "project_id": project_id,
+        "hosting_details.title": title
+    })
+
+    if link_exists:
+        updated = await db.Projects.update_one(
+            {
+                "project_id": project_id,
+                "hosting_details.title": title
+            },
+            {
+                "$set": {"links.$.link": link,"links.$.descp":descp}
+            }
+        )
+
+        if updated.modified_count == 0:
+            raise HTTPException(status_code=400, detail="Link not updated.")
+        
+        return {"message": f"Link '{title}' updated in project {project_id}."}
+
+    else:
+        added = await db.Projects.update_one(
+            {"project_id": project_id},
+            {"$push": {"links": {"title": title, "link": link,"descp":descp}}}
+        )
+
+        if added.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Project not found or link not added.")
+
+        return {"message": f"New link '{title}' added to project {project_id}."}
 
 # ============= Get all Clients briefs =================
 @app.get("/clients/briefs")
