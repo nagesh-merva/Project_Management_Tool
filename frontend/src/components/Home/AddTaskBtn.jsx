@@ -42,7 +42,7 @@ const AddTaskButton = () => {
     }, [])
 
     const setEmployees = () => {
-        const selectOptions = allEmps.map(emp => ({
+        const selectOptions = allEmps?.map(emp => ({
             name: `${emp.emp_id} - ${emp.emp_name} - ${emp.role}`,
             value: emp.emp_id
         }))
