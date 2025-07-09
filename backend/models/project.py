@@ -41,7 +41,7 @@ class Feature(BaseModel):
     status: str
     created_by: str
     tasks : List[str]
-    verifiend: bool
+    verified: bool
 
 
 class SRS(BaseModel):
