@@ -1,14 +1,14 @@
-from fastapi import FastAPI, HTTPException, Depends,Body
+from fastapi import FastAPI, HTTPException, Depends,Body ,UploadFile , File,Form
 from fastapi.security import OAuth2PasswordRequestForm
 from motor.motor_asyncio import AsyncIOMotorClient
 from models.dept import Employee, Department, PerformanceMetrics ,EmployeeInput, EmployeeSummary,EmployeeResponse,EmployeesByDeptResponse
 from models.updatesAndtask import  UpdateTask,AddComment
 from models.project import Project,AddProjectRequest ,QuickLinks ,SRS
+from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 from models.clients import Client, ClientMetrics, ClientDocuments, ContactPerson, ClientEngagement ,BasicClientInput
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
-from pydantic import BaseModel
-from bson import ObjectId
+# from bson import ObjectId
 from jose import JWTError, jwt # type: ignore
 from datetime import datetime, timedelta,date
 import os
@@ -31,6 +31,8 @@ app.add_middleware(
 # MongoDB connection
 client = AsyncIOMotorClient(os.environ.get("MONGODB_URL"))
 db = client.ProjectManagementTool
+
+fs_bucket = AsyncIOMotorGridFSBucket(db)
 
 SECRET_KEY = os.environ.get("SECRET_KEY")  
 ALGORITHM = "HS256"
@@ -694,6 +696,39 @@ async def manage_quick_links(data: dict):
             raise HTTPException(status_code=404, detail="Project not found or link not added.")
 
         return {"message": f"New link '{link_name}' added to project {project_id}."}
+    
+#================= manage maintenance reports by project_id  ============================
+@app.post("/manage-maintenance-reports")
+async def manage_maintenance_reports(
+    project_id: str = Form(...),
+    title: str = Form(...),
+    descp: str = Form(...),
+    file: UploadFile = File(...)
+):
+    if not project_id or not title or not descp:
+        raise HTTPException(status_code=400, detail="project_id, title, and descp are required.")
+    
+    file_id = await fs_bucket.upload_from_stream(file.filename, await file.read())
+
+    gridfs_link = f"/files/{str(file_id)}"
+
+    report_entry = {
+        "id": f"MAINT{random.randint(1000,9999)}",
+        "title": title,
+        "descp": descp,
+        "issued_date": datetime.utcnow(),
+        "doc_link": gridfs_link 
+    }
+
+    updated = await db.Projects.update_one(
+        {"project_id": project_id},
+        {"$push": {"issues_and_maintenance_reports": report_entry}}
+    )
+
+    if updated.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Project not found or report not added.")
+
+    return {"message": f"Maintenance report '{title}' added to project {project_id}.", "doc_link": gridfs_link}
 
 #================= manage hosting details by project_id  ============================
 @app.post("/manage-hostings")
