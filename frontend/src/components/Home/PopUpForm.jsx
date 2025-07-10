@@ -42,28 +42,41 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                 newFormData[f.name] = validateTo(newFormData[f.name])
             }
             if (f.type === "number" && newFormData[f.name] !== undefined) {
-                const val = newFormData[f.name];
+                const val = newFormData[f.name]
                 if (val === "" || val === null) {
-                    newFormData[f.name] = null;
+                    newFormData[f.name] = null
                 } else if (val.toString().includes(".")) {
-                    newFormData[f.name] = parseFloat(val);
+                    newFormData[f.name] = parseFloat(val)
                 } else {
-                    newFormData[f.name] = parseInt(val, 10);
+                    newFormData[f.name] = parseInt(val, 10)
                 }
             }
         })
 
-        console.table(newFormData)
+        const hasFile = fields.some(f => f.type === "file")
         try {
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newFormData),
-            })
+            let response
+            if (hasFile) {
+                const formDataToSend = new FormData()
+                for (const key in newFormData) {
+                    formDataToSend.append(key, newFormData[key])
+                }
+
+                response = await fetch(endpoint, {
+                    method: "POST",
+                    body: formDataToSend,
+                })
+            } else {
+                response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newFormData),
+                })
+            }
 
             if (response.ok) {
                 alert('Successfully submitted!')
-                onClose();
+                onClose()
                 if (onSuccess) onSuccess()
             } else {
                 alert('Failed to submit!')
@@ -148,6 +161,25 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                     onChange={handleChange}
                                     className="border p-2 rounded resize-none"
                                 />
+                            )
+                        }
+
+                        if (field.type === "file") {
+                            return (
+                                <div key={field.name}>
+                                    <label className="block mb-1 font-medium">
+                                        {field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}:
+                                    </label>
+                                    <input
+                                        type="file"
+                                        name={field.name}
+                                        required={!field.optional}
+                                        onChange={(e) =>
+                                            setFormData({ ...formData, [field.name]: e.target.files[0] })
+                                        }
+                                        className="border p-2 rounded w-full"
+                                    />
+                                </div>
                             )
                         }
 
