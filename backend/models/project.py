@@ -79,10 +79,11 @@ class TemplateFields(BaseModel):
     id : str
     title : str
     descp : str
-    remark : str
+    remark : bool
 
 class Template(BaseModel):
-    fields : TemplateFields
+    id: str
+    fields : List[TemplateFields]
     template_name: str
     department: str
     phase: str

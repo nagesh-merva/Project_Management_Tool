@@ -221,7 +221,7 @@ const DynamicSection = ({
                         onClick={isEditing ? handleCancel : handleEdit}
                         className={`p-2 text-gray-500 ${colors.hover} transition-colors`}
                     >
-                        {isEditing ? <X size={20} /> : <Edit2 size={20} />}
+                        {isEditing ? <X size={20} className='cursor-pointer ' /> : <Edit2 size={20} className='cursor-pointer ' />}
                     </button>
                 )}
             </div>

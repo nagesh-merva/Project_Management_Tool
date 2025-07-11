@@ -29,11 +29,11 @@ const Newfeatures = ({ feature }) => {
         <div className="my-3 mx-4 p-4 bg-white rounded-xl border border-gray-300 shadow-sm hover:shadow-md transition cursor-pointer">
             <div className="flex justify-between items-center" onClick={() => setIsOpen(!isOpen)}>
                 <div className="flex items-start gap-4">
-                    <div onClick={(e) => { e.stopPropagation(); handleVerify(); }}>
+                    <div >
                         {isVerified ? (
                             <CheckSquare className="text-green-600 h-5 w-5" />
                         ) : (
-                            <Square className="text-gray-600 h-5 w-5 hover:text-blue-500" />
+                            <Square onClick={(e) => { e.stopPropagation(); handleVerify(); }} className="text-gray-600 h-5 w-5 hover:text-blue-500" />
                         )}
                     </div>
                     <div>

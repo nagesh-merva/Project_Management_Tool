@@ -71,6 +71,21 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
     raise HTTPException(status_code=401, detail="Invalid credentials")
 
+# ================= Get all  Department ====================
+@app.get("/all-dept-brief")
+async def get_edepartments():
+
+    departments = db.Departments.find({})
+    depts = []
+    async for dept in departments:
+        depts.append(
+            {
+                "depy_id":dept["dept_id"],
+                "dept_name":dept["dept_name"],
+            }
+        )
+    return depts
+
 
 # ================= Get All Employees ====================
 @app.get("/all-employees", response_model=List[EmployeeSummary])
@@ -267,7 +282,6 @@ async def get_tasks(emp_id: str):
 # ================= Add Task ====================
 @app.post("/add-task")
 async def add_task(task_data: dict):
-    # Auto-generate unique Task ID
     while True:
         random_id = f"TASK{random.randint(1000, 9999)}"
         existing_task = await db.Tasks.find_one({"task_id": random_id})
@@ -278,10 +292,8 @@ async def add_task(task_data: dict):
     task_data["created_on"] = datetime.utcnow()
     task_data["status"] = "assigned"
 
-    # Format members_assigned to include individual status
     task_data["members_assigned"] = [{"emp_id": emp_id, "status": "assigned"} for emp_id in task_data["members_assigned"]]
 
-    # Initialize comments 
     if "comments" not in task_data:
         task_data["comments"] = []
 
@@ -307,7 +319,6 @@ async def update_task_status(update: UpdateTask):
         {"$set": {"members_assigned.$.status": status}}
     )
 
-    # Check if all are completed
     task = await db.Tasks.find_one({"task_id": task_id})
     if task:
         statuses = [member["status"] for member in task["members_assigned"]]
@@ -401,7 +412,6 @@ async def get_projects_byid(emp_id:str):
 @app.post("/add-project")
 async def add_project(project_data: AddProjectRequest):
     
-    # Auto-generate unique Project ID
     while True:
         random_id = f"PRJ{random.randint(1000, 9999)}"
         existing_project = await db.Projects.find_one({"project_id": random_id})
@@ -421,7 +431,6 @@ async def add_project(project_data: AddProjectRequest):
             })
     client_details = {"name": client_data["name"],"logo": client_data["logo_url"],"domain": client_data["industry"]}
 
-    # Build the complete project object with default values
     project = Project(
         project_id=random_id,
         project_name=project_data.project_name,
@@ -772,6 +781,117 @@ async def manage_hosting_links(data: dict):
             raise HTTPException(status_code=404, detail="Project not found or link not added.")
 
         return {"message": f"New Quick Action link '{title}' added to project {project_id}."}
+    
+# ================= Get all phases of project development ====================
+@app.get("/all-phases")
+async def get_phases_project(project_id: str):
+    if not project_id:
+        raise HTTPException(status_code=400, detail="Project ID is required.")
+    
+    project = await db.Projects.find_one({"project_id": project_id}, {"_id": 0, "project_status": 1})
+    
+    if not project: 
+        raise HTTPException(status_code=404, detail="Project not found.")
+    project_phases = project.get("project_status", [])
+    
+    if not project_phases:
+        raise HTTPException(status_code=404, detail="No phases found for this project.")
+    
+    phases = []
+    for phase in project_phases:
+        phases.append(phase["parent_phase"] if "parent_phase" in phase else "")
+    return phases
+
+
+#================= Add new template to templates by project_id  ============================
+@app.post("/add-new-template")
+async def add_template(data: dict):
+    project_id = data.get("project_id")
+    template_name = data.get("template_name")
+    department = data.get("department")
+    phase = data.get("phase")
+    fields = data.get("fields")
+
+    if not project_id or not template_name or not department or not phase or not fields:
+        raise HTTPException(status_code=400, detail="All fields are required.")
+
+    while True:
+        random_id = f"TEMP{random.randint(1000, 9999)}"
+        existing_template = await db.Projects.find_one({"project_id": project_id, "templates.id": random_id})
+        if not existing_template:
+            break
+
+    template_fields = []
+    for field in fields:
+        while True:
+            randomFD_id = f"TEMPFD{random.randint(1000, 9999)}"
+            if any(f["id"] == randomFD_id for f in template_fields):
+                continue
+            existing_field = await db.Projects.find_one({
+                "project_id": project_id,
+                "templates.fields.id": randomFD_id
+            })
+            if not existing_field:
+                break
+        template_fields.append({
+            "id": randomFD_id,
+            "title": field.get("title"),
+            "descp": field.get("descp"),
+            "remark": False
+        })
+
+    template = {
+        "id": random_id,
+        "fields": template_fields,
+        "template_name": template_name,
+        "department": department,
+        "phase": phase
+    }
+
+    updated = await db.Projects.update_one(
+        {"project_id": project_id},
+        {"$push": {"templates": template}}
+    )
+
+    if updated.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Project not found or template not added.")
+
+    return {"message": f"Template '{template_name}' added to project {project_id}."}
+
+#================= Mark the Remark fields of a template  ============================
+@app.post("/mark-template-remarks")
+async def mark_template_remarks(data: dict):
+    project_id = data.get("project_id")
+    template_id = data.get("template_id")
+    verified_ids = data.get("verified_ids")
+
+    if not project_id or not template_id or not verified_ids:
+        raise HTTPException(status_code=400, detail="project_id, template_id, and verified_ids are required.")
+
+    project = await db.Projects.find_one({"project_id": project_id})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found.")
+
+    templates = project.get("templates", [])
+    template_index = None
+    for i, template in enumerate(templates):
+        if template.get("id") == template_id:
+            template_index = i
+            break
+
+    if template_index is None:
+        raise HTTPException(status_code=404, detail="Template not found.")
+
+
+    for field_id in verified_ids:
+        update_path = f"templates.{template_index}.fields.$[field].remark"
+        db.Projects.update_one(
+            {"project_id": project_id},
+            {"$set": {update_path: True}},
+            array_filters=[{"field.id": field_id}]
+        )
+
+    return {"message": f"Remark fields updated for template {template_id} in project {project_id}."}
 
 # ============= Get all Clients briefs =================
 @app.get("/clients/briefs")

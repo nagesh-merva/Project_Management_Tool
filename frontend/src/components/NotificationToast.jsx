@@ -28,7 +28,7 @@ const NotificationToast = ({ notifications, onRemove }) => {
                             onClick={() => onRemove(notification.id)}
                             className="text-white hover:text-gray-200 transition-colors"
                         >
-                            <X size={16} />
+                            <X size={16} className='cursor-pointer ' />
                         </button>
                     </div>
                 </div>
