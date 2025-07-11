@@ -4,7 +4,8 @@ import {
     Megaphone,
     Palette,
     BookOpen,
-    FastForward
+    FastForward,
+    Activity
 } from "lucide-react"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
@@ -91,13 +92,14 @@ const QuickActions = ({ links }) => {
 
     return (
         <>
-            <div className="h-fit w-full grid gap-2 bg-gray-50 rounded-lg shadow-lg p-4 ">
+            <div className="h-2/5 w-full grid gap-2 bg-gray-50 rounded-lg shadow-lg p-4 ">
                 <div className="flex gap-2 items-center justify-between mb-2">
                     <div className="flex gap-2 items-center" >
                         <FastForward className="h-5 w-7" />
                         <h1 className="font-semibold text-base">Quick Actions</h1>
                     </div>
-                    <button onClick={() => setShowPopup(true)} className="px-4 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition-all ">
+                    <button onClick={() => setShowPopup(true)} className="px-3 py-1.5 bg-btncol hover:bg-btncol/40 text-white rounded-lg transition-all duration-200 backdrop-blur-sm ">
+                        <Activity size={16} className="inline mr-2" />
                         Update
                     </button>
                 </div>

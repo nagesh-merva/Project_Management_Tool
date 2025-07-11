@@ -1,4 +1,4 @@
-import { Files } from "lucide-react"
+import { Activity, Files } from "lucide-react"
 import { useState } from "react"
 import PopupForm from "../Home/PopUpForm"
 
@@ -30,7 +30,8 @@ const Srs = ({ srs }) => {
                         <Files color="#0C098C" fill="#79EE8D" className="h-7 w-7" />
                         <p className="ml-3 text-lg font-bold text-gray-800">SRS & Requirements</p>
                     </div>
-                    <button onClick={() => setShowPopup(true)} className="px-4 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition-all ">
+                    <button onClick={() => setShowPopup(true)} className="px-3 py-1.5 bg-btncol hover:bg-btncol/40 text-white rounded-lg transition-all duration-200 backdrop-blur-sm ">
+                        <Activity size={16} className="inline mr-2" />
                         Update
                     </button>
                 </div>

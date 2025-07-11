@@ -1,4 +1,5 @@
 import {
+    Activity,
     ArrowDownToLine,
     Database,
     GitBranch,
@@ -89,7 +90,7 @@ const Maintenance = ({ MaintObj, HostingObj }) => {
 
     return (
         <>
-            <div className="relative w-full h-auto p-4 flex flex-col rounded-xl border border-gray-300 bg-white shadow-lg">
+            <div className="relative w-full h-2/5 p-4 flex flex-col rounded-xl border border-gray-300 bg-white shadow-lg">
                 <div className="flex gap-2 items-center mb-2">
                     <Server color="#0C098C" fill="#FDDC5C" className="h-5 w-7" />
                     <h1 className="font-semibold text-base">Issues and Maintenance </h1>
@@ -131,8 +132,9 @@ const Maintenance = ({ MaintObj, HostingObj }) => {
                             <h1 className="font-semibold text-lg">Hosting Details</h1>
                             <p className="text-paracolor text-sm">Primary Servers, Databases , Content Delivery Network</p>
                         </div>
-                        <button onClick={() => addhosting()} className="px-4 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition-all ">
-                            Update
+                        <button onClick={() => addhosting()} className="px-3 py-1.5 bg-btncol hover:bg-btncol/40 text-white rounded-lg transition-all duration-200 backdrop-blur-sm ">
+                            <Activity size={16} className="inline mr-1" />
+
                         </button>
                     </div>
 
