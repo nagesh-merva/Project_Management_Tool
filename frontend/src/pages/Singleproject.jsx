@@ -47,7 +47,7 @@ function Singleproject() {
         }
     }
 
-    console.log(projectDetails.project_status)
+    // console.log(projectDetails.project_status)
 
     return (
         <div className="relative h-full w-full flex flex-col bg-gray-100 min-w-[800px]">

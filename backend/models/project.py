@@ -101,14 +101,18 @@ class CostBreakdown(BaseModel):
     id: str
     calc_brief: str
     
-
+class SpenditureAnalysis(BaseModel):
+    month: str
+    dept: str
+    cost: float
+    id:str
 
 class FinancialData(BaseModel):
     total_budget: float
     expected_revenue: float
     profit_margin: float
     cost_breakdown: List[CostBreakdown]
-    spenditure_analysis: List[Dict[str, str]]  # {month, dept, cost}
+    spenditure_analysis: List[SpenditureAnalysis]  # {month, dept, cost}
 
 
 class PerformanceMetrics(BaseModel):

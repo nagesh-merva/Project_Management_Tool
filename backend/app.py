@@ -15,7 +15,6 @@ import os
 from dotenv import load_dotenv
 import random
 
-
 load_dotenv()
 
 app = FastAPI()
@@ -892,6 +891,88 @@ async def mark_template_remarks(data: dict):
         )
 
     return {"message": f"Remark fields updated for template {template_id} in project {project_id}."}
+
+# =============== Manage Financial Data ===================
+@app.put("/manage-financial-data")
+async def manage_financial_data(data: dict):
+    project_id = data.get("project_id")
+    if not project_id:
+        raise HTTPException(status_code=400, detail="project_id is required.")
+
+    project = await db.Projects.find_one({"project_id": project_id})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found.")
+
+    financial_data = project.get("financial_data", {})
+
+    total_budget = data.get("total_budget", financial_data.get("total_budget"))
+    expected_revenue = data.get("expected_revenue", financial_data.get("expected_revenue"))
+
+    profit_margin = financial_data.get("profit_margin")
+    if ("total_budget" in data or "expected_revenue" in data) and total_budget and expected_revenue:
+        try:
+            profit_margin = round(((float(expected_revenue) - float(total_budget)) / float(expected_revenue)) * 100, 2)
+        except Exception:
+            profit_margin = None
+
+    cost_breakdown = financial_data.get("cost_breakdown", [])
+    frontend_costs = data.get("cost_breakdown", [])
+    updated_cost_breakdown = []
+    existing_cost_ids = {c.get("id"): c for c in cost_breakdown if "id" in c}
+    for item in frontend_costs:
+        if "id" in item and item["id"] in existing_cost_ids:
+            updated = existing_cost_ids[item["id"]]
+            updated.update(item)
+            updated_cost_breakdown.append(updated)
+        else:
+            if "id" not in item:
+                item["id"] = f"COST{random.randint(1000,9999)}"
+            updated_cost_breakdown.append(item)
+
+    spenditure_analysis = financial_data.get("spenditure_analysis", [])
+    frontend_spends = data.get("spenditure_analysis", [])
+    existing_spend_ids = {s.get("id"): s for s in spenditure_analysis if "id" in s}
+    updated_spenditure = []
+    for item in frontend_spends:
+        found = False
+        if "id" in item and item["id"] in existing_spend_ids:
+            updated = existing_spend_ids[item["id"]]
+            updated.update(item)
+            updated_spenditure.append(updated)
+            found = True
+        else:
+            for s in spenditure_analysis:
+                if s.get("month") == item.get("month") and s.get("dept") == item.get("dept"):
+                    s.update(item)
+                    if "id" not in s:
+                        s["id"] = f"SPA{random.randint(1000,9999)}"
+                    item["id"] = s["id"]
+                    updated_spenditure.append(s)
+                    found = True
+                    break
+        if not found:
+            if "id" not in item:
+                item["id"] = f"SPA{random.randint(1000,9999)}"
+            updated_spenditure.append(item)
+
+    update_dict = {
+        "financial_data.total_budget": float(total_budget) if total_budget is not None else None,
+        "financial_data.expected_revenue": float(expected_revenue) if expected_revenue is not None else None,
+        "financial_data.profit_margin": float(profit_margin) if profit_margin is not None else None,
+        "financial_data.cost_breakdown": updated_cost_breakdown,
+        "financial_data.spenditure_analysis": updated_spenditure
+    }
+    update_dict = {k: v for k, v in update_dict.items() if v is not None}
+
+    result = await db.Projects.update_one(
+        {"project_id": project_id},
+        {"$set": update_dict}
+    )
+
+    if result.modified_count == 0:
+        raise HTTPException(status_code=400, detail="Financial data not updated.")
+
+    return {"message": "Financial data updated successfully."}
 
 # ============= Get all Clients briefs =================
 @app.get("/clients/briefs")
