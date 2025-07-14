@@ -8,7 +8,7 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
         const { name, value } = e.target
         setFormData({ ...formData, [name]: value })
     }
-    console.log(id)
+    // console.log(id)
 
     const handleSelectChange = (e, name, isMulti) => {
         if (isMulti) {
@@ -27,7 +27,7 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
     }
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
+        e.preventDefault()
         const emp = JSON.parse(localStorage.getItem("emp"))
         const newFormData = { ...formData }
 

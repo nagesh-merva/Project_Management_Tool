@@ -20,8 +20,6 @@ const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
     const [predicted, setPredicted] = useState(0)
     const [stats, setStats] = useState({ completed: 0, inProgress: 0, notStarted: 0, total: 0 })
 
-    console.table(projectPhases)
-
     useEffect(() => {
         let maxWeeks = 0
         let completedCount = 0
@@ -29,20 +27,27 @@ const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
         let notStartedCount = 0
         let totalCount = 0
 
+        const baseStartDate = (projectPhases && projectPhases[0] && projectPhases[0].subphases && projectPhases[0].subphases[0] && projectPhases[0].subphases[0].start_date)
+            ? parseISO(projectPhases[0].subphases[0].start_date)
+            : new Date()
+
         projectPhases?.forEach(phase => {
             phase.subphases.forEach(sub => {
                 const start = parseISO(sub.start_date)
                 const end = sub.closed_date ? parseISO(sub.closed_date) : new Date()
                 const duration = Math.ceil(differenceInCalendarDays(end, start) / 7) || 1
 
-                const startWeek = Math.ceil(differenceInCalendarDays(start, parseISO(projectPhases[0].subphases[0].start_date)) / 7) + 1
+                const startWeek = Math.ceil(differenceInCalendarDays(start, baseStartDate) / 7) + 1
+                const endWeek = sub.closed_date
+                    ? Math.ceil(differenceInCalendarDays(parseISO(sub.closed_date), baseStartDate) / 7) + 1
+                    : startWeek + 2
 
-                if (startWeek + duration - 1 > maxWeeks) maxWeeks = startWeek + duration - 1
+                if (endWeek > maxWeeks) maxWeeks = endWeek
 
                 if (sub.status === "completed") completedCount++
                 else if (sub.status === "in_progress") inProgressCount++
                 else notStartedCount++
-                totalCount++;
+                totalCount++
             })
         })
 
@@ -50,8 +55,9 @@ const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
         for (let i = 1; i <= maxWeeks; i++) {
             allWeeks.push(`W${i}`)
         }
+
         setWeeks(allWeeks)
-        setProgress(Math.floor((completedCount / totalCount) * 100));
+        setProgress(Math.floor((completedCount / totalCount) * 100))
         setPredicted(Math.min(progress + 20, 100))
         setStats({
             completed: completedCount,
@@ -61,10 +67,8 @@ const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
         })
     }, [projectPhases, progress])
 
-    // Calculate total subphases for dynamic sizing
     const totalSubphases = projectPhases?.reduce((total, phase) => total + phase.subphases.length, 0) || 0
 
-    // Dynamic sizing based on content
     const isCompact = totalSubphases > 8
     const isVeryCompact = totalSubphases > 12
     const needsScroll = totalSubphases > 7
@@ -80,7 +84,7 @@ const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
                     <p className="text-gray-500">No project phase data available to display.</p>
                 </div>
             </div>
-        );
+        )
     }
 
     return (
@@ -121,7 +125,7 @@ const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
                     </div>
                     <div className={`bg-gray-50 border border-gray-200 rounded-lg ${isVeryCompact ? 'p-1.5' : 'p-2'} text-center`}>
                         <div className={`${isVeryCompact ? 'text-lg' : 'text-2xl'} font-bold text-gray-600`}>{stats.total}</div>
-                        <div className={`${isVeryCompact ? 'text-xs' : 'text-xs'} text-gray-700 font-medium`}>Total Tasks</div>
+                        <div className={`${isVeryCompact ? 'text-xs' : 'text-xs'} text-gray-700 font-medium`}>Total Phases</div>
                     </div>
                 </div>
                 <div className={`space-y-${isVeryCompact ? '2' : '4'} flex-shrink-0`}>
@@ -205,7 +209,7 @@ const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
                                 </div>
                             </div>
                             <div className={`space-y-${isVeryCompact ? '0.5' : '1'}`}>
-                                {projectPhases && projectPhases.map((phase, phaseIdx) => (
+                                {projectPhases.map((phase, phaseIdx) => (
                                     <div key={`phase-${phaseIdx}`} className={`space-y-${isVeryCompact ? '0.5' : '1'}`}>
                                         <div className="flex">
                                             <div className={`w-48 flex-shrink-0 ${isVeryCompact ? 'p-1.5' : 'p-2'} bg-gradient-to-r from-gray-700 to-gray-800 ${isVeryCompact ? 'text-xs' : 'text-sm'} text-white font-bold rounded-lg`}>
@@ -213,8 +217,11 @@ const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
                                             </div>
                                         </div>
                                         {phase.subphases.map((sub, subIdx) => {
-                                            const startWeek = Math.ceil(differenceInCalendarDays(parseISO(sub.start_date), parseISO(projectPhases[0].subphases[0].start_date)) / 7) + 1;
-                                            const endWeek = sub.closed_date ? Math.ceil(differenceInCalendarDays(parseISO(sub.closed_date), parseISO(projectPhases[0].subphases[0].start_date)) / 7) + 1 : startWeek + 1;
+                                            const baseStart = parseISO(projectPhases[0].subphases[0].start_date)
+                                            const startWeek = Math.ceil(differenceInCalendarDays(parseISO(sub.start_date), baseStart) / 7) + 1
+                                            const endWeek = sub.closed_date
+                                                ? Math.ceil(differenceInCalendarDays(parseISO(sub.closed_date), baseStart) / 7) + 1
+                                                : startWeek + 2
 
                                             return (
                                                 <div key={`subphase-${phaseIdx}-${subIdx}`} className="flex hover:bg-white transition-colors duration-200 rounded-lg">
@@ -227,7 +234,7 @@ const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
                                                     <div className="flex flex-1 bg-white border-t border-r border-b border-gray-200 rounded-r-lg">
                                                         {weeks.map((week, idx) => (
                                                             <div key={idx} className={`flex-1 min-w-[${isVeryCompact ? '28px' : '36px'}] ${isVeryCompact ? 'p-1' : 'p-2'} border-l border-gray-100 first:border-l-0 flex items-center justify-center`}>
-                                                                {idx + 1 >= startWeek && idx + 1 < endWeek && (
+                                                                {idx + 1 >= startWeek && idx + 1 <= endWeek && (
                                                                     <div className={`w-full ${isVeryCompact ? 'h-4' : 'h-6'} rounded-md ${COLORS[sub.status]} shadow-sm`}></div>
                                                                 )}
                                                             </div>
