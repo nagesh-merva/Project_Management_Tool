@@ -28,7 +28,7 @@ class Department(BaseModel):
 
 
 # Employee Performance Metrics
-class PerformanceMetrics(BaseModel):
+class EmpPerformanceMetrics(BaseModel):
     completed_projects: int
     ratings: float  # Average rating out of 5
     remarks: Optional[str] = None
@@ -49,7 +49,7 @@ class Employee(BaseModel):
     salary_monthly: float
     bonus: Optional[float] = 0.0
     salary_account: List[SalaryRecord] = []
-    performance_metrics: PerformanceMetrics
+    performance_metrics: EmpPerformanceMetrics
     status: str = "Active"  # Example: Active, Resigned, On Leave
     leaves_taken: int = 0
     current_projects: Optional[List[str]] = []  # Project IDs
@@ -96,7 +96,7 @@ class EmployeeSummary(BaseModel):
     emp_id: str
     emp_name: str
     role: str
-    performance_metrics: PerformanceMetrics
+    performance_metrics: EmpPerformanceMetrics
     
 class EmployeesByDeptResponse(BaseModel):
     employees: List[EmployeeSummary]

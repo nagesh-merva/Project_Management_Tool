@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional, Dict
 from datetime import datetime
 from enum import Enum
@@ -96,23 +96,23 @@ class CustomLink(BaseModel):
 
 # ---------- Restricted Data ----------
 class CostBreakdown(BaseModel):
-    cost: float
-    title: str
-    id: str
-    calc_brief: str
+    cost: Optional[float] = 0
+    title: Optional[str] = None
+    id: Optional[str] = None
+    calc_brief: Optional[str] = None
     
 class SpenditureAnalysis(BaseModel):
-    month: str
-    dept: str
-    cost: float
-    id:str
+    month: Optional[str] = None
+    dept: Optional[str] = None
+    cost: Optional[float] = None
+    id:Optional[str] = None
 
 class FinancialData(BaseModel):
-    total_budget: float
-    expected_revenue: float
-    profit_margin: float
-    cost_breakdown: List[CostBreakdown]
-    spenditure_analysis: List[SpenditureAnalysis]  # {month, dept, cost}
+    total_budget: Optional[float] = 0
+    expected_revenue: Optional[float] = 0
+    profit_margin: Optional[float] = 0
+    cost_breakdown: List[CostBreakdown] = Field(default_factory=list)
+    spenditure_analysis: List[SpenditureAnalysis] = Field(default_factory=list)
 
 
 class PerformanceMetrics(BaseModel):
@@ -137,17 +137,17 @@ class Project(BaseModel):
     team_members: List[TeamMember]
     quick_links: QuickLinks
     client_details: ClientDetails
-    features: List[Feature]
-    srs: SRS
-    project_status: List[ProjectPhase]
-    issues_and_maintenance_reports: List[IssueMaintenanceReport]
-    hosting_details: List[HostingDetail]
-    templates: List[Template]
-    links: List[CustomLink]
-
-    # Restricted Data
-    financial_data: Optional[FinancialData] = None
-    performance_metrics: Optional[PerformanceMetrics] = None
+    features: List[Feature] = Field(default_factory=list)
+    srs: SRS = Field(default_factory=SRS)
+    project_status: List[ProjectPhase] = Field(default_factory=list)
+    issues_and_maintenance_reports: List[IssueMaintenanceReport] = Field(default_factory=list)
+    hosting_details: List[HostingDetail] = Field(default_factory=list)
+    templates: List[Template] = Field(default_factory=list)
+    links: List[CustomLink] = Field(default_factory=list)
+    quick_links: QuickLinks = Field(default_factory=QuickLinks)
+    #financial data
+    financial_data: FinancialData = Field(default_factory=FinancialData)
+    performance_metrics: PerformanceMetrics = Field(default_factory=PerformanceMetrics)
 
 
 class AddProjectRequest(BaseModel):

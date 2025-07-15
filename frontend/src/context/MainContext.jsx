@@ -52,9 +52,9 @@ export const MainProvider = ({ children }) => {
     const setAllEmployees = (empObj) => {
         setEmps(empObj)
         if (empObj) {
-            localStorage.setItem("all-emps", JSON.stringify(empObj))
+            sessionStorage.setItem("all-emps", JSON.stringify(empObj))
         } else {
-            localStorage.removeItem("all-emps")
+            sessionStorage.removeItem("all-emps")
         }
     }
 
@@ -89,7 +89,7 @@ export const MainProvider = ({ children }) => {
 
     useEffect(() => {
         const cached = sessionStorage.getItem("all-emps")
-        if (cached) {
+        if (cached || cached !== null) {
             setAllEmployees(JSON.parse(cached))
         } else {
             fetchEmployees()

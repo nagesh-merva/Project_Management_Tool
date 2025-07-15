@@ -1,9 +1,9 @@
 from fastapi import FastAPI, HTTPException, Depends,Body ,UploadFile , File,Form
 from fastapi.security import OAuth2PasswordRequestForm
 from motor.motor_asyncio import AsyncIOMotorClient
-from models.dept import Employee, Department, PerformanceMetrics ,EmployeeInput, EmployeeSummary,EmployeeResponse,EmployeesByDeptResponse
+from models.dept import Employee, Department, EmpPerformanceMetrics ,EmployeeInput, EmployeeSummary,EmployeeResponse,EmployeesByDeptResponse
 from models.updatesAndtask import  UpdateTask,AddComment
-from models.project import Project,AddProjectRequest ,QuickLinks ,SRS
+from models.project import Project,AddProjectRequest ,QuickLinks ,SRS ,FinancialData,PerformanceMetrics
 from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 from models.clients import Client, ClientMetrics, ClientDocuments, ContactPerson, ClientEngagement ,BasicClientInput
 from fastapi.middleware.cors import CORSMiddleware
@@ -97,7 +97,7 @@ async def get_all_employees():
                 emp_id=emp["emp_id"],
                 emp_name=emp["emp_name"],
                 role=emp["role"],
-                performance_metrics=PerformanceMetrics(**emp.get("performance_metrics", {}))
+                performance_metrics=EmpPerformanceMetrics(**emp.get("performance_metrics", {}))
             )
         )
     return employees
@@ -118,7 +118,7 @@ async def get_employees_by_department(dept: str):
                 emp_id=emp["emp_id"],
                 emp_name=emp["emp_name"],
                 role=emp["role"],
-                performance_metrics=PerformanceMetrics(**emp.get("performance_metrics", {}))
+                performance_metrics=EmpPerformanceMetrics(**emp.get("performance_metrics", {}))
             )
         )
     return EmployeesByDeptResponse(employees=employees, details=Department(**department) if department else None)
@@ -418,6 +418,13 @@ async def add_project(project_data: AddProjectRequest):
             break
         
     client_data = await db.Clients.find_one({"client_id": project_data.client_details})
+    await db.Clients.update_one(
+        {"client_id": project_data.client_details},
+        {
+            "$inc": {"metrics.total_projects": 1},
+            "$set": {"metrics.last_project_date": datetime.utcnow()}
+        }
+    )
     member_objs = []
     for emp_id in project_data.team_members:
         emp = await db.Employees.find_one({"emp_id": emp_id})
@@ -449,8 +456,8 @@ async def add_project(project_data: AddProjectRequest):
         hosting_details=[],
         templates=[],
         links=[],
-        financial_data=None,
-        performance_metrics=None
+        financial_data=FinancialData(),
+        performance_metrics=PerformanceMetrics()
     )
 
     await db.Projects.insert_one(project.dict())
@@ -909,11 +916,37 @@ async def manage_financial_data(data: dict):
     expected_revenue = data.get("expected_revenue", financial_data.get("expected_revenue"))
 
     profit_margin = financial_data.get("profit_margin")
+    prior_expected_revenue = financial_data.get("expected_revenue", 0)
     if ("total_budget" in data or "expected_revenue" in data) and total_budget and expected_revenue:
         try:
             profit_margin = round(((float(expected_revenue) - float(total_budget)) / float(expected_revenue)) * 100, 2)
         except Exception:
             profit_margin = None
+
+    # Update client's total_billed in metrics
+    client_details = project.get("client_details", {})
+    client_name = client_details.get("name")
+    if client_name:
+        client = await db.Clients.find_one({"name": client_name})
+        if client:
+            metrics = client.get("metrics", {})
+            total_billed = metrics.get("total_billed", 0) or 0
+            if expected_revenue is not None:
+                try:
+                    expected_revenue_val = float(expected_revenue)
+                    prior_expected_revenue_val = float(prior_expected_revenue) if prior_expected_revenue else 0
+                    if not prior_expected_revenue_val or prior_expected_revenue_val == 0:
+                        new_total_billed = total_billed + expected_revenue_val
+                    elif prior_expected_revenue_val > 100:
+                        new_total_billed = total_billed - prior_expected_revenue_val + expected_revenue_val
+                    else:
+                        new_total_billed = total_billed
+                    await db.Clients.update_one(
+                        {"_id": client["_id"]},
+                        {"$set": {"metrics.total_billed": new_total_billed}}
+                    )
+                except Exception:
+                    pass
 
     cost_breakdown = financial_data.get("cost_breakdown", [])
     frontend_costs = data.get("cost_breakdown", [])

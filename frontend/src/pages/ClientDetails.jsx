@@ -417,7 +417,7 @@ const ClientDetails = () => {
                             <div className="mt-4 space-y-2">
                                 <div className="flex items-center justify-between">
                                     <span className="text-gray-600">Last Project</span>
-                                    <span className="font-medium">{client.metrics.last_project_date}</span>
+                                    <span className="font-medium">{client.metrics.last_project_date.split("T")[0]}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-gray-600">Payment Status</span>
