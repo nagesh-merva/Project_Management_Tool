@@ -92,8 +92,8 @@ const QuickActions = ({ links }) => {
 
     return (
         <>
-            <div className="h-2/5 w-full grid gap-2 bg-gray-50 rounded-lg shadow-lg p-4 ">
-                <div className="flex gap-2 items-center justify-between mb-2">
+            <div className="h-2/5 w-full flex flex-col gap-2 bg-gray-50 rounded-lg shadow-lg p-4 ">
+                <div className="gap-2 place-self-start flex w-full items-center place-content-between mb-2">
                     <div className="flex gap-2 items-center" >
                         <FastForward className="h-5 w-7" />
                         <h1 className="font-semibold text-base">Quick Actions</h1>
@@ -103,7 +103,7 @@ const QuickActions = ({ links }) => {
                         Update
                     </button>
                 </div>
-                <div className="h-fit w-full grid gap-2 bg-gray-50 rounded-xl max-h-80 overflow-y-auto custom-scrollbar pt-2">
+                <div className="place-self-start h-fit w-full grid gap-2 bg-gray-50 rounded-xl max-h-80 overflow-y-auto custom-scrollbar pt-2">
                     {actions.map((action, idx) => (
                         <button
                             key={idx}
@@ -114,7 +114,7 @@ const QuickActions = ({ links }) => {
                                     : "bg-white text-slate-700 hover:bg-gray-100 border-gray-400"
                                 }`}
                         >
-                            <div className="w-1/5 h-full"></div>
+                            <div className="w-0 md:w-1/5 lg:w-1/6 xl:w-3/12 h-full"></div>
                             {action.icon}
                             {action.label}
                         </button>
