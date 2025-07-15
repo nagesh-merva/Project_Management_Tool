@@ -157,3 +157,18 @@ class AddProjectRequest(BaseModel):
     deadline: datetime
     team_members: List[str]
     client_details: str
+    
+class SubPhaseInput(BaseModel):
+    subphase: str
+    start_date: Optional[str] = None
+    closed_date: Optional[str] = None
+    remarks: Optional[str] = None
+
+class PhaseInput(BaseModel):
+    parent_phase: str
+    subphases: List[SubPhaseInput]
+    
+class ProjectPhaseUpdate(BaseModel):
+    project_id: str
+    phases: List[PhaseInput]
+

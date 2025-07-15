@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from motor.motor_asyncio import AsyncIOMotorClient
 from models.dept import Employee, Department, EmpPerformanceMetrics ,EmployeeInput, EmployeeSummary,EmployeeResponse,EmployeesByDeptResponse
 from models.updatesAndtask import  UpdateTask,AddComment
-from models.project import Project,AddProjectRequest ,QuickLinks ,SRS ,FinancialData,PerformanceMetrics
+from models.project import Project,AddProjectRequest ,QuickLinks ,SRS ,FinancialData,PerformanceMetrics,ProjectPhaseUpdate
 from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 from models.clients import Client, ClientMetrics, ClientDocuments, ContactPerson, ClientEngagement ,BasicClientInput
 from fastapi.middleware.cors import CORSMiddleware
@@ -1006,6 +1006,92 @@ async def manage_financial_data(data: dict):
         raise HTTPException(status_code=400, detail="Financial data not updated.")
 
     return {"message": "Financial data updated successfully."}
+
+#=============== Add Initial phase to project development =================
+@app.post("/add-initial-phases")
+async def add_project_phases(data: ProjectPhaseUpdate):
+    project = db.Projects.find_one({"project_id": data.project_id})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    processed_phases = []
+    for phase in data.phases:
+        processed_subphases = []
+        for sub in phase.subphases:
+            sub_dict = {
+                "subphase": sub.subphase,
+                "status": "not_started", 
+                "start_date": sub.start_date if sub.start_date else None,
+                "closed_date": None,
+                "remarks": sub.remarks or ""
+            }
+            if sub_dict["start_date"]:
+                try:
+                    sub_dict["start_date"] = datetime.fromisoformat(sub_dict["start_date"])
+                except ValueError:
+                    raise HTTPException(status_code=400, detail=f"Invalid date format: {sub_dict['start_date']}")
+            processed_subphases.append(sub_dict)
+
+        processed_phases.append({
+            "parent_phase": phase.parent_phase,
+            "subphases": processed_subphases
+        })
+
+    result = db.Projects.update_one(
+        {"project_id": data.project_id},
+        {"$set": {"project_status": processed_phases}}
+    )
+
+    # if result.modified_count == 0:
+    #     raise HTTPException(status_code=400, detail="Phases data not updated.")
+    # else:
+    return {"message": "Sucessfully added initial phases to project."}
+
+#================ update project phase status ============================
+def infer_status(start: Optional[str], closed: Optional[str]) -> str:
+    if start and closed:
+        return "completed"
+    elif start and not closed:
+        return "in_progress"
+    else:
+        return "not_started"
+    
+@app.post("/update_project_phases")
+async def update_project_phases(data: ProjectPhaseUpdate):
+    project = db.Projects.find_one({"project_id": data.project_id})
+
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    updated_status = []
+    for phase in data.phases:
+        updated_subphases = []
+        for sub in phase.subphases:
+            start_date = datetime.fromisoformat(sub.start_date) if sub.start_date else None
+            closed_date = datetime.fromisoformat(sub.closed_date) if sub.closed_date else None
+
+            status = infer_status(start_date, closed_date)
+            updated_subphases.append({
+                "subphase": sub.subphase,
+                "status": status,
+                "start_date": datetime.fromisoformat(sub.start_date) if sub.start_date else None,
+                "closed_date": datetime.fromisoformat(sub.closed_date) if sub.closed_date else None,
+                "remarks": sub.remarks or ""
+            })
+        updated_status.append({
+            "parent_phase": phase.parent_phase,
+            "subphases": updated_subphases
+        })
+
+    result = db.Projects.update_one(
+        {"project_id": data.project_id},
+        {"$set": {"project_status": updated_status}}
+    )
+
+    # if result.modified_count == 0:
+    #     raise HTTPException(status_code=400, detail="No changes were made")
+
+    return {"message": "Project phases updated successfully"}
 
 # ============= Get all Clients briefs =================
 @app.get("/clients/briefs")

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react"
+import { useParams } from "react-router-dom"
 import { BarChartBig, TrendingUp, Calendar, Target, Activity } from "lucide-react"
 import { differenceInCalendarDays, parseISO } from "date-fns"
+import ManageProjectForm from "./ManageProjectForm"
 
 const COLORS = {
     completed: "bg-gradient-to-r from-green-500 to-green-600",
@@ -15,10 +17,13 @@ const STATUS_COLORS = {
 }
 
 const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
+    const { id } = useParams()
     const [weeks, setWeeks] = useState([])
     const [progress, setProgress] = useState(0)
     const [predicted, setPredicted] = useState(0)
     const [stats, setStats] = useState({ completed: 0, inProgress: 0, notStarted: 0, total: 0 })
+    const [isInitialized, setInitialized] = useState(false)
+    const [showForm, setShowForm] = useState(false)
 
     useEffect(() => {
         let maxWeeks = 0
@@ -28,18 +33,18 @@ const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
         let totalCount = 0
 
         const baseStartDate = (projectPhases && projectPhases[0] && projectPhases[0].subphases && projectPhases[0].subphases[0] && projectPhases[0].subphases[0].start_date)
-            ? parseISO(projectPhases[0].subphases[0].start_date)
+            ? projectPhases[0].subphases[0].start_date
             : new Date()
 
         projectPhases?.forEach(phase => {
             phase.subphases.forEach(sub => {
-                const start = parseISO(sub.start_date)
-                const end = sub.closed_date ? parseISO(sub.closed_date) : new Date()
+                const start = sub.start_date
+                const end = sub.closed_date ? sub.closed_date : new Date()
                 const duration = Math.ceil(differenceInCalendarDays(end, start) / 7) || 1
 
                 const startWeek = Math.ceil(differenceInCalendarDays(start, baseStartDate) / 7) + 1
                 const endWeek = sub.closed_date
-                    ? Math.ceil(differenceInCalendarDays(parseISO(sub.closed_date), baseStartDate) / 7) + 1
+                    ? Math.ceil(differenceInCalendarDays(sub.closed_date, baseStartDate) / 7) + 1
                     : startWeek + 2
 
                 if (endWeek > maxWeeks) maxWeeks = endWeek
@@ -65,7 +70,14 @@ const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
             notStarted: notStartedCount,
             total: totalCount
         })
+        setInitialized(projectPhases && projectPhases.length > 0)
     }, [projectPhases, progress])
+
+    useEffect(() => {
+
+    }, [projectPhases])
+
+    const toggleForm = () => setShowForm(prev => !prev)
 
     const totalSubphases = projectPhases?.reduce((total, phase) => total + phase.subphases.length, 0) || 0
 
@@ -73,24 +85,49 @@ const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
     const isVeryCompact = totalSubphases > 12
     const needsScroll = totalSubphases > 7
 
-    if (!projectPhases || projectPhases.length === 0) {
+    // if (!projectPhases || projectPhases.length === 0) {
+    //     return (
+    //         <div className="w-2/5 md:w-2/3 bg-white rounded-xl shadow-xl p-8" style={{ maxHeight: '1185px' }}>
+    //             <button onClick={toggleForm} className={`${isVeryCompact ? 'px-2 py-1 text-sm' : 'px-3 py-1.5'} bg-btncol hover:bg-btncol/40 text-white rounded-lg transition-all duration-200 backdrop-blur-sm`}>
+    //                 <Activity size={16} className="inline mr-2" />
+    //                 Add Development Cycle
+    //             </button>
+    //             <div className="text-center space-y-4">
+    //                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+    //                     <BarChartBig className="text-gray-400" size={32} />
+    //                 </div>
+    //                 <h3 className="text-lg font-medium text-gray-900">No Project Data</h3>
+    //                 <p className="text-gray-500">No project phase data available to display.</p>
+    //             </div>
+    //         </div>
+    //     )
+    // }
+
+    if (showForm || !projectPhases || projectPhases.length === 0) {
         return (
-            <div className="w-2/5 md:w-2/3 bg-white rounded-xl shadow-xl p-8" style={{ maxHeight: '1185px' }}>
-                <div className="text-center space-y-4">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
-                        <BarChartBig className="text-gray-400" size={32} />
-                    </div>
-                    <h3 className="text-lg font-medium text-gray-900">No Project Data</h3>
-                    <p className="text-gray-500">No project phase data available to display.</p>
+            <div className="w-full max-w-4xl mx-auto bg-white p-6 rounded-xl shadow-md">
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-semibold text-gray-800">Manage Project</h2>
+                    <button
+                        onClick={toggleForm}
+                        className="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-lg text-sm"
+                    >
+                        Cancel
+                    </button>
                 </div>
+                <ManageProjectForm
+                    projectId={id}
+                    projectPhases={projectPhases}
+                    isInitialized={isInitialized}
+                    setInitialized={setInitialized}
+                />
             </div>
         )
     }
 
     return (
         <div
-            className="w-2/5 md:w-2/3 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden flex flex-col"
-            style={{ maxHeight: '1185px' }}
+            className="w-2/5 md:w-2/3 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden flex flex-col max-h-full"
         >
             <div className={`${isVeryCompact ? 'p-3' : isCompact ? 'p-4' : 'p-4'} text-black flex-shrink-0`}>
                 <div className="flex items-center justify-between">
@@ -103,7 +140,7 @@ const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
                             <p className={`text-gray-600 ${isVeryCompact ? 'text-xs' : 'text-xs'}`}>Track progress across all phases</p>
                         </div>
                     </div>
-                    <button className={`${isVeryCompact ? 'px-2 py-1 text-sm' : 'px-3 py-1.5'} bg-btncol hover:bg-btncol/40 text-white rounded-lg transition-all duration-200 backdrop-blur-sm`}>
+                    <button onClick={toggleForm} className={`${isVeryCompact ? 'px-2 py-1 text-sm' : 'px-3 py-1.5'} bg-btncol hover:bg-btncol/40 text-white rounded-lg transition-all duration-200 backdrop-blur-sm`}>
                         <Activity size={16} className="inline mr-2" />
                         Update
                     </button>
@@ -217,10 +254,10 @@ const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
                                             </div>
                                         </div>
                                         {phase.subphases.map((sub, subIdx) => {
-                                            const baseStart = parseISO(projectPhases[0].subphases[0].start_date)
-                                            const startWeek = Math.ceil(differenceInCalendarDays(parseISO(sub.start_date), baseStart) / 7) + 1
+                                            const baseStart = projectPhases[0].subphases[0]?.start_date
+                                            const startWeek = Math.ceil(differenceInCalendarDays(sub.start_date, baseStart) / 7) + 1
                                             const endWeek = sub.closed_date
-                                                ? Math.ceil(differenceInCalendarDays(parseISO(sub.closed_date), baseStart) / 7) + 1
+                                                ? Math.ceil(differenceInCalendarDays(sub.closed_date, baseStart) / 7) + 1
                                                 : startWeek + 2
 
                                             return (
