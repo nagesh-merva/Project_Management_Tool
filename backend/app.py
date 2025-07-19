@@ -5,7 +5,7 @@ from models.dept import Employee, Department, EmpPerformanceMetrics ,EmployeeInp
 from models.updatesAndtask import  UpdateTask,AddComment
 from models.project import Project,AddProjectRequest ,QuickLinks ,SRS ,FinancialData,PerformanceMetrics,ProjectPhaseUpdate
 from motor.motor_asyncio import AsyncIOMotorGridFSBucket
-from models.clients import Client, ClientMetrics, ClientDocuments, ContactPerson, ClientEngagement ,BasicClientInput
+from models.clients import Client, ClientMetrics, ClientDocuments, ContactPerson, ClientEngagement ,BasicClientInput,UpdateClientInput
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 # from bson import ObjectId
@@ -1169,3 +1169,34 @@ async def add_new_client(data: BasicClientInput):
 
     await db.Clients.insert_one(client_data.dict())
     return {"message": "Client added successfully", "client_id": random_id}
+
+
+@app.put("/update-client")
+def update_client( data: UpdateClientInput):
+    if not data.client_id:
+        raise HTTPException(status_code=400, detail="Client ID is required.")
+    
+    client = db.Clients.find_one({"client_id": data.client_id})
+    if not client:  
+        raise HTTPException(status_code=404, detail="Client not found.")
+    
+    update_data = {
+        "name": data.name,
+        "brand_name": data.brand_name if data.brand_name else None,
+        "logo_url": data.logo_url if data.logo_url else None,
+        "location": data.location if data.location else None,
+        "website": data.website if data.website else None,
+        "gst_id": data.gst_id if data.gst_id else None,
+        "contact_name": data.contact_name if data.contact_name else None,
+        "contact_email": data.contact_email if data.contact_email else None,
+        "contact_phone": data.contact_phone if data.contact_phone else None,
+    }
+    
+    update_fields = {key: value for key, value in update_data.items() if value is not None}
+    result = db.Clients.update_one(
+        {"client_id": data.client_id},
+        {"$set": update_fields}
+    )
+    # if result.modified_count == 0:
+    #     raise HTTPException(status_code=400, detail="Client not updated.")
+    return {"message": "Client updated successfully."}

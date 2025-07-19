@@ -74,3 +74,15 @@ class BasicClientInput(BaseModel):
     contact_email: EmailStr
     contact_phone: str
     source :str
+    
+class UpdateClientInput(BaseModel):
+    client_id: str
+    name: Optional[str] = None
+    brand_name: Optional[str] = None
+    logo_url: Optional[str] = None
+    location: Optional[str] = None
+    website: Optional[str] = None
+    gst_id: Optional[str] = None
+    contact_name: Optional[str] = None
+    contact_email: Optional[EmailStr] = None
+    contact_phone: Optional[str] = None
