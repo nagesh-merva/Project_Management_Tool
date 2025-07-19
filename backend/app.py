@@ -1179,7 +1179,7 @@ def update_client( data: UpdateClientInput):
     client = db.Clients.find_one({"client_id": data.client_id})
     if not client:  
         raise HTTPException(status_code=404, detail="Client not found.")
-    
+    print (data)
     update_data = {
         "name": data.name,
         "brand_name": data.brand_name if data.brand_name else None,

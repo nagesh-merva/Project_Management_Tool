@@ -3,7 +3,7 @@ import { useState } from "react"
 import { useParams } from "react-router-dom"
 function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess }) {
     const [formData, setFormData] = useState({})
-    const { id } = useParams()
+    const { id, clientid } = useParams()
     const handleChange = (e) => {
         const { name, value } = e.target
         setFormData({ ...formData, [name]: value })
@@ -34,6 +34,9 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
         fields.forEach(f => {
             if (f.type === "id") {
                 newFormData[f.name] = emp.emp_id
+            }
+            if (f.type === "clientid") {
+                newFormData[f.name] = clientid
             }
             if (f.name === "project_id") {
                 newFormData[f.name] = id
