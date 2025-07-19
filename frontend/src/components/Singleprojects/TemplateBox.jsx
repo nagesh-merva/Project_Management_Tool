@@ -1,3 +1,5 @@
+import { ClipboardList, Download } from "lucide-react"
+
 const TemplateBox = ({ head, par, download, fillTemplate }) => {
     return (
 
@@ -7,9 +9,9 @@ const TemplateBox = ({ head, par, download, fillTemplate }) => {
                 <p className="text-paracolor text-sm">{par}</p>
             </div>
             <div className="flex   justify-center gap-1 mr-2  items-center p-2">
-                <img src="/Fill.png" className="w-[27.17px] h-[24px]" ></img>
+                <ClipboardList className="w-[27.17px] h-[24px] text-download" />
                 <button onClick={fillTemplate} className="text-download  hover:underline mr-3 "> Fill Template </button>
-                <img src="/download.png" className="w-[27.17px] h-[24px]" ></img>
+                <Download className="w-[27.17px] h-[24px] text-download" />
                 <button onClick={download} className="text-download hover:underline "> Download </button>
             </div>
         </div>
