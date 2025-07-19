@@ -16,9 +16,9 @@ function Sidebar() {
                 <div className="relative bg-white/95 backdrop-blur-sm h-full rounded-3xl shadow-2xl border border-white/20 flex justify-center items-center overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/50 rounded-3xl"></div>
                     <div className="relative z-10 w-5/6 h-5/6 flex justify-center items-center">
-                        <img 
-                            className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105" 
-                            src="/Login.png" 
+                        <img
+                            className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                            src="/Login.png"
                             alt="Management Dashboard"
                         />
                     </div>
@@ -37,9 +37,9 @@ function Sidebar() {
                 </div>
             </div>
             <div className="absolute bottom-6 right-6 group">
-                <img 
-                    className="h-8 md:h-10 w-auto opacity-80 hover:opacity-100 transition-all duration-300 group-hover:scale-110" 
-                    src="/logo.png" 
+                <img
+                    className="h-8 md:h-10 w-auto opacity-80 hover:opacity-100 transition-all duration-300 group-hover:scale-110"
+                    src="/logo.png"
                     alt="Company Logo"
                 />
                 <div className="absolute inset-0 bg-white/10 rounded-lg blur-xl group-hover:bg-white/20 transition-all duration-300"></div>

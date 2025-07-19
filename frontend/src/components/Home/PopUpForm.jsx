@@ -54,6 +54,7 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
         })
 
         const hasFile = fields.some(f => f.type === "file")
+        console.log(newFormData)
         try {
             let response
             if (hasFile) {
@@ -77,6 +78,7 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
             if (response.ok) {
                 alert('Successfully submitted!')
                 onClose()
+                window.location.reload()
                 if (onSuccess) onSuccess()
             } else {
                 alert('Failed to submit!')

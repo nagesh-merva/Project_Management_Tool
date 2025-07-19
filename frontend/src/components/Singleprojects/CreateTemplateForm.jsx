@@ -23,6 +23,7 @@ const CreateTemplateForm = ({ project_id, close }) => {
         const [deptData, phaseData] = await Promise.all([deptPromise, phasePromise])
         setDepartments(deptData)
         setPhases(phaseData)
+        window.location.reload()
       } catch (err) {
         console.error("Failed to fetch data", err)
       } finally {

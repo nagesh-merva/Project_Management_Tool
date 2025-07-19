@@ -1146,7 +1146,7 @@ async def add_new_client(data: BasicClientInput):
         location=data.location,
         joined_date = datetime.now(),
         website=data.website,
-        business_id=data.business_id,
+        gst_id=data.gst_id,
 
         primary_contact=ContactPerson(
             name=data.contact_name,

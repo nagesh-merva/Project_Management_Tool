@@ -28,6 +28,8 @@ const FillTemplateForm = ({ template, close }) => {
 
             if (res.ok) {
                 alert("Checklist Submitted Successfully!")
+                close();
+                window.location.reload();
             } else {
                 alert("Submission Failed.")
             }

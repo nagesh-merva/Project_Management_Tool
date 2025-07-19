@@ -5,6 +5,7 @@ import * as XLSX from "xlsx"
 import TemplateBox from "./TemplateBox"
 import CreateTemplateForm from "./CreateTemplateForm"
 import FillTemplateForm from "./FillTemplateForm"
+import { BadgePlus, LayoutPanelTop } from "lucide-react"
 
 const Templates = ({ templates }) => {
     const { id } = useParams()
@@ -82,8 +83,8 @@ const Templates = ({ templates }) => {
     return (
         <>
             <div className="w-full h-auto rounded-lg p-5 bg-white shadow-lg">
-                <div className="font-bold text-xl flex gap-1">
-                    <img src="/temd.png" className="w-[24px] h-[24px]" />
+                <div className="font-bold text-xl flex items-center gap-1">
+                    <LayoutPanelTop fill="#4A5568" className="w-5 h-5 " />
                     Templates
                 </div>
 
@@ -97,7 +98,7 @@ const Templates = ({ templates }) => {
 
                 <div className="w-full flex justify-center mt-6">
                     <button onClick={() => setShowForm(true)} className="w-[374.78px] h-[37.51px] bg-quickbtn flex items-center justify-center gap-1 rounded-xl hover:bg-btncol/80 transition-all hover:scale-95 mb-3">
-                        <img src="/Create.png" className="w-[18px] h-[18px]" />
+                        <BadgePlus className="w-6 h-6 text-white" />
                         <div className="text-white">Create Template</div>
                     </button>
                 </div>

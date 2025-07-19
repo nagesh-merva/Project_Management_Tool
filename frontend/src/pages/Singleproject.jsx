@@ -92,7 +92,7 @@ function Singleproject() {
                             </div>
                             <Srs srs={projectDetails.srs} />
                             <div className="w-full h-[1185px] flex space-x-5">
-                                <div className="h-full w-2/5 md:w-1/3 space-y-5">
+                                <div className="h-full flex flex-col justify-center w-2/5 md:w-1/3 space-y-5">
                                     <QuickActions links={projectDetails.links} />
                                     <Maintenance HostingObj={projectDetails.hosting_details} MaintObj={projectDetails.issues_and_maintenance_reports} />
                                 </div>

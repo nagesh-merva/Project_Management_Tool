@@ -316,7 +316,7 @@ const ClientDetails = () => {
                                     <a
                                         href={client.website}
                                         target="_blank"
-                                        rel="noopener noreferrer"
+
                                         className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition-colors"
                                     >
                                         <Globe size={14} />
@@ -409,7 +409,7 @@ const ClientDetails = () => {
                                 </div>
                                 <div className="text-center p-3 bg-green-50 rounded-lg">
                                     <p className="text-2xl font-bold text-green-600">
-                                        ${client.metrics.total_billed.toLocaleString()}
+                                        ₹{client.metrics.total_billed.toLocaleString()}
                                     </p>
                                     <p className="text-sm text-gray-600">Total Billed</p>
                                 </div>
@@ -417,7 +417,7 @@ const ClientDetails = () => {
                             <div className="mt-4 space-y-2">
                                 <div className="flex items-center justify-between">
                                     <span className="text-gray-600">Last Project</span>
-                                    <span className="font-medium">{client.metrics.last_project_date.split("T")[0]}</span>
+                                    <span className="font-medium">{client.metrics.last_project_date?.split("T")[0]}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-gray-600">Payment Status</span>
@@ -473,7 +473,7 @@ const ClientDetails = () => {
                                 <MapPin className="text-green-600" size={20} />
                                 Billing Address
                             </h2>
-                            <p className="text-gray-700">{client.billing_address}</p>
+                            <p className="text-gray-700">{client.location}</p>
                         </div>
                         <div className="bg-white rounded-xl shadow-sm p-6">
                             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">

@@ -79,11 +79,13 @@ const ClientsList = () => {
         },
         {
             name: "contact_email",
-            type: "email"
+            type: "email",
+            optional: false
         },
         {
             name: "contact_phone",
-            type: "text"
+            type: "text",
+            optional: false
         }
     ])
 

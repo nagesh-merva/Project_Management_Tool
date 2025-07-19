@@ -57,7 +57,8 @@ const FinancialDataForm = ({ isVisible, onClose, existingData, onSubmit }) => {
             if (budgetChanged || revenueChanged) payload.profit_margin = Number(profitMargin)
 
             console.log(payload)
-            onSubmit(payload)
+            await onSubmit(payload)
+            window.location.reload()
 
         } catch (e) {
             console.error(e)
