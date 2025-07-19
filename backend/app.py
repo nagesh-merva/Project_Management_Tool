@@ -1171,7 +1171,7 @@ async def add_new_client(data: BasicClientInput):
     return {"message": "Client added successfully", "client_id": random_id}
 
 
-@app.put("/update-client")
+@app.post("/update-client")
 def update_client( data: UpdateClientInput):
     if not data.client_id:
         raise HTTPException(status_code=400, detail="Client ID is required.")
