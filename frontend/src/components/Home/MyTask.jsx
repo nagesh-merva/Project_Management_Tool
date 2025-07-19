@@ -160,7 +160,7 @@ function MyTask() {
             </div>
             {showPopup && selectedTask && (
                 <div className="fixed inset-0 z-50  h-auto bg-black bg-opacity-40 flex items-center justify-center">
-                    <div className="fixed max-w-[720px] max-h-[600px] bg-white p-6 overflow-y-auto">
+                    <div className="fixed max-w-1/2 min-w-[600px] max-h-[600px] bg-white p-6 overflow-y-auto">
                         {loading ? (
                             <Loading />
                         ) : (

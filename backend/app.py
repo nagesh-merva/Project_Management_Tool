@@ -418,13 +418,7 @@ async def add_project(project_data: AddProjectRequest):
             break
         
     client_data = await db.Clients.find_one({"client_id": project_data.client_details})
-    await db.Clients.update_one(
-        {"client_id": project_data.client_details},
-        {
-            "$inc": {"metrics.total_projects": 1},
-            "$set": {"metrics.last_project_date": datetime.utcnow()}
-        }
-    )
+    
     member_objs = []
     for emp_id in project_data.team_members:
         emp = await db.Employees.find_one({"emp_id": emp_id})
@@ -460,6 +454,13 @@ async def add_project(project_data: AddProjectRequest):
         performance_metrics=PerformanceMetrics()
     )
 
+    await db.Clients.update_one(
+        {"client_id": project_data.client_details},
+        {
+            "$inc": {"metrics.total_projects": 1},
+            "$set": {"metrics.last_project_date": datetime.utcnow()}
+        }
+    )
     await db.Projects.insert_one(project.dict())
     return {"message": "Project added successfully.", "project_id": random_id}
 
