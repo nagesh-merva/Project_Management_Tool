@@ -31,7 +31,7 @@ function App() {
         <Route path="/departments" element={<ProtectedRoute><Department /></ProtectedRoute>} />
         <Route path="/departments/:id" element={<ProtectedRoute><SingleEmployee /></ProtectedRoute>} />
         <Route path="/clients" element={<ClientsList />} />
-        <Route path="/clients/:id" element={<ClientDetails />} />
+        <Route path="/clients/:clientid" element={<ClientDetails />} />
       </Routes>
     </div>
   )
