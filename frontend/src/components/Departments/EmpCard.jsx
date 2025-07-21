@@ -12,7 +12,11 @@ const EmployeeCard = ({ employee, dept }) => {
         <div className="relative bg-white w-full h-full rounded-2xl shadow-xl p-4 ">
             <div className="w-2/5 flex justify-center items-center">
                 <div className="h-16 w-16 rounded-full border-2 border-violet-500 bg-btncol/20 flex justify-center items-center scale-75 md:scale-90 lg:scale-100">
-                    <p className="text-2xl font-bold text-btncol">{employee.emp_name[0]}</p>
+                    {employee.profile ? (
+                        <img src={employee.profile} alt="Profile" className="h-full w-full rounded-full object-cover" />
+                    ) : (
+                        <p className="text-2xl font-bold text-btncol">{employee.emp_name[0]}</p>
+                    )}
                 </div>
                 <div className="absolute top-0 right-4 bg-blue-100 w-1/2 h-[100px] rounded-t-lg flex flex-col items-center justify-center ">
                     <button onClick={() => ViewEmployee(employee.emp_id)}><Settings size={20} className="absolute right-1 top-1 text-gray-500 hover:text-black cursor-pointer text-md" /></button>

@@ -4,16 +4,19 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from models.dept import Employee, Department, EmpPerformanceMetrics ,EmployeeInput, EmployeeSummary,EmployeeResponse,EmployeesByDeptResponse
 from models.updatesAndtask import  UpdateTask,AddComment
 from models.project import Project,AddProjectRequest ,QuickLinks ,SRS ,FinancialData,PerformanceMetrics,ProjectPhaseUpdate
-from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 from models.clients import Client, ClientMetrics, ClientDocuments, ContactPerson, ClientEngagement ,BasicClientInput,UpdateClientInput
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
+from pydantic import EmailStr
 # from bson import ObjectId
 from jose import JWTError, jwt # type: ignore
 from datetime import datetime, timedelta,date
+import firebase_admin # type: ignore
+from firebase_admin import credentials, storage # type: ignore
 import os
 from dotenv import load_dotenv
 import random
+import uuid
 
 load_dotenv()
 
@@ -31,11 +34,19 @@ app.add_middleware(
 client = AsyncIOMotorClient(os.environ.get("MONGODB_URL"))
 db = client.ProjectManagementTool
 
-fs_bucket = AsyncIOMotorGridFSBucket(db)
-
 SECRET_KEY = os.environ.get("SECRET_KEY")  
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 12
+
+FIREBASE_BUCKET_NAME = os.environ.get("FIREBASE_BUCKET_NAME")
+
+cred = credentials.Certificate("firebase-adminsdk.json")
+
+firebase_admin.initialize_app(cred, {
+    'storageBucket': FIREBASE_BUCKET_NAME
+})
+
+bucket = storage.bucket()
 
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
@@ -47,6 +58,21 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+async def upload_file_to_firebase(file: UploadFile, folder: str) -> str:
+    try:
+        file_ext = os.path.splitext(file.filename)[1]
+        unique_name = f"{uuid.uuid4().hex}{file_ext}"
+        blob_path = f"{folder}/{unique_name}"
+
+        blob = bucket.blob(blob_path)
+        blob.upload_from_file(file.file, content_type=file.content_type)
+
+        blob.make_public()
+        return blob.public_url
+
+    except Exception as e:
+        raise RuntimeError(f"Failed to upload file: {e}")
 
 # ================= Authentication ====================
 @app.post("/login")
@@ -64,6 +90,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
             "emp_id": employee.get("emp_id"),
             "emp_name": employee.get("emp_name"),
             "emp_dept": employee.get("emp_dept"),
+            "profile": employee.get("profile"),
             "role": employee.get("role")
         }  , "token":access_token
         }
@@ -97,6 +124,7 @@ async def get_all_employees():
                 emp_id=emp["emp_id"],
                 emp_name=emp["emp_name"],
                 role=emp["role"],
+                profile=emp.get("profile", ""),
                 performance_metrics=EmpPerformanceMetrics(**emp.get("performance_metrics", {}))
             )
         )
@@ -118,6 +146,7 @@ async def get_employees_by_department(dept: str):
                 emp_id=emp["emp_id"],
                 emp_name=emp["emp_name"],
                 role=emp["role"],
+                profile=emp.get("profile", ""),
                 performance_metrics=EmpPerformanceMetrics(**emp.get("performance_metrics", {}))
             )
         )
@@ -125,45 +154,60 @@ async def get_employees_by_department(dept: str):
 
 # ================= Add Employee to Department ====================
 @app.post("/add-employee")
-async def add_employee(employee_input: EmployeeInput):
+async def add_employee(
+        emp_name: str = Form(...),
+        emp_dept: str = Form(...),
+        role: str = Form(...),
+        email: EmailStr = Form(...),
+        password: str = Form(...),
+        address: str = Form(...),
+        contact: str = Form(...),
+        joined_on: datetime = Form(...),
+        hired_by: str = Form(...),
+        salary_monthly: float = Form(...),
+        emergency_contact: Optional[str] = Form(None),
+        bank_account_number: Optional[str] = Form(None),
+        bank_ifsc: Optional[str] = Form(None),
+        file: UploadFile = File(...)
+    ):
     while True:
         random_id = f"EMP{random.randint(1000, 9999)}"
-        existing_employee = await db.Employees.find_one({"emp_id": random_id})
-        if not existing_employee:
+        if not await db.Employees.find_one({"emp_id": random_id}):
             break
+
+    profile_url = await upload_file_to_firebase(file, folder="PMT/employee_profiles")
+
+    print(profile_url)
 
     employee = Employee(
         emp_id=random_id,
-        emp_name=employee_input.emp_name,
-        emp_dept=employee_input.emp_dept,
-        role=employee_input.role,
-        email=employee_input.email,
-        password=employee_input.password,
-        address=employee_input.address,
-        contact=employee_input.contact,
-        joined_on=employee_input.joined_on,
-        hired_by=employee_input.hired_by,
-        salary_monthly=employee_input.salary_monthly,
+        emp_name=emp_name,
+        emp_dept=emp_dept,
+        role=role,
+        email=email,
+        profile=profile_url,
+        password=password,
+        address=address,
+        contact=contact.strip(),
+        joined_on=joined_on,
+        hired_by=hired_by,
+        salary_monthly=salary_monthly,
         bonus=0.0,
         salary_account=[],
-        performance_metrics=PerformanceMetrics(completed_projects=0, ratings=0, remarks=""),
+        performance_metrics=EmpPerformanceMetrics(completed_projects=0, ratings=0, remarks=""),
         status="Active",
         leaves_taken=0,
         current_projects=[],
-        emergency_contact=employee_input.emergency_contact,
-        bank_account_number=employee_input.bank_account_number,
-        bank_ifsc=employee_input.bank_ifsc
+        emergency_contact=emergency_contact,
+        bank_account_number=bank_account_number,
+        bank_ifsc=bank_ifsc
     )
 
-    employee_dict = employee.dict()
+    await db.Employees.insert_one(employee.dict())
 
-    if isinstance(employee_dict['joined_on'], date):
-        employee_dict['joined_on'] = datetime.combine(employee_dict['joined_on'], datetime.min.time())
-
-    await db.Employees.insert_one(employee_dict)
-
+    # Update employee count in department
     await db.Departments.update_one(
-        {"dept_id": employee.emp_dept},
+        {"dept_id": emp_dept},
         {"$inc": {"no_of_employees": 1}}
     )
 
@@ -724,16 +768,16 @@ async def manage_maintenance_reports(
     if not project_id or not title or not descp:
         raise HTTPException(status_code=400, detail="project_id, title, and descp are required.")
     
-    file_id = await fs_bucket.upload_from_stream(file.filename, await file.read())
+    # file_id = await fs_bucket.upload_from_stream(file.filename, await file.read())
 
-    gridfs_link = f"/files/{str(file_id)}"
+    # gridfs_link = f"/files/{str(file_id)}"
 
     report_entry = {
         "id": f"MAINT{random.randint(1000,9999)}",
         "title": title,
         "descp": descp,
         "issued_date": datetime.utcnow(),
-        "doc_link": gridfs_link 
+        # "doc_link": gridfs_link 
     }
 
     updated = await db.Projects.update_one(
@@ -744,7 +788,7 @@ async def manage_maintenance_reports(
     if updated.modified_count == 0:
         raise HTTPException(status_code=404, detail="Project not found or report not added.")
 
-    return {"message": f"Maintenance report '{title}' added to project {project_id}.", "doc_link": gridfs_link}
+    return {"message": f"Maintenance report '{title}' added to project {project_id}.", "doc_link": "gridfs_link"}
 
 #================= manage hosting details by project_id  ============================
 @app.post("/manage-hostings")
@@ -1169,7 +1213,6 @@ async def add_new_client(data: BasicClientInput):
 
     await db.Clients.insert_one(client_data.dict())
     return {"message": "Client added successfully", "client_id": random_id}
-
 
 @app.post("/update-client")
 def update_client( data: UpdateClientInput):

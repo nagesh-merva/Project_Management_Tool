@@ -7,7 +7,7 @@ import Employees from "../components/Departments/Emplooyees"
 import { useMainContext } from "../context/MainContext"
 
 const employeeFields = [
-    { name: "emp_name", type: "text" },
+    { name: "emp_name", type: "text",optional:false },
     {
         name: "emp_dept", type: "select",
         multi: false,
@@ -32,6 +32,7 @@ const employeeFields = [
     },
     { name: "role", type: "text", optional: false },
     { name: "email", type: "email" },
+    {name : "file" , type:"file"},
     { name: "password", type: "text", optional: false },
     { name: "address", type: "text", optional: false },
     { name: "contact", type: "text", optional: false },

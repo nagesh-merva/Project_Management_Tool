@@ -32,6 +32,10 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
         const newFormData = { ...formData }
 
         fields.forEach(f => {
+            if (newFormData[f.name] === undefined && !f.optional && f.type !== "id" && f.type !== "clientid") {
+                alert(`Please fill the ${f.name.replace(/_/g, " ")}`)
+                return
+            }
             if (f.type === "id") {
                 newFormData[f.name] = emp.emp_id
             }

@@ -41,6 +41,7 @@ class Employee(BaseModel):
     emp_dept: str  # This can be dept_id for linking
     role: str
     email: EmailStr
+    profile:str
     password: str
     address: str
     contact: str
@@ -78,6 +79,7 @@ class EmployeeResponse(BaseModel):
     emp_dept: str
     role: str
     email: EmailStr
+    profile:str
     address: str
     contact: str
     joined_on: date
@@ -96,6 +98,7 @@ class EmployeeSummary(BaseModel):
     emp_id: str
     emp_name: str
     role: str
+    profile: str
     performance_metrics: EmpPerformanceMetrics
     
 class EmployeesByDeptResponse(BaseModel):
