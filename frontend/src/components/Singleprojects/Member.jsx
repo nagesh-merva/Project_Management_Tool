@@ -2,12 +2,13 @@ import { User } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
 const Member = ({ name, id, role, dept, profile }) => {
+    // console.log(profile)
     const navigate = useNavigate()
     return (
         <div onClick={() => navigate(`/departments/${id}`)} className="flex items-center justify-between  rounded-lg shadow-sm p-4 mb-4 hover:shadow-lg transition-all cursor-pointer border border-gray-500">
             <div className="flex items-center">
                 <img
-                    src={profile || "/icons/face.png"}
+                    src={profile}
                     alt={name}
                     className="h-14 w-14 rounded-full object-cover bg-btncol border-2 border-blue-500"
                 />

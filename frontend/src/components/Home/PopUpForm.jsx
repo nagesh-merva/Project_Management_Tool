@@ -82,13 +82,16 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                 })
             }
 
-            if (response.ok) {
+            if (response === 200 || response === 201) {
                 alert('Successfully submitted!')
                 onClose()
                 window.location.reload()
                 if (onSuccess) onSuccess()
+            }
+            if (!response.ok) {
+                alert('Failed to perform the task!' + response.message)
             } else {
-                alert('Failed to submit!')
+                alert('Failed to submit!' + response.message || response.statusText || response.headers)
             }
         } catch (err) {
             alert(err.message)

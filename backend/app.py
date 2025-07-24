@@ -471,7 +471,8 @@ async def add_project(project_data: AddProjectRequest):
                 "emp_id": emp["emp_id"],
                 "name": emp["emp_name"],
                 "role": emp["role"],
-                'dept':emp["emp_dept"]
+                'dept':emp["emp_dept"],
+                'profile': emp.get("profile", "")
             })
     client_details = {"name": client_data["name"],"logo": client_data["logo_url"],"domain": client_data["industry"]}
 
@@ -600,8 +601,18 @@ async def add_teammember(data: dict):
         "emp_id": emp["emp_id"],
         "name": emp["emp_name"],
         "role": emp["role"],
-        "dept": emp["emp_dept"]
+        "dept": emp["emp_dept"],
+        "profile": emp.get("profile", "")
     }
+    
+    project = await db.Projects.find_one({"project_id": project_id})
+    for member in project.get("team_members", []):
+        if member.get("emp_id") == emp_id:
+            raise HTTPException(
+                status_code=409,
+                detail=f"{emp['emp_name']} is already a team member of project {project_id}.",
+                headers={"X-Frontend-Message": f"{emp['emp_name']} is already a team member of this project."}
+            )
 
     updated = await db.Projects.update_one(
         {"project_id": project_id},
