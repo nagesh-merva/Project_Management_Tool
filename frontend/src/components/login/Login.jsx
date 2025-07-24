@@ -32,9 +32,9 @@ function Login() {
 
     const SubmitLogin = async (e) => {
         e.preventDefault();
-        
+
         if (!validateForm()) return;
-        
+
         setIsLoading(true);
         setErrors({});
 
@@ -70,11 +70,11 @@ function Login() {
         <div className="flex flex-col items-center justify-center w-full md:w-1/2 h-full px-6 py-8 relative">
             <div className="absolute top-20 right-20 w-20 h-20 bg-blue-100 rounded-full opacity-20 animate-pulse"></div>
             <div className="absolute bottom-32 left-16 w-16 h-16 bg-purple-100 rounded-full opacity-20 animate-pulse" style={{ animationDelay: '1s' }}></div>
-            
+
             <div className="w-full max-w-md relative z-10">
                 <div className="text-center mb-3">
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl mb-3 shadow-lg">
-                        <Shield className="w-8 h-8 text-white" />
+                        <img src="/logo_icon.png" alt="logo_icon.png" className="w-10 h-10" />
                     </div>
                     <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-2">
                         CROB
@@ -88,10 +88,10 @@ function Login() {
                 </div>
                 <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 p-8 relative overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/50 rounded-2xl"></div>
-                    
+
                     <div className="relative z-10">
                         <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Welcome Back</h2>
-                        
+
                         {errors.general && (
                             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
                                 {errors.general}
@@ -114,9 +114,8 @@ function Login() {
                                             if (errors.name) setErrors(prev => ({ ...prev, name: '' }))
                                         }}
                                         placeholder="Enter your employee ID"
-                                        className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/70 ${
-                                            errors.name ? 'border-red-300' : 'border-gray-200 hover:border-gray-300'
-                                        }`}
+                                        className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/70 ${errors.name ? 'border-red-300' : 'border-gray-200 hover:border-gray-300'
+                                            }`}
                                     />
                                 </div>
                                 {errors.name && (
@@ -138,9 +137,8 @@ function Login() {
                                             if (errors.password) setErrors(prev => ({ ...prev, password: '' }))
                                         }}
                                         placeholder="Enter your password"
-                                        className={`w-full pl-10 pr-12 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/70 ${
-                                            errors.password ? 'border-red-300' : 'border-gray-200 hover:border-gray-300'
-                                        }`}
+                                        className={`w-full pl-10 pr-12 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/70 ${errors.password ? 'border-red-300' : 'border-gray-200 hover:border-gray-300'
+                                            }`}
                                     />
                                     <button
                                         type="button"
@@ -172,8 +170,8 @@ function Login() {
                                 )}
                             </button>
                             <div className="text-center">
-                                <a 
-                                    href="#" 
+                                <a
+                                    href="#"
                                     className="text-sm text-blue-600 hover:text-blue-700 font-medium hover:underline transition-colors"
                                 >
                                     Forgot your password?

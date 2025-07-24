@@ -219,9 +219,14 @@ async def get_employee(emp_id: Optional[str] = None):
     if emp_id is None:
         raise HTTPException(status_code=400, detail="Employee ID is required.")
 
-    employee = await db.Employees.find_one({"emp_id": emp_id},{"password":0})
+    employee = await db.Employees.find_one({"emp_id": emp_id}, {"password": 0})
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found.")
+
+    # Convert joined_on datetime to date if needed
+    if "joined_on" in employee and isinstance(employee["joined_on"], datetime):
+        employee["joined_on"] = employee["joined_on"].date()
+
     return employee
 
 # ================== Update Employee Details =======================
@@ -308,13 +313,14 @@ async def get_tasks(emp_id: str):
                     "emp_id": emp["emp_id"],
                     "status": member.get("status"),
                     "emp_name": emp["emp_name"],
-                    "role": emp["role"]
+                    "role": emp["role"],
                 })
         task["members_assigned"] = emps
         task["created_by"] = {
                 "emp_id":created_by["emp_id"],
                 "emp_name":created_by["emp_name"],
-                "role":created_by["role"]
+                "role":created_by["role"],
+                "profile": created_by.get("profile", "")
             }
         if task["status"] != "done":
             tasks.append(task)
