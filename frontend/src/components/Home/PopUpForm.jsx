@@ -8,6 +8,7 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
         const { name, value } = e.target
         setFormData({ ...formData, [name]: value })
     }
+    const [isSubmiting, setIsSubmiting] = useState(false)
     // console.log(id)
 
     const handleSelectChange = (e, name, isMulti) => {
@@ -28,6 +29,7 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
 
     const handleSubmit = async (e) => {
         e.preventDefault()
+        setIsSubmiting(true)
         const emp = JSON.parse(localStorage.getItem("emp"))
         const newFormData = { ...formData }
 
@@ -82,19 +84,25 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                 })
             }
 
-            if (response === 200 || response === 201) {
+            if (response === 200 || response === 201 || response.ok) {
                 alert('Successfully submitted!')
                 onClose()
                 window.location.reload()
                 if (onSuccess) onSuccess()
             }
+
+            if (response.status === 409) {
+                const message = await response.json()
+                alert(message.detail || message.message || 'Conflict occurred!')
+                return
+            }
             if (!response.ok) {
                 alert('Failed to perform the task!' + response.message)
-            } else {
-                alert('Failed to submit!' + response.message || response.statusText || response.headers)
             }
         } catch (err) {
-            alert(err.message)
+            alert('Failed to submit!' + err.message || err.statusText || err.headers)
+        } finally {
+            setIsSubmiting(false)
         }
     }
 
@@ -142,7 +150,8 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                     type="email"
                                     name={field.name}
                                     required={!field.optional}
-                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) + "*"}
+                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) +
+                                        (field.optional === false ? "*" : "")}
                                     onChange={handleChange}
                                     className="border p-2 rounded"
                                 />
@@ -156,7 +165,8 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                     type="number"
                                     name={field.name}
                                     required={!field.optional}
-                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) + "*"}
+                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) +
+                                        (field.optional === false ? "*" : "")}
                                     onChange={handleChange}
                                     className="border p-2 rounded"
                                 />
@@ -169,7 +179,8 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                     key={field.name}
                                     name={field.name}
                                     required={!field.optional}
-                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) + "*"}
+                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) +
+                                        (field.optional === false ? "*" : "")}
                                     onChange={handleChange}
                                     className="border p-2 rounded resize-none"
                                 />
@@ -246,9 +257,10 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
 
                     <button
                         type="submit"
+                        disabled={isSubmiting}
                         className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded"
                     >
-                        Submit
+                        {isSubmiting ? 'Submitting...' : 'Submit'}
                     </button>
                 </form>
             </div>

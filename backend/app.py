@@ -175,6 +175,15 @@ async def add_employee(
         if not await db.Employees.find_one({"emp_id": random_id}):
             break
 
+    existing_Employees = await db.Employees.find({}).to_list(1000)    
+    for Employee in existing_Employees:
+        if Employee.get("emp_name") == emp_name or Employee.get("email") == email or Employee.get("bank_account_number") == bank_account_number:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Employee already exists.",
+                headers={"X-Frontend-Message": f"Employee already exists."}
+            )  
+            
     profile_url = await upload_file_to_firebase(file, folder="PMT/employee_profiles")
 
     print(profile_url)
@@ -1190,47 +1199,69 @@ async def get_all_details_client(client_id: str):
 
 # ============= Add new client =================
 @app.post("/clients/add")
-async def add_new_client(data: BasicClientInput):
+async def add_new_client(
+    name: str = Form(...),
+    brand_name: str = Form(...),
+    type: str = Form(...),
+    industry: str = Form(...),
+    location: str = Form(...),
+    website: Optional[str] = Form(None),
+    gst_id: str = Form(...),
+    source: str = Form(...),
+    contact_name: str = Form(...),
+    contact_email: EmailStr = Form(...),
+    contact_phone: str = Form(...),
+    contact_designation: str = Form(...),  
+    file: UploadFile = File(...)
+):
     while True:
         random_id = f"CLT{random.randint(1000, 9999)}"
         existing = await db.Clients.find_one({"client_id": random_id})
         if not existing:
             break
+        
+    existing_clients = await db.Clients.find({}).to_list(1000)    
+    for client in existing_clients:
+        if client.get("brand_name") == brand_name or client.get("gst_id") == gst_id:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Client already exists.",
+                headers={"X-Frontend-Message": f"Client already exists."}
+            )  
 
+    logo_url = await upload_file_to_firebase(file, folder=f"PMT/clients/{brand_name}")
+    
     client_data = Client(
         client_id=random_id,
-        name=data.name,
-        brand_name=data.brand_name,
-        logo_url=data.logo_url,
-        type=data.type,
-        industry=data.industry,
-        location=data.location,
-        joined_date = datetime.now(),
-        website=data.website,
-        gst_id=data.gst_id,
-
+        name=name,
+        brand_name=brand_name,
+        logo_url=logo_url,
+        type=type,
+        industry=industry,
+        location=location,
+        website=website,
+        gst_id=gst_id,
         primary_contact=ContactPerson(
-            name=data.contact_name,
-            email=data.contact_email,
-            phone=data.contact_phone,
-            designation=None,
-            linkedin=None
+            name=contact_name,
+            email=contact_email,
+            phone=contact_phone,
+            designation=contact_designation  
         ),
-
         engagement=ClientEngagement(
             joined_date=datetime.utcnow(),
-            source=data.source,
+            source=source,
             onboarding_notes=None,
             tags=[]
         ),
-
-        documents=ClientDocuments(), 
-        metrics=ClientMetrics() 
+        documents=ClientDocuments(),
+        metrics=ClientMetrics()
     )
 
     await db.Clients.insert_one(client_data.dict())
+
     return {"message": "Client added successfully", "client_id": random_id}
 
+# ============= Update existing client =================
 @app.post("/update-client")
 def update_client( data: UpdateClientInput):
     if not data.client_id:
@@ -1241,7 +1272,7 @@ def update_client( data: UpdateClientInput):
         raise HTTPException(status_code=404, detail="Client not found.")
     print (data)
     update_data = {
-        "name": data.name,
+        "name": data.name  if data.brand_name else None,
         "brand_name": data.brand_name if data.brand_name else None,
         "logo_url": data.logo_url if data.logo_url else None,
         "location": data.location if data.location else None,

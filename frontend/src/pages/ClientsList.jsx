@@ -24,8 +24,8 @@ const ClientsList = () => {
             optional: false
         },
         {
-            name: "logo_url",
-            type: "text",
+            name: "file",
+            type: "file",
             optional: false
         },
         {
@@ -74,6 +74,11 @@ const ClientsList = () => {
         },
         {
             name: "contact_name",
+            type: "text",
+            optional: false
+        },
+        {
+            name: "contact_designation",
             type: "text",
             optional: false
         },

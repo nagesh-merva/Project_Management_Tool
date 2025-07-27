@@ -16,7 +16,6 @@ class ContactPerson(BaseModel):
     designation: Optional[str]
     email: EmailStr
     phone: int
-    linkedin: Optional[str]
 
 
 class ClientEngagement(BaseModel):

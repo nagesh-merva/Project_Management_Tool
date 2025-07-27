@@ -79,6 +79,11 @@ const ClientDetails = () => {
             optional: true
         },
         {
+            name: "contact_designation",
+            type: "text",
+            optional: true
+        },
+        {
             name: "contect_email",
             type: "email",
             optional: true
@@ -119,10 +124,6 @@ const ClientDetails = () => {
 
     const handleBack = () => {
         navigate('/clients')
-    }
-
-    const handleEdit = () => {
-        navigate(`/clients/${id}/edit`)
     }
 
     const handleDelete = () => {
