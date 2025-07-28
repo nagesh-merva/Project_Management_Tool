@@ -4,16 +4,17 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from models.dept import Employee, Department, EmpPerformanceMetrics ,EmployeeInput, EmployeeSummary,EmployeeResponse,EmployeesByDeptResponse
 from models.updatesAndtask import  UpdateTask,AddComment
 from models.project import Project,AddProjectRequest ,QuickLinks ,SRS ,FinancialData,PerformanceMetrics,ProjectPhaseUpdate
-from models.clients import Client, ClientMetrics, ClientDocuments, ContactPerson, ClientEngagement ,BasicClientInput,UpdateClientInput
+from models.clients import Client, ClientMetrics, ClientDocuments, ContactPerson, ClientEngagement ,BasicClientInput,UpdateClientInput ,ClientDocuments ,ClientNote
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 from pydantic import EmailStr
 # from bson import ObjectId
 from jose import JWTError, jwt # type: ignore
-from datetime import datetime, timedelta,date
+from datetime import datetime, timedelta,date ,timezone
 import firebase_admin # type: ignore
 from firebase_admin import credentials, storage # type: ignore
 import os
+import tempfile
 from dotenv import load_dotenv
 import random
 import uuid
@@ -21,7 +22,7 @@ import uuid
 load_dotenv()
 
 app = FastAPI()
-
+timezone
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], 
@@ -61,18 +62,28 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
 
 async def upload_file_to_firebase(file: UploadFile, folder: str) -> str:
     try:
-        file_ext = os.path.splitext(file.filename)[1]
+        allowed_extensions = [".pdf", ".docx", ".xlsx", ".xls", ".csv", ".txt"]
+        file_ext = os.path.splitext(file.filename)[1].lower()
+
+        if file_ext not in allowed_extensions:
+            raise ValueError(f"Unsupported file type: {file_ext}")
+
         unique_name = f"{uuid.uuid4().hex}{file_ext}"
         blob_path = f"{folder}/{unique_name}"
-
         blob = bucket.blob(blob_path)
-        blob.upload_from_file(file.file, content_type=file.content_type)
+
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            tmp.write(await file.read())
+            tmp.seek(0)
+            blob.upload_from_filename(tmp.name, content_type=file.content_type)
 
         blob.make_public()
         return blob.public_url
 
+    except ValueError as ve:
+        raise RuntimeError(f"File validation error: {ve}")
     except Exception as e:
-        raise RuntimeError(f"Failed to upload file: {e}")
+        raise RuntimeError(f"Failed to upload file: {str(e)}")
 
 # ================= Authentication ====================
 @app.post("/login")
@@ -1108,15 +1119,15 @@ async def add_project_phases(data: ProjectPhaseUpdate):
             "subphases": processed_subphases
         })
 
-    result = db.Projects.update_one(
+    result = await db.Projects.update_one(
         {"project_id": data.project_id},
         {"$set": {"project_status": processed_phases}}
     )
 
-    # if result.modified_count == 0:
-    #     raise HTTPException(status_code=400, detail="Phases data not updated.")
-    # else:
-    return {"message": "Sucessfully added initial phases to project."}
+    if result.modified_count == 0:
+        raise HTTPException(status_code=400, detail="Phases data not updated.")
+    else:
+        return {"message": "Sucessfully added initial phases to project."}
 
 #================ update project phase status ============================
 def infer_status(start: Optional[str], closed: Optional[str]) -> str:
@@ -1154,13 +1165,13 @@ async def update_project_phases(data: ProjectPhaseUpdate):
             "subphases": updated_subphases
         })
 
-    result = db.Projects.update_one(
+    result = await db.Projects.update_one(
         {"project_id": data.project_id},
         {"$set": {"project_status": updated_status}}
     )
 
-    # if result.modified_count == 0:
-    #     raise HTTPException(status_code=400, detail="No changes were made")
+    if result.modified_count == 0:
+        raise HTTPException(status_code=400, detail="No changes were made")
 
     return {"message": "Project phases updated successfully"}
 
@@ -1251,9 +1262,9 @@ async def add_new_client(
             joined_date=datetime.utcnow(),
             source=source,
             onboarding_notes=None,
-            tags=[]
+            tags=[industry, type]
         ),
-        documents=ClientDocuments(),
+        documents=[ClientDocuments().dict()],  
         metrics=ClientMetrics()
     )
 
@@ -1263,7 +1274,7 @@ async def add_new_client(
 
 # ============= Update existing client =================
 @app.post("/update-client")
-def update_client( data: UpdateClientInput):
+async def update_client( data: UpdateClientInput):
     if not data.client_id:
         raise HTTPException(status_code=400, detail="Client ID is required.")
     
@@ -1284,10 +1295,108 @@ def update_client( data: UpdateClientInput):
     }
     
     update_fields = {key: value for key, value in update_data.items() if value is not None}
-    result = db.Clients.update_one(
+    result = await db.Clients.update_one(
         {"client_id": data.client_id},
         {"$set": update_fields}
     )
-    # if result.modified_count == 0:
-    #     raise HTTPException(status_code=400, detail="Client not updated.")
+    if result.modified_count == 0:
+        raise HTTPException(status_code=400, detail="Client not updated.")
     return {"message": "Client updated successfully."}
+
+# ============= Add new client documents =================
+@app.post("/add-client-documents")
+async def add_client_documents(
+    doc_name: str = Form(...),
+    doc_type: str = Form(...),
+    client_id: str = Form(...),
+    file: UploadFile = File(...)
+):
+    print("📥 Received request to add client document")
+
+    if not client_id:
+        raise HTTPException(status_code=400, detail="Client ID is required.")
+    
+    client = await db.Clients.find_one({"client_id": client_id})
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found.")
+    
+    if not doc_name or not doc_type:
+        raise HTTPException(status_code=400, detail="Document name and type are required.")
+    
+    for c in client.get("documents", []):
+        if c.get("doc_name").lower() == doc_name.lower() :
+            raise HTTPException(
+                status_code=409,
+                detail=f"Document '{doc_name}' of type '{doc_type}' already exists for this client.",
+                headers={"X-Frontend-Message": f"Document '{doc_name}' already exists."}
+            )
+
+    existing_documents = client.get("documents", [])
+    if not existing_documents:
+        random_id = f"CDOC{random.randint(1000, 9999)}"
+        print("📄 No existing documents, assigned ID:", random_id)
+    else:
+        existing_ids = [doc["id"] for doc in existing_documents if "id" in doc]
+        while True:
+            random_id = f"CDOC{random.randint(1000, 9999)}"
+            if random_id not in existing_ids:
+                print("✅ Unique document ID generated:", random_id)
+                break
+
+    try:
+        print("📤 Uploading document...")
+        doc_link = await upload_file_to_firebase(file, folder=f"PMT/clients/{client['brand_name']}/documents")
+        print("✅ Upload successful")
+    except Exception as e:
+        print("❌ Upload failed:", str(e))
+        raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
+
+
+    document = ClientDocuments(
+        id=random_id,
+        doc_name=doc_name,
+        doc_type=doc_type,
+        doc_url=doc_link,
+        uploaded_at=datetime.now(timezone.utc)
+    ).dict()
+    
+    result = await db.Clients.update_one(
+        {"client_id": client_id},
+        {"$addToSet": {"documents": document}}
+    )
+
+    if result.modified_count == 0:
+        raise HTTPException(status_code=500, detail="Document not added to the client.")
+
+    return {"message": f"✅ Document '{doc_name}' added to client {client_id}.",}
+
+# ============= Add client notes =================
+@app.post("/add-client-notes")
+async def add_client_note(
+    client_id: str = Form(...),
+    note: str = Form(...)
+):
+    if not client_id:
+        raise HTTPException(status_code=400, detail="Client ID is required.")
+    
+    if not note:
+        raise HTTPException(status_code=400, detail="Note content is required.")
+
+    client = await db.Clients.find_one({"client_id": client_id})
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found.")
+
+    note_entry = ClientNote(
+        note= note,
+        created_at= datetime.utcnow()
+    ).dict()
+
+    result = await db.Clients.update_one(
+        {"client_id": client_id},
+        {"$addToSet": {"notes": note_entry}}
+    )
+
+    if result.modified_count == 0:
+        raise HTTPException(status_code=500, detail="Note not added to the client.")
+
+    return {"message": f"Note added to client {client_id}."}

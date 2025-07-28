@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import PopupForm from '../components/Home/PopUpForm'
 import {
@@ -8,23 +8,22 @@ import {
     Building,
     Globe,
     MapPin,
-    User,
-    Mail,
-    Phone,
-    Linkedin,
-    Calendar,
     Tag,
-    DollarSign,
     FileText,
     AlertCircle,
     ExternalLink,
     Briefcase,
-    TrendingUp,
     Menu,
-    X
+    X,
 } from 'lucide-react'
 import Navigation from '../components/Navigation/Navigation'
 import Header from '../components/header'
+import PrimaryContact from '../components/clients/PrimaryContact'
+import EngagementInfo from '../components/clients/EngagementInfo'
+import MetricsOverview from '../components/clients/MetricsOverview'
+import Documents from '../components/clients/Documents'
+import Notes from '../components/clients/Notes'
+import BillingAddress from '../components/clients/BillingAddress'
 
 
 const ClientDetails = () => {
@@ -131,25 +130,6 @@ const ClientDetails = () => {
             console.log('Deleting client:', id)
             navigate('/clients')
         }
-    }
-
-    const getTagColor = (tag) => {
-        const colors = {
-            'priority': 'bg-red-100 text-red-800 border-red-200',
-            'recurring': 'bg-green-100 text-green-800 border-green-200',
-            'enterprise': 'bg-blue-100 text-blue-800 border-blue-200',
-            'startup': 'bg-purple-100 text-purple-800 border-purple-200'
-        }
-        return colors[tag] || 'bg-gray-100 text-gray-800 border-gray-200'
-    }
-
-    const getPaymentStatusColor = (status) => {
-        const colors = {
-            'active': 'bg-green-100 text-green-800 border-green-200',
-            'suspended': 'bg-red-100 text-red-800 border-red-200',
-            'pending': 'bg-yellow-100 text-yellow-800 border-yellow-200'
-        }
-        return colors[status] || 'bg-gray-100 text-gray-800 border-gray-200'
     }
 
     if (loading) {
@@ -386,162 +366,14 @@ const ClientDetails = () => {
                             </div>
                         </div>
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div className="bg-white rounded-xl shadow-sm p-6">
-                                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-                                    <User className="text-blue-600" size={20} />
-                                    Primary Contact
-                                </h2>
-                                <div className="space-y-3">
-                                    <div>
-                                        <p className="font-medium text-gray-900">{client.primary_contact.name}</p>
-                                        <p className="text-gray-600 text-sm">{client.primary_contact.designation}</p>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <a
-                                            href={`mailto:${client.primary_contact.email}`}
-                                            className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors"
-                                        >
-                                            <Mail size={16} />
-                                            {client.primary_contact.email}
-                                        </a>
-                                        <a
-                                            href={`tel:${client.primary_contact.phone}`}
-                                            className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors"
-                                        >
-                                            <Phone size={16} />
-                                            {client.primary_contact.phone}
-                                        </a>
-                                        {client.primary_contact.linkedin && (
-                                            <a
-                                                href={client.primary_contact.linkedin}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors"
-                                            >
-                                                <Linkedin size={16} />
-                                                LinkedIn Profile
-                                                <ExternalLink size={12} />
-                                            </a>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="bg-white rounded-xl shadow-sm p-6">
-                                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-                                    <Calendar className="text-green-600" size={20} />
-                                    Engagement Info
-                                </h2>
-                                <div className="space-y-3">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-gray-600">Joined Date</span>
-                                        <span className="font-medium">{client.engagement.joined_date.split("T")[0]}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-gray-600">Source</span>
-                                        <span className="font-medium">{client.engagement?.source}</span>
-                                    </div>
-                                    <div>
-                                        <span className="text-gray-600 block mb-2">Tags</span>
-                                        <div className="flex flex-wrap gap-2">
-                                            {client.engagement?.tags.map((tag, index) => (
-                                                <span
-                                                    key={index}
-                                                    className={`px-2 py-1 rounded-full text-xs font-medium border ${getTagColor(tag)}`}
-                                                >
-                                                    {tag}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="bg-white rounded-xl shadow-sm p-6">
-                                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-                                    <TrendingUp className="text-purple-600" size={20} />
-                                    Metrics Overview
-                                </h2>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="text-center p-3 bg-blue-50 rounded-lg">
-                                        <p className="text-2xl font-bold text-blue-600">{client.metrics.total_projects}</p>
-                                        <p className="text-sm text-gray-600">Total Projects</p>
-                                    </div>
-                                    <div className="text-center p-3 bg-green-50 rounded-lg">
-                                        <p className="text-2xl font-bold text-green-600">
-                                            ₹{client.metrics.total_billed.toLocaleString()}
-                                        </p>
-                                        <p className="text-sm text-gray-600">Total Billed</p>
-                                    </div>
-                                </div>
-                                <div className="mt-4 space-y-2">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-gray-600">Last Project</span>
-                                        <span className="font-medium">{client.metrics.last_project_date?.split("T")[0]}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-gray-600">Payment Status</span>
-                                        <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getPaymentStatusColor(client.metrics.payment_status)}`}>
-                                            {client.metrics.payment_status}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="bg-white rounded-xl shadow-sm p-6">
-                                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-                                    <FileText className="text-orange-600" size={20} />
-                                    Documents
-                                </h2>
-                                <div className="space-y-3">
-                                    {client.documents.nda_link && (
-                                        <a
-                                            href={client.documents.nda_link}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                                        >
-                                            <span className="font-medium">NDA Document</span>
-                                            <ExternalLink size={16} className="text-gray-400" />
-                                        </a>
-                                    )}
-                                    {client.documents.agreement_link && (
-                                        <a
-                                            href={client.documents.agreement_link}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                                        >
-                                            <span className="font-medium">Service Agreement</span>
-                                            <ExternalLink size={16} className="text-gray-400" />
-                                        </a>
-                                    )}
-                                </div>
-                            </div>
+                            <PrimaryContact primary_contact={client.primary_contact} />
+                            <EngagementInfo engagement={client.engagement} />
+                            <MetricsOverview metrics={client.metrics} />
+                            <Documents documents={client.documents} />
                         </div>
                         <div className="mt-6 space-y-6">
-                            <div className="bg-white rounded-xl shadow-sm p-6">
-                                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-                                    <Tag className="text-blue-600" size={20} />
-                                    Onboarding Notes
-                                </h2>
-                                <p className="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-lg">
-                                    {client.engagement_info?.onboarding_notes}
-                                </p>
-                            </div>
-                            <div className="bg-white rounded-xl shadow-sm p-6">
-                                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-                                    <MapPin className="text-green-600" size={20} />
-                                    Billing Address
-                                </h2>
-                                <p className="text-gray-700">{client.location}</p>
-                            </div>
-                            <div className="bg-white rounded-xl shadow-sm p-6">
-                                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-                                    <FileText className="text-purple-600" size={20} />
-                                    Additional Notes
-                                </h2>
-                                <p className="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-lg">
-                                    {client.extra_notes}
-                                </p>
-                            </div>
+                            <Notes notes={client.notes} />
+                            <BillingAddress location={client.location} />
                         </div>
                     </div>
                 </div>
