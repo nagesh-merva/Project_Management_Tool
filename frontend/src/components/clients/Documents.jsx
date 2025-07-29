@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import PopupForm from '../Home/PopUpForm';
 import { ExternalLink, FileText, Plus } from "lucide-react"
+import { useParams } from 'react-router-dom';
 
 const Documents = ({ documents }) => {
     const [showPopup, setShowPopup] = useState(false)
+    const { clientid } = useParams()
     const [fields, setFields] = useState([
-        { name: "client_id", type: "clientid" },
+        { name: "client_id", type: "stored", value: clientid },
         { name: "doc_type", type: "select", fields: [{ name: "NDA", value: "NDA" }, { name: "SLA", value: "SLA" }, { name: "SOW", value: "SOW" }, { name: "Quotation", value: "Quotation" }, { name: "Contract", value: "Contract" }, { name: "Invoice", value: "Invoice" }, { name: "Report", value: "Report" }, { name: "Other", value: "Other" }] },
         { name: "doc_name", type: "text", optional: false },
         { name: "file", type: "file" },

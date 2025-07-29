@@ -22,7 +22,7 @@ const EmployeeHeader = ({ emp }) => {
                         {emp.profile ? (
                             <img src={emp.profile} alt="Profile" className="h-full w-full rounded-full object-cover" />
                         ) : (
-                            <p className="text-2xl font-bold text-btncol">{emp?.emp_name?.charAt(0)}</p>
+                            <p className="text-2xl text-white font-bold">{emp?.emp_name?.charAt(0)}</p>
                         )}
                     </div>
                     <div>

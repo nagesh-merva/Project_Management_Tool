@@ -47,7 +47,7 @@ class Employee(BaseModel):
     emp_dept: str  # This can be dept_id for linking
     role: str
     email: EmailStr
-    profile:str
+    profile:Optional[str] = None  
     password: str
     address: str
     contact: str
@@ -86,7 +86,7 @@ class EmployeeResponse(BaseModel):
     emp_dept: str
     role: str
     email: EmailStr
-    profile:str
+    profile:Optional[str] = None
     address: str
     contact: str
     joined_on: date

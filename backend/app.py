@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends,Body ,UploadFile , File,Form
 from fastapi.security import OAuth2PasswordRequestForm
 from motor.motor_asyncio import AsyncIOMotorClient
-from models.dept import Employee, Department, EmpPerformanceMetrics ,EmployeeInput, EmployeeSummary,EmployeeResponse,EmployeesByDeptResponse ,EmpDocuments
+from models.dept import Department, EmpPerformanceMetrics ,EmployeeInput, EmployeeSummary,EmployeeResponse,EmployeesByDeptResponse ,EmpDocuments ,Employee
 from models.updatesAndtask import  UpdateTask,AddComment
 from models.project import Project,AddProjectRequest ,QuickLinks ,SRS ,FinancialData,PerformanceMetrics,ProjectPhaseUpdate
 from models.clients import Client, ClientMetrics, ClientDocuments, ContactPerson, ClientEngagement ,BasicClientInput,UpdateClientInput ,ClientDocuments ,ClientNote
@@ -179,7 +179,7 @@ async def add_employee(
         emergency_contact: Optional[str] = Form(None),
         bank_account_number: Optional[str] = Form(None),
         bank_ifsc: Optional[str] = Form(None),
-        file: UploadFile = File(...)
+        profile: UploadFile = File(...)
     ):
     while True:
         random_id = f"EMP{random.randint(1000, 9999)}"
@@ -187,15 +187,15 @@ async def add_employee(
             break
 
     existing_Employees = await db.Employees.find({}).to_list(1000)    
-    for Employee in existing_Employees:
-        if Employee.get("emp_name") == emp_name or Employee.get("email") == email or Employee.get("bank_account_number") == bank_account_number:
+    for Emp in existing_Employees:
+        if Emp.get("emp_name") == emp_name or Emp.get("email") == email or Emp.get("bank_account_number") == bank_account_number:
             raise HTTPException(
                 status_code=409,
                 detail=f"Employee already exists.",
                 headers={"X-Frontend-Message": f"Employee already exists."}
             )  
             
-    profile_url = await upload_file_to_firebase(file, folder="PMT/employee_profiles")
+    profile_url = await upload_file_to_firebase(profile, folder="PMT/employee_profiles")
 
     print(profile_url)
 
@@ -289,10 +289,13 @@ async def add_emp_documents(emp_id: str = Form(...), file: UploadFile = File(...
         uploaded_at=datetime.utcnow()
     )
 
-    await db.Employees.update_one(
+    result = await db.Employees.update_one(
         {"emp_id": emp_id},
-        {"$push": {"emp_documents": document.dict()}}
+        {"$addToSet": {"emp_documents": document.dict()}}
     )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Employee not found.")
 
     return {"message": "Document added successfully.", "doc_url": doc_url}
 

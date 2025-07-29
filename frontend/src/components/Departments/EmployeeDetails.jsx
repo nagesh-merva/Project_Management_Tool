@@ -315,7 +315,7 @@ const EmployeeDetails = ({ emp }) => {
     ]
 
     const empDocumentFields = [
-        { name: "emp_id", type: "id" }, // This will be filled automatically from logged-in employee
+        { name: "emp_id", type: "stored", value: employeeData.emp_id },
         { name: "file", type: "file", optional: false }
     ]
 

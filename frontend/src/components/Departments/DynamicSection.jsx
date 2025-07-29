@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Edit2, Save, X, Plus } from 'lucide-react'
+import { useMainContext } from '../../context/MainContext';
 
 const DynamicSection = ({
     title,
@@ -15,11 +16,11 @@ const DynamicSection = ({
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({});
     const [loading, setLoading] = useState(false);
+    const { emp } = useMainContext()
 
     const isAdmin = () => {
         try {
-            const user = JSON.parse(localStorage.getItem('emp') || '{}');
-            return user.role === 'admin'
+            return emp.role === 'admin' || emp.emp_dept === 'ADMIN'
         } catch {
             return false
         }

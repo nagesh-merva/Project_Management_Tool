@@ -1,16 +1,20 @@
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import Newfeatures from "./Newfeatures"
 import { PanelLeftOpen } from "lucide-react"
 import PopupForm from "../Home/PopUpForm"
 import { useState } from "react"
+import { useMainContext } from "../../context/MainContext"
 
 const Features = ({ features }) => {
     const navigate = useNavigate()
     const [showPopup, setShowPopup] = useState(false)
+    const { id } = useParams()
+    const { emp } = useMainContext()
     const [fields, setFields] = useState([
         {
             name: "project_id",
-            type: "id",
+            type: "stored",
+            value: id
         },
         {
             name: "title",
@@ -25,7 +29,8 @@ const Features = ({ features }) => {
         },
         {
             name: "created_by",
-            type: "id"
+            type: "stored",
+            value: emp.emp_id
         }
 
     ])

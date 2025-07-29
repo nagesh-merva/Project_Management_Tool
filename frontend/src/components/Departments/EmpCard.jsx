@@ -20,9 +20,9 @@ const EmployeeCard = ({ employee, dept }) => {
                 </div>
                 <div className="absolute top-0 right-4 bg-blue-100 w-1/2 h-[100px] rounded-t-lg flex flex-col items-center justify-center ">
                     <button onClick={() => ViewEmployee(employee.emp_id)}><Settings size={20} className="absolute right-1 top-1 text-gray-500 hover:text-black cursor-pointer text-md" /></button>
-                    <div className="flex justify-center">
+                    <div className="flex justify-center ">
                         {Array.from({ length: employee.performance_metrics.ratings }).map((_, index) => (
-                            <Star key={index} className="text-violet-500 text-lg mx-[1px]" />
+                            <Star key={index} className="text-violet-500 text-sm lg:text-md xl:text-lg mx-[1px]" />
                         ))}
                     </div>
                     <p className="text-sm font-semibold mt-1 px-2 text-center" >{employee.role}</p>
@@ -35,7 +35,7 @@ const EmployeeCard = ({ employee, dept }) => {
                     <p><span className="font-semibold">Department :</span> {dept}</p>
                     <p><span className="font-semibold">Performance :</span> {employee.performance_metrics.ratings}</p>
                     <p><span className="font-semibold">Remark :</span></p>
-                    <p>{employee.performance_metrics.remarks}</p>
+                    <p className="line-clamp-2 text-ellipsis">{employee.performance_metrics.remarks}</p>
                 </div>
             </div>
         </div>

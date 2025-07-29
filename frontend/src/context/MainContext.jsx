@@ -24,7 +24,7 @@ export const MainProvider = ({ children }) => {
 
     // Selected Department
     const [selectedDepartment, setDepart] = useState(() => {
-        const stored = sessionStorage.getItem("selectedDepartment")
+        const stored = localStorage.getItem("selectedDepartment")
         return stored ? stored : ""
     })
 
@@ -69,7 +69,7 @@ export const MainProvider = ({ children }) => {
     const setDepartment = (dept) => {
         setDepart(dept)
         if (dept) {
-            sessionStorage.setItem("selectedDepartment", dept)
+            localStorage.setItem("selectedDepartment", dept)
         }
     }
 

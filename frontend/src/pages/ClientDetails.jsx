@@ -38,8 +38,8 @@ const ClientDetails = () => {
     const [fields, setFields] = useState([
         {
             name: "client_id",
-            type: "clientid",
-            optional: true
+            type: "stored",
+            value: clientid
         },
         {
             name: "name",

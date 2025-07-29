@@ -1,11 +1,13 @@
 import { Tag, Plus } from "lucide-react"
 import { useState } from "react"
 import PopupForm from '../Home/PopUpForm'
+import { useParams } from "react-router-dom"
 
 const Notes = ({ notes }) => {
     const [showPopup, setShowPopup] = useState(false)
+    const { clientid } = useParams()
     const [fields, setFields] = useState([
-        { name: "client_id", type: "clientid" },
+        { name: "client_id", type: "stored", value: clientid },
         { name: "note", type: "textarea" },
     ])
     return (

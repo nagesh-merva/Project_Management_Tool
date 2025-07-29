@@ -3,7 +3,6 @@ import { useState } from "react"
 import { useParams } from "react-router-dom"
 function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess }) {
     const [formData, setFormData] = useState({})
-    const { id, clientid } = useParams()
     const handleChange = (e) => {
         const { name, value } = e.target
         setFormData({ ...formData, [name]: value })
@@ -34,18 +33,12 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
         const newFormData = { ...formData }
 
         fields.forEach(f => {
-            if (newFormData[f.name] === undefined && !f.optional && f.type !== "id" && f.type !== "clientid") {
+            if (newFormData[f.name] === undefined && !f.optional && f.type !== "stored") {
                 alert(`Please fill the ${f.name.replace(/_/g, " ")}`)
                 return
             }
-            if (f.type === "id") {
-                newFormData[f.name] = emp.emp_id
-            }
-            if (f.type === "clientid") {
-                newFormData[f.name] = clientid
-            }
-            if (f.name === "project_id") {
-                newFormData[f.name] = id
+            if (f.type === "stored") {
+                newFormData[f.name] = f.value
             }
             if (f.name === "to") {
                 newFormData[f.name] = validateTo(newFormData[f.name])
@@ -122,7 +115,7 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     {fields.map(field => {
-                        if (field.type === "id" || field.type === "clientid") return null
+                        if (field.type === "stored") return null
 
                         if (field.type === "text") {
                             return (

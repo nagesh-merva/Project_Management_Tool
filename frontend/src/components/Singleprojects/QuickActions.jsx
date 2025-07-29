@@ -8,16 +8,18 @@ import {
     Activity
 } from "lucide-react"
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import PopupForm from "../Home/PopUpForm"
 
 const QuickActions = ({ links }) => {
     const navigate = useNavigate()
     const [showPopup, setShowPopup] = useState(false)
+    const { id } = useParams()
     const [fields, setFields] = useState([
         {
             name: "project_id",
-            type: "id",
+            type: "stored",
+            value: id
         },
         {
             name: "linkname",

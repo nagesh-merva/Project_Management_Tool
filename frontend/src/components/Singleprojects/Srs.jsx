@@ -1,14 +1,17 @@
 import { Activity, Files } from "lucide-react"
 import { useState } from "react"
 import PopupForm from "../Home/PopUpForm"
+import { useParams } from "react-router-dom"
 
 const Srs = ({ srs }) => {
     // console.log(srs)
     const [showPopup, setShowPopup] = useState(false)
+    const { id } = useParams()
     const [fields, setFields] = useState([
         {
             name: "project_id",
-            type: "id",
+            type: "stored",
+            value: id
         },
         {
             name: "srs_key_req",
