@@ -1399,31 +1399,28 @@ async def add_client_documents(
 
 # ============= Add client notes =================
 @app.post("/add-client-notes")
-async def add_client_note(
-    client_id: str = Form(...),
-    note: str = Form(...)
-):
-    if not client_id:
+async def add_client_note(data:dict):
+    if not data.get("client_id"):
         raise HTTPException(status_code=400, detail="Client ID is required.")
     
-    if not note:
+    if not data.get("note"):
         raise HTTPException(status_code=400, detail="Note content is required.")
 
-    client = await db.Clients.find_one({"client_id": client_id})
+    client = await db.Clients.find_one({"client_id": data.get("client_id")})
     if not client:
         raise HTTPException(status_code=404, detail="Client not found.")
 
     note_entry = ClientNote(
-        note= note,
+        note= data.get("note"),
         created_at= datetime.utcnow()
     ).dict()
 
     result = await db.Clients.update_one(
-        {"client_id": client_id},
+        {"client_id": data.get("client_id")},
         {"$addToSet": {"notes": note_entry}}
     )
 
     if result.modified_count == 0:
         raise HTTPException(status_code=500, detail="Note not added to the client.")
 
-    return {"message": f"Note added to client {client_id}."}
+    return {"message": f"Note added to client {data.get("client_id")}."}

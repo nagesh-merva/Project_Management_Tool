@@ -22,7 +22,7 @@ const Notes = ({ notes }) => {
                     <ul className="list-disc pl-5 space-y-2">
                         {notes.map((note, index) => (
                             <li key={index} className="text-gray-700">
-                                {note}
+                                {note.note} <span className="text-gray-500 text-sm">({new Date(note.created_at).toLocaleDateString()})</span>
                             </li>
                         ))}
                     </ul>

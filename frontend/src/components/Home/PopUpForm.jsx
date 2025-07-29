@@ -122,7 +122,7 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     {fields.map(field => {
-                        if (field.type === "id") return null
+                        if (field.type === "id" || field.type === "clientid") return null
 
                         if (field.type === "text") {
                             return (
