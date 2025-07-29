@@ -58,7 +58,7 @@ const Actives = ({ project }) => {
                     ))}
                 </div>
             </div>
-            <p className="text-sm text-gray-700 break-words mb-8">{`Description: ${descp}`}</p>
+            <p className="text-sm text-gray-700 break-words mb-8 text-ellipsis line-clamp-4">{`Description: ${descp}`}</p>
             <div className="absolute bottom-2 right-2 flex items-center justify-between">
                 <div className="flex place-self-end">
                     <button onClick={viewFull} target="_blank" rel="noopener noreferrer">

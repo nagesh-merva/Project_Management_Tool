@@ -300,7 +300,7 @@ const ClientDetails = () => {
                                             <img
                                                 src={client.logo_url}
                                                 alt={`${client.name} logo`}
-                                                className="w-full h-full object-cover"
+                                                className="w-full h-fit object-cover"
                                             />
                                         ) : (
                                             <Building className="text-white" size={32} />
@@ -371,7 +371,7 @@ const ClientDetails = () => {
                             <MetricsOverview metrics={client.metrics} />
                             <Documents documents={client.documents} />
                         </div>
-                        <div className="mt-6 space-y-6">
+                        <div className="my-6 space-y-6">
                             <Notes notes={client.notes} />
                             <BillingAddress location={client.location} />
                         </div>

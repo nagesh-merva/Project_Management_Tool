@@ -27,7 +27,7 @@ const ClientCard = ({ client }) => {
                         <img
                             src={client.logo_url}
                             alt={`${client.name} logo`}
-                            className="w-full h-full object-cover"
+                            className="w-full h-fit object-cover"
                         />
                     ) : (
                         <Building className="text-white" size={24} />
