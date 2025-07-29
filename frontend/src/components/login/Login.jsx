@@ -51,8 +51,7 @@ function Login() {
             const data = await response.json();
 
             if (response.status === 201 || response.status === 200) {
-                localStorage.setItem("emp", JSON.stringify(data.emp));
-                LogIn(data.token)
+                LogIn(data.emp, data.token)
                 navigate("/dashboard");
             } else if (response.status === 401) {
                 setErrors({ general: "Invalid credentials. Please try again." });

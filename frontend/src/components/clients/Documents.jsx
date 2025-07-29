@@ -37,9 +37,12 @@ const Documents = ({ documents }) => {
                             <div className="flex flex-col">
                                 <span className="font-medium">{doc.doc_name}</span>
                                 <span className="font-thin text-xs">{doc.doc_type}</span>
+
                             </div>
-                            <span className="text-sm text-gray-500">{doc.uploaded_at?.split("T")[0]}</span>
-                            <ExternalLink size={16} className="text-gray-400" />
+                            <div className='flex flex-col items-end space-y-2'>
+                                <ExternalLink size={16} className="text-gray-400" />
+                                <span className="text-[10px] text-gray-500">{doc.uploaded_at?.split("T")[0]}</span>
+                            </div>
                         </a>
                     ))}
                     {documents && documents.length === 0 && (

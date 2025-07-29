@@ -42,7 +42,8 @@ export const MainProvider = ({ children }) => {
     }
 
     // sync loggedin to localStorage
-    const LogIn = (token) => {
+    const LogIn = (emp, token) => {
+        setEmp(emp)
         const data = { logged: true, token: token }
         setLoggedIn(data)
         localStorage.setItem("logged", JSON.stringify(data))
