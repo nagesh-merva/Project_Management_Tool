@@ -33,6 +33,10 @@ const ClientsList = () => {
             type: "select",
             multi: false,
             fields: [
+                { name: "LLC", value: "LLC" },
+                { name: "PVT-LTD", value: "PVT-LTD" },
+                { name: "Partnership", value: "Partnership" },
+                { name: "Sole-Proprietorship", value: "Sole-Proprietorship" },
                 { name: "Startup", value: "Startup" },
                 { name: "NGO", value: "NGO" },
                 { name: "Enterprise", value: "Enterprise" },

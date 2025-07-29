@@ -13,16 +13,19 @@ import {
     Building,
     UserCheck,
     Target,
+    FileText
 } from 'lucide-react'
 
 import EmployeeHeader from './EmployeeHeader'
 import DynamicSection from './DynamicSection'
 import SalaryAccountManager from './SalaryAccountManager'
 import NotificationToast from '../NotificationToast'
+import PopupForm from '../Home/PopUpForm'
 
 const EmployeeDetails = ({ emp }) => {
     const [notifications, setNotifications] = useState([])
     const [employeeData, setEmployeeData] = useState(emp)
+    const [showDocPopup, setShowDocPopup] = useState(false);
 
     React.useEffect(() => {
         setEmployeeData(emp)
@@ -278,6 +281,44 @@ const EmployeeDetails = ({ emp }) => {
         }
     ]
 
+    console.log(employeeData.emp_documents)
+
+    const empDocumentsFields = [
+        {
+            name: 'emp_documents',
+            label: 'Employee Documents',
+            type: 'documents',
+            render: (docs) => (
+                <div className="space-y-3">
+                    {docs && docs.length > 0 ? docs.map((doc, idx) => (
+                        <a
+                            key={idx}
+                            href={doc.doc_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                        >
+                            <div className="flex flex-col">
+                                <span className="font-medium">{doc.doc_name}</span>
+                                <span className="font-thin text-xs">{doc.doc_type}</span>
+                            </div>
+                            <span className="text-sm text-gray-500">{doc.uploaded_at?.split("T")[0]}</span>
+                        </a>
+                    )) : (
+                        <div className="text-gray-500 text-sm text-center mt-4">
+                            No documents available
+                        </div>
+                    )}
+                </div>
+            )
+        }
+    ]
+
+    const empDocumentFields = [
+        { name: "emp_id", type: "id" }, // This will be filled automatically from logged-in employee
+        { name: "file", type: "file", optional: false }
+    ]
+
     if (!employeeData) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -375,6 +416,17 @@ const EmployeeDetails = ({ emp }) => {
                             </div>
                         }
                     />
+                    <div>
+                        <DynamicSection
+                            title="Employee Documents"
+                            icon={FileText}
+                            data={employeeData}
+                            onUpdate={() => setShowDocPopup(true)}
+                            isDocument={true}
+                            fields={empDocumentsFields}
+                            colorScheme="orange"
+                        />
+                    </div>
                 </div>
 
                 <div className="mt-6">
@@ -384,6 +436,16 @@ const EmployeeDetails = ({ emp }) => {
                     />
                 </div>
             </div>
+            <PopupForm
+                isVisible={showDocPopup}
+                onClose={() => setShowDocPopup(false)}
+                formTitle="Upload Employee Document"
+                endpoint="http://127.0.0.1:8000/add-emp-documents"
+                fields={empDocumentFields}
+                onSuccess={() => {
+                    setShowDocPopup(false);
+                }}
+            />
         </div>
     )
 }

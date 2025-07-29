@@ -15,7 +15,7 @@ const Documents = ({ documents }) => {
 
     return (
         <>
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="bg-white rounded-xl shadow-sm p-6 h-64">
                 <div className='w-full flex items-center justify-between mb-4'>
                     <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
                         <FileText className="text-orange-600" size={20} />
@@ -23,7 +23,7 @@ const Documents = ({ documents }) => {
                     </h2>
                     <button onClick={() => setShowPopup(true)} className='p-2 bg-gray-100 rounded-md hover:scale-105 hover:bg-gray-200 transition-all'><Plus size={24} /></button>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-3 h-40 overflow-y-auto scrollbar-none">
                     {documents && documents.map((doc, index) => (
                         <a
                             key={index}
@@ -36,10 +36,15 @@ const Documents = ({ documents }) => {
                                 <span className="font-medium">{doc.doc_name}</span>
                                 <span className="font-thin text-xs">{doc.doc_type}</span>
                             </div>
-                            <span className="text-sm text-gray-500">{doc.uploaded_at.split("T")[0]}</span>
+                            <span className="text-sm text-gray-500">{doc.uploaded_at?.split("T")[0]}</span>
                             <ExternalLink size={16} className="text-gray-400" />
                         </a>
                     ))}
+                    {documents && documents.length === 0 && (
+                        <div className="text-gray-500 text-sm text-center mt-4">
+                            No documents available
+                        </div>
+                    )}
                 </div>
             </div>
             <PopupForm

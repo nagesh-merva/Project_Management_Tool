@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends,Body ,UploadFile , File,Form
 from fastapi.security import OAuth2PasswordRequestForm
 from motor.motor_asyncio import AsyncIOMotorClient
-from models.dept import Employee, Department, EmpPerformanceMetrics ,EmployeeInput, EmployeeSummary,EmployeeResponse,EmployeesByDeptResponse
+from models.dept import Employee, Department, EmpPerformanceMetrics ,EmployeeInput, EmployeeSummary,EmployeeResponse,EmployeesByDeptResponse ,EmpDocuments
 from models.updatesAndtask import  UpdateTask,AddComment
 from models.project import Project,AddProjectRequest ,QuickLinks ,SRS ,FinancialData,PerformanceMetrics,ProjectPhaseUpdate
 from models.clients import Client, ClientMetrics, ClientDocuments, ContactPerson, ClientEngagement ,BasicClientInput,UpdateClientInput ,ClientDocuments ,ClientNote
@@ -62,7 +62,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
 
 async def upload_file_to_firebase(file: UploadFile, folder: str) -> str:
     try:
-        allowed_extensions = [".pdf", ".docx", ".xlsx", ".xls", ".csv", ".txt"]
+        allowed_extensions = [".pdf", ".docx", ".xlsx", ".xls", ".csv", ".txt",".png", ".jpg", ".jpeg"]
         file_ext = os.path.splitext(file.filename)[1].lower()
 
         if file_ext not in allowed_extensions:
@@ -214,6 +214,7 @@ async def add_employee(
         salary_monthly=salary_monthly,
         bonus=0.0,
         salary_account=[],
+        emp_documents= [],
         performance_metrics=EmpPerformanceMetrics(completed_projects=0, ratings=0, remarks=""),
         status="Active",
         leaves_taken=0,
@@ -268,6 +269,32 @@ async def update_employee(emp_id: str, data: dict = Body(...)):
         raise HTTPException(status_code=404, detail="Employee not found.")
 
     return {"message": "Employee updated successfully.", "emp_id": emp_id}
+
+# ================== add Emp Documents =======================
+@app.post("/add-emp-documents")
+async def add_emp_documents(emp_id: str = Form(...), file: UploadFile = File(...)):
+    if not emp_id or not file:
+        raise HTTPException(status_code=400, detail="Employee ID and file are required.")
+
+    emp = await db.Employees.find_one({"emp_id": emp_id})
+    if not emp:
+        raise HTTPException(status_code=404, detail="Employee not found.")
+
+    doc_url = await upload_file_to_firebase(file, folder=f"PMT/employee_documents/{emp_id}")
+
+    document = EmpDocuments(
+        doc_type=file.filename.split('.')[-1],
+        doc_name=file.filename,
+        doc_url=doc_url,
+        uploaded_at=datetime.utcnow()
+    )
+
+    await db.Employees.update_one(
+        {"emp_id": emp_id},
+        {"$push": {"emp_documents": document.dict()}}
+    )
+
+    return {"message": "Document added successfully.", "doc_url": doc_url}
 
 # ================= Get All Updates ====================
 @app.get("/get-updates")
@@ -500,7 +527,7 @@ async def add_project(project_data: AddProjectRequest):
                 'dept':emp["emp_dept"],
                 'profile': emp.get("profile", "")
             })
-    client_details = {"name": client_data["name"],"logo": client_data["logo_url"],"domain": client_data["industry"]}
+    client_details = { "client_id":client_data["client_id"],"name": client_data["name"],"logo": client_data["logo_url"],"domain": client_data["industry"]}
 
     project = Project(
         project_id=random_id,
@@ -1264,7 +1291,7 @@ async def add_new_client(
             onboarding_notes=None,
             tags=[industry, type]
         ),
-        documents=[ClientDocuments().dict()],  
+        documents=[],  
         metrics=ClientMetrics()
     )
 

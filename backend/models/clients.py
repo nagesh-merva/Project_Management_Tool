@@ -5,6 +5,10 @@ from enum import Enum
 
 
 class ClientType(str, Enum):
+    llc = "LLC"
+    pvt_ltd = "PVT-LTD"
+    partnership = "Partnership"
+    sole_proprietorship = "Sole-Proprietorship"
     startup = "Startup"
     enterprise = "Enterprise"
     individual = "Individual"

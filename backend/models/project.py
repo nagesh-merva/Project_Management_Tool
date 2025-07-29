@@ -27,6 +27,7 @@ class QuickLinks(BaseModel):
 
 
 class ClientDetails(BaseModel):
+    client_id: str
     name: str
     logo: Optional[str] = None
     domain: Optional[str] = None
