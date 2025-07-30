@@ -98,6 +98,7 @@ const DynamicSection = ({
         console.log(filteredData)
         try {
             await onUpdate(filteredData)
+            window.location.reload()
             setIsEditing(false)
         } catch (error) {
             console.error('Update failed:', error)

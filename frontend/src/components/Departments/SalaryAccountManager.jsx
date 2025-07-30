@@ -30,6 +30,7 @@ const SalaryAccountManager = ({ emp, onUpdate }) => {
                 reference_id: '',
                 working_days: 30
             })
+            window.location.reload()
         } catch (error) {
             console.error('Failed to add salary record:', error)
         }

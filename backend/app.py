@@ -197,7 +197,7 @@ async def add_employee(
             
     profile_url = await upload_file_to_firebase(profile, folder="PMT/employee_profiles")
 
-    print(profile_url)
+    #print(profile_url)
 
     employee = Employee(
         emp_id=random_id,
@@ -247,6 +247,22 @@ async def get_employee(emp_id: Optional[str] = None):
     # Convert joined_on datetime to date if needed
     if "joined_on" in employee and isinstance(employee["joined_on"], datetime):
         employee["joined_on"] = employee["joined_on"].date()
+        
+    emp_projects =[]    
+        
+    for proj in employee.get("current_projects", []):
+        proj_details = await db.Projects.find_one({"project_id": proj})
+        project_info ={}
+        if proj_details:
+            project_info["project_name"] = proj_details.get("project_name", "Unknown Project")
+            client = proj_details.get("client_details")
+            project_info["client_name"] = client["name"] if client and "name" in client else "unknown Client"
+        else:
+            project_info["project_name"] = "Unknown Project"
+            project_info["client_name"] = "unknown Client"
+        emp_projects.append(project_info)
+    
+    employee["current_projects"] = emp_projects    
 
     return employee
 
@@ -256,7 +272,7 @@ async def update_employee(emp_id: str, data: dict = Body(...)):
     if not emp_id or not data:
         raise HTTPException(status_code=400, detail="Employee ID and update data are required.")
 
-    # print(data)
+    # #print(data)
     if "emp_id" in data:
         data.pop("emp_id")
 
@@ -456,9 +472,11 @@ async def add_comment(comment:AddComment):
 
 # ================= get all projects - only for admin role ====================
 @app.get("/get-projects")
-async def get_projects():
+async def get_projects(role: str):
     projects_cursor = db.Projects.find({})
     projects = []
+    if role not in ["Admin", "Manager", "Founder", "Co-Founder"]:
+        raise HTTPException(status_code=403, detail="You do not have permission to view all projects.")
 
     async for project in projects_cursor:
         project["_id"] = str(project["_id"])  
@@ -563,6 +581,12 @@ async def add_project(project_data: AddProjectRequest):
         }
     )
     await db.Projects.insert_one(project.dict())
+    
+    await db.Employees.update_one(
+        {"emp_id": emp_id},
+        {"$addToSet": {"current_projects": random_id}}
+    )
+    
     return {"message": "Project added successfully.", "project_id": random_id}
 
 
@@ -674,8 +698,13 @@ async def add_teammember(data: dict):
         {"project_id": project_id},
         {"$addToSet": {"team_members": team_member_data}}
     )
+    
+    await db.Employees.update_one(
+        {"emp_id": emp_id},
+        {"$addToSet": {"current_projects": project_id}}
+    )
 
-    if updated.modified_count == 0:
+    if updated.modified_count == 0 :
         raise HTTPException(status_code=404, detail="Project not found or employee already on the team.")
 
     return {"message": f"{team_member_data['name']} added to project {project_id}."}
@@ -1311,7 +1340,7 @@ async def update_client( data: UpdateClientInput):
     client = db.Clients.find_one({"client_id": data.client_id})
     if not client:  
         raise HTTPException(status_code=404, detail="Client not found.")
-    print (data)
+    #print (data)
     update_data = {
         "name": data.name  if data.brand_name else None,
         "brand_name": data.brand_name if data.brand_name else None,
@@ -1341,7 +1370,7 @@ async def add_client_documents(
     client_id: str = Form(...),
     file: UploadFile = File(...)
 ):
-    print("📥 Received request to add client document")
+    #print("📥 Received request to add client document")
 
     if not client_id:
         raise HTTPException(status_code=400, detail="Client ID is required.")
@@ -1364,21 +1393,21 @@ async def add_client_documents(
     existing_documents = client.get("documents", [])
     if not existing_documents:
         random_id = f"CDOC{random.randint(1000, 9999)}"
-        print("📄 No existing documents, assigned ID:", random_id)
+        #print("📄 No existing documents, assigned ID:", random_id)
     else:
         existing_ids = [doc["id"] for doc in existing_documents if "id" in doc]
         while True:
             random_id = f"CDOC{random.randint(1000, 9999)}"
             if random_id not in existing_ids:
-                print("✅ Unique document ID generated:", random_id)
+                #print("✅ Unique document ID generated:", random_id)
                 break
 
     try:
-        print("📤 Uploading document...")
+        #print("📤 Uploading document...")
         doc_link = await upload_file_to_firebase(file, folder=f"PMT/clients/{client['brand_name']}/documents")
-        print("✅ Upload successful")
+        #print("✅ Upload successful")
     except Exception as e:
-        print("❌ Upload failed:", str(e))
+        #print("❌ Upload failed:", str(e))
         raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
 
 

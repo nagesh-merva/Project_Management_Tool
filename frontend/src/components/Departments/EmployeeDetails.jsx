@@ -391,7 +391,8 @@ const EmployeeDetails = ({ emp }) => {
                             {employeeData.current_projects && employeeData.current_projects.length > 0 ? (
                                 employeeData.current_projects.map((project, index) => (
                                     <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                        <span className="font-medium text-gray-900">{project}</span>
+                                        <span className="font-medium text-gray-900">{project.project_name}</span>
+                                        <span className='font-thin text-xs px-2 py-0.5 rounded-full bg-blue-200 text-center'>{project.client_name}</span>
                                     </div>
                                 ))
                             ) : (
