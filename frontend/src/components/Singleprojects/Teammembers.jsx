@@ -3,13 +3,16 @@ import { Users, Users2 } from "lucide-react"
 import PopupForm from "../Home/PopUpForm"
 import { useState, useEffect } from "react"
 import { useMainContext } from "../../context/MainContext"
+import { useParams } from "react-router-dom"
 const Teammember = ({ members }) => {
     const [showPopup, setShowPopup] = useState(false)
     const { allEmps } = useMainContext()
+    const { id } = useParams()
     const [fields, setFields] = useState([
         {
             name: "project_id",
-            type: "id",
+            type: "stored",
+            value: id
         },
         {
             name: "team_members",

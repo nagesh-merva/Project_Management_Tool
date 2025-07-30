@@ -3,11 +3,11 @@ import { useState } from "react"
 import { useParams } from "react-router-dom"
 function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess }) {
     const [formData, setFormData] = useState({})
-    const { id, clientid } = useParams()
     const handleChange = (e) => {
         const { name, value } = e.target
         setFormData({ ...formData, [name]: value })
     }
+    const [isSubmiting, setIsSubmiting] = useState(false)
     // console.log(id)
 
     const handleSelectChange = (e, name, isMulti) => {
@@ -28,18 +28,17 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
 
     const handleSubmit = async (e) => {
         e.preventDefault()
+        setIsSubmiting(true)
         const emp = JSON.parse(localStorage.getItem("emp"))
         const newFormData = { ...formData }
 
         fields.forEach(f => {
-            if (f.type === "id") {
-                newFormData[f.name] = emp.emp_id
+            if (newFormData[f.name] === undefined && !f.optional && f.type !== "stored") {
+                alert(`Please fill the ${f.name.replace(/_/g, " ")}`)
+                return
             }
-            if (f.type === "clientid") {
-                newFormData[f.name] = clientid
-            }
-            if (f.name === "project_id") {
-                newFormData[f.name] = id
+            if (f.type === "stored") {
+                newFormData[f.name] = f.value
             }
             if (f.name === "to") {
                 newFormData[f.name] = validateTo(newFormData[f.name])
@@ -78,16 +77,25 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                 })
             }
 
-            if (response.ok) {
+            if (response === 200 || response === 201 || response.ok) {
                 alert('Successfully submitted!')
                 onClose()
                 window.location.reload()
                 if (onSuccess) onSuccess()
-            } else {
-                alert('Failed to submit!')
+            }
+
+            if (response.status === 409) {
+                const message = await response.json()
+                alert(message.detail || message.message || 'Conflict occurred!')
+                return
+            }
+            if (!response.ok) {
+                alert('Failed to perform the task!' + response.message)
             }
         } catch (err) {
-            alert(err.message)
+            alert('Failed to submit!' + err.message || err.statusText || err.headers)
+        } finally {
+            setIsSubmiting(false)
         }
     }
 
@@ -107,7 +115,7 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     {fields.map(field => {
-                        if (field.type === "id") return null
+                        if (field.type === "stored") return null
 
                         if (field.type === "text") {
                             return (
@@ -135,7 +143,8 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                     type="email"
                                     name={field.name}
                                     required={!field.optional}
-                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) + "*"}
+                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) +
+                                        (field.optional === false ? "*" : "")}
                                     onChange={handleChange}
                                     className="border p-2 rounded"
                                 />
@@ -149,7 +158,8 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                     type="number"
                                     name={field.name}
                                     required={!field.optional}
-                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) + "*"}
+                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) +
+                                        (field.optional === false ? "*" : "")}
                                     onChange={handleChange}
                                     className="border p-2 rounded"
                                 />
@@ -162,7 +172,8 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                     key={field.name}
                                     name={field.name}
                                     required={!field.optional}
-                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) + "*"}
+                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) +
+                                        (field.optional === false ? "*" : "")}
                                     onChange={handleChange}
                                     className="border p-2 rounded resize-none"
                                 />
@@ -239,9 +250,10 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
 
                     <button
                         type="submit"
+                        disabled={isSubmiting}
                         className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded"
                     >
-                        Submit
+                        {isSubmiting ? 'Submitting...' : 'Submit'}
                     </button>
                 </form>
             </div>

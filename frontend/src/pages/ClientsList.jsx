@@ -24,8 +24,8 @@ const ClientsList = () => {
             optional: false
         },
         {
-            name: "logo_url",
-            type: "text",
+            name: "file",
+            type: "file",
             optional: false
         },
         {
@@ -33,6 +33,10 @@ const ClientsList = () => {
             type: "select",
             multi: false,
             fields: [
+                { name: "LLC", value: "LLC" },
+                { name: "PVT-LTD", value: "PVT-LTD" },
+                { name: "Partnership", value: "Partnership" },
+                { name: "Sole-Proprietorship", value: "Sole-Proprietorship" },
                 { name: "Startup", value: "Startup" },
                 { name: "NGO", value: "NGO" },
                 { name: "Enterprise", value: "Enterprise" },
@@ -74,6 +78,11 @@ const ClientsList = () => {
         },
         {
             name: "contact_name",
+            type: "text",
+            optional: false
+        },
+        {
+            name: "contact_designation",
             type: "text",
             optional: false
         },

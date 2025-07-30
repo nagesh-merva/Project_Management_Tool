@@ -8,6 +8,7 @@ import {
 } from "lucide-react"
 import { useState } from "react"
 import PopupForm from "../Home/PopUpForm"
+import { useParams } from "react-router-dom";
 
 
 const Maintenance = ({ MaintObj, HostingObj }) => {
@@ -20,6 +21,7 @@ const Maintenance = ({ MaintObj, HostingObj }) => {
     };
     const [showPopup, setShowPopup] = useState(false)
     const [formtype, setFormType] = useState("")
+    const { id } = useParams()
     const [mntFields, setMntFields] = useState(
         {
             type: "maintenance",
@@ -28,7 +30,8 @@ const Maintenance = ({ MaintObj, HostingObj }) => {
             fields: [
                 {
                     name: "project_id",
-                    type: "id",
+                    type: "stored",
+                    value: id
                 },
                 {
                     name: "title",
@@ -57,7 +60,8 @@ const Maintenance = ({ MaintObj, HostingObj }) => {
         fields: [
             {
                 name: "project_id",
-                type: "id",
+                type: "stored",
+                value: id
             },
             {
                 name: "title",

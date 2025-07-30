@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Edit2, Save, X, Plus } from 'lucide-react'
+import { useMainContext } from '../../context/MainContext';
 
 const DynamicSection = ({
     title,
@@ -9,16 +10,17 @@ const DynamicSection = ({
     isUpdatable = true,
     onUpdate,
     colorScheme = 'blue',
+    isDocument,
     specialActions = null
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({});
     const [loading, setLoading] = useState(false);
+    const { emp } = useMainContext()
 
     const isAdmin = () => {
         try {
-            const user = JSON.parse(localStorage.getItem('emp') || '{}');
-            return user.role === 'admin'
+            return emp.role === 'admin' || emp.emp_dept === 'ADMIN'
         } catch {
             return false
         }
@@ -86,6 +88,7 @@ const DynamicSection = ({
 
     const handleSave = async () => {
         setLoading(true)
+
         const filteredData = {}
         fields.forEach(field => {
             if (field.type !== 'display') {
@@ -103,6 +106,10 @@ const DynamicSection = ({
         }
     }
 
+    const newDocUpload = () => {
+        onUpdate()
+        return
+    }
 
     const handleInputChange = (fieldName, value) => {
         const field = fields.find(f => f.name === fieldName);
@@ -227,54 +234,76 @@ const DynamicSection = ({
             </div>
 
             <div className="space-y-4">
-                {fields.map((field, index) => (
-                    <div key={index} className={field.type === 'textarea' ? 'block' : 'flex items-center justify-between'}>
-                        {field.icon && (
-                            <field.icon className="text-gray-400 mr-3" size={20} />
-                        )}
-                        <div className={field.type === 'textarea' ? 'w-full' : 'flex items-center gap-3 flex-1'}>
-                            {field.type !== 'textarea' && (
-                                <span className="text-gray-600 min-w-0 flex-shrink-0">
-                                    {field.label}
-                                </span>
-                            )}
-                            {field.type === 'textarea' && (
-                                <span className="text-gray-600 block mb-2">{field.label}</span>
-                            )}
-                            <div className="flex-1">
-                                {renderField(field)}
+                {fields.map((field, index) => {
+                    if (field.render) {
+                        return (
+                            <div key={field.name} className="mb-4">
+                                <h3 className="font-semibold mb-2">{field.label}</h3>
+                                {field.render(data[field.name])}
                             </div>
+                        )
+                    }
+
+                    return (
+                        <div key={index} className={field.type === 'textarea' ? 'block' : 'flex items-center justify-between'}>
+                            {field.icon && (
+                                <field.icon className="text-gray-400 mr-3" size={20} />
+                            )}
+                            <div className={field.type === 'textarea' ? 'w-full' : 'flex items-center gap-3 flex-1'}>
+                                {field.type !== 'textarea' && (
+                                    <span className="text-gray-600 min-w-0 flex-shrink-0">
+                                        {field.label}
+                                    </span>
+                                )}
+                                {field.type === 'textarea' && (
+                                    <span className="text-gray-600 block mb-2">{field.label}</span>
+                                )}
+                                <div className="flex-1">
+                                    {renderField(field)}
+                                </div>
+                            </div>
+                            {field.specialAction && isEditing && field.specialAction}
                         </div>
-                        {field.specialAction && isEditing && field.specialAction}
-                    </div>
-                ))}
+                    )
+                })}
 
                 {specialActions && specialActions}
 
                 {isEditing && canEdit && (
-                    <div className="flex gap-2 pt-4 border-t border-gray-100">
-                        <button
-                            onClick={handleSave}
-                            disabled={loading}
-                            className={`flex items-center gap-2 px-4 py-2 ${colors.button} text-white rounded-lg disabled:opacity-50 transition-colors`}
-                        >
-                            {loading ? (
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                            ) : (
-                                <Save size={16} />
-                            )}
-                            Save Changes
-                        </button>
-                        <button
-                            onClick={handleCancel}
-                            className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                        >
-                            Cancel
-                        </button>
-                    </div>
+                    <>
+                        {isDocument ? (
+                            <button
+                                className="bg-orange-600 text-white px-4 py-2 rounded"
+                                onClick={newDocUpload}
+                            >
+                                Upload New Document
+                            </button>
+                        ) : (
+                            <div className="flex gap-2 pt-4 border-t border-gray-100">
+                                <button
+                                    onClick={handleSave}
+                                    disabled={loading}
+                                    className={`flex items-center gap-2 px-4 py-2 ${colors.button} text-white rounded-lg disabled:opacity-50 transition-colors`}
+                                >
+                                    {loading ? (
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                    ) : (
+                                        <Save size={16} />
+                                    )}
+                                    Save Changes
+                                </button>
+                                <button
+                                    onClick={handleCancel}
+                                    className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        )}
+                    </>
                 )}
-            </div>
-        </div>
+            </div >
+        </div >
     )
 }
 

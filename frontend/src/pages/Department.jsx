@@ -6,51 +6,64 @@ import { Menu, X } from "lucide-react"
 import Employees from "../components/Departments/Emplooyees"
 import { useMainContext } from "../context/MainContext"
 
-const employeeFields = [
-    { name: "emp_name", type: "text" },
-    {
-        name: "emp_dept", type: "select",
-        multi: false,
-        fields: [
-            {
-                name: "Development",
-                value: "DEV"
-            },
-            {
-                name: "Sales",
-                value: "SALES"
-            },
-            {
-                name: "Design",
-                value: "DESIGN"
-            },
-            {
-                name: "Maintenance",
-                value: "MAINTENANCE"
-            },
-        ]
-    },
-    { name: "role", type: "text", optional: false },
-    { name: "email", type: "email" },
-    { name: "password", type: "text", optional: false },
-    { name: "address", type: "text", optional: false },
-    { name: "contact", type: "text", optional: false },
-    { name: "joined_on", type: "date" },
-    { name: "hired_by", type: "id" },
-    { name: "salary_monthly", type: "number" },
-    { name: "emergency_contact", type: "text", optional: true },
-    { name: "bank_account_number", type: "text", optional: true },
-    { name: "bank_ifsc", type: "text", optional: true },
-]
 
 export default function Department() {
     const [navOpen, setNavOpen] = useState(false)
-    const { selectedDepartment } = useMainContext()
+    const { emp, selectedDepartment } = useMainContext()
+    const employeeFields = [
+        { name: "emp_name", type: "text", optional: false },
+        {
+            name: "emp_dept", type: "select",
+            multi: false,
+            fields: [
+                {
+                    name: "Development",
+                    value: "DEV"
+                },
+                {
+                    name: "Sales",
+                    value: "SALES"
+                },
+                {
+                    name: "Design",
+                    value: "DESIGN"
+                },
+                {
+                    name: "Maintenance",
+                    value: "MAINTENANCE"
+                },
+            ]
+        },
+        { name: "role", type: "text", optional: false },
+        { name: "email", type: "email" },
+        { name: "profile", type: "file" },
+        { name: "password", type: "text", optional: false },
+        { name: "address", type: "text", optional: false },
+        { name: "contact", type: "text", optional: false },
+        { name: "joined_on", type: "date" },
+        { name: "hired_by", type: "stored", value: emp.emp_id },
+        { name: "salary_monthly", type: "number" },
+        { name: "emergency_contact", type: "text", optional: true },
+        { name: "bank_account_number", type: "text", optional: true },
+        { name: "bank_ifsc", type: "text", optional: true },
+    ]
+
 
     const [showPopup, setShowPopup] = useState(false)
 
     const handleSuccess = () => {
         console.log("Employee added successfully")
+    }
+
+    // console.log(emp)
+
+    const addNewEmployee = () => {
+        if (emp.emp_dept === "ADMIN") {
+            setShowPopup(true)
+        }
+        else {
+            alert("You are not allowed to add new employees.")
+        }
     }
 
     return (
@@ -77,7 +90,7 @@ export default function Department() {
                 <div className="px-10 w-full h-full z-20">
                     <div className="flex justify-end mb-4">
                         <button
-                            onClick={() => setShowPopup(true)}
+                            onClick={() => addNewEmployee()}
                             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
                         >
                             Add New Employee

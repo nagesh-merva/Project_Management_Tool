@@ -26,6 +26,12 @@ class Department(BaseModel):
     spenditure_stats: List[MonthlyStat] = []
     revenue_to_spend_ratio: Optional[float] = None  # Can be calculated dynamically
 
+# emp documents
+class EmpDocuments(BaseModel):
+    doc_type: str
+    doc_name: str
+    doc_url: str
+    uploaded_at: Optional[datetime] = None
 
 # Employee Performance Metrics
 class EmpPerformanceMetrics(BaseModel):
@@ -41,6 +47,7 @@ class Employee(BaseModel):
     emp_dept: str  # This can be dept_id for linking
     role: str
     email: EmailStr
+    profile:Optional[str] = None  
     password: str
     address: str
     contact: str
@@ -49,6 +56,7 @@ class Employee(BaseModel):
     salary_monthly: float
     bonus: Optional[float] = 0.0
     salary_account: List[SalaryRecord] = []
+    emp_documents: Optional[List[EmpDocuments]] = []
     performance_metrics: EmpPerformanceMetrics
     status: str = "Active"  # Example: Active, Resigned, On Leave
     leaves_taken: int = 0
@@ -78,6 +86,7 @@ class EmployeeResponse(BaseModel):
     emp_dept: str
     role: str
     email: EmailStr
+    profile:Optional[str] = None
     address: str
     contact: str
     joined_on: date
@@ -85,6 +94,7 @@ class EmployeeResponse(BaseModel):
     salary_monthly: float
     bonus: Optional[float] = 0.0
     salary_account: List[dict] = []
+    emp_documents:List[EmpDocuments] =[]
     performance_metrics: dict
     status: str
     leaves_taken: int
@@ -96,6 +106,7 @@ class EmployeeSummary(BaseModel):
     emp_id: str
     emp_name: str
     role: str
+    profile: str
     performance_metrics: EmpPerformanceMetrics
     
 class EmployeesByDeptResponse(BaseModel):

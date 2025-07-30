@@ -19,7 +19,11 @@ const EmployeeHeader = ({ emp }) => {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                        {emp?.emp_name?.charAt(0)}
+                        {emp.profile ? (
+                            <img src={emp.profile} alt="Profile" className="h-full w-full rounded-full object-cover" />
+                        ) : (
+                            <p className="text-2xl text-white font-bold">{emp?.emp_name?.charAt(0)}</p>
+                        )}
                     </div>
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">{emp.emp_name}</h1>

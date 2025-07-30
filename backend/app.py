@@ -1,24 +1,28 @@
 from fastapi import FastAPI, HTTPException, Depends,Body ,UploadFile , File,Form
 from fastapi.security import OAuth2PasswordRequestForm
 from motor.motor_asyncio import AsyncIOMotorClient
-from models.dept import Employee, Department, EmpPerformanceMetrics ,EmployeeInput, EmployeeSummary,EmployeeResponse,EmployeesByDeptResponse
+from models.dept import Department, EmpPerformanceMetrics ,EmployeeInput, EmployeeSummary,EmployeeResponse,EmployeesByDeptResponse ,EmpDocuments ,Employee
 from models.updatesAndtask import  UpdateTask,AddComment
 from models.project import Project,AddProjectRequest ,QuickLinks ,SRS ,FinancialData,PerformanceMetrics,ProjectPhaseUpdate
-from motor.motor_asyncio import AsyncIOMotorGridFSBucket
-from models.clients import Client, ClientMetrics, ClientDocuments, ContactPerson, ClientEngagement ,BasicClientInput,UpdateClientInput
+from models.clients import Client, ClientMetrics, ClientDocuments, ContactPerson, ClientEngagement ,BasicClientInput,UpdateClientInput ,ClientDocuments ,ClientNote
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
+from pydantic import EmailStr
 # from bson import ObjectId
 from jose import JWTError, jwt # type: ignore
-from datetime import datetime, timedelta,date
+from datetime import datetime, timedelta,date ,timezone
+import firebase_admin # type: ignore
+from firebase_admin import credentials, storage # type: ignore
 import os
+import tempfile
 from dotenv import load_dotenv
 import random
+import uuid
 
 load_dotenv()
 
 app = FastAPI()
-
+timezone
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], 
@@ -31,11 +35,19 @@ app.add_middleware(
 client = AsyncIOMotorClient(os.environ.get("MONGODB_URL"))
 db = client.ProjectManagementTool
 
-fs_bucket = AsyncIOMotorGridFSBucket(db)
-
 SECRET_KEY = os.environ.get("SECRET_KEY")  
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 12
+
+FIREBASE_BUCKET_NAME = os.environ.get("FIREBASE_BUCKET_NAME")
+
+cred = credentials.Certificate("firebase-adminsdk.json")
+
+firebase_admin.initialize_app(cred, {
+    'storageBucket': FIREBASE_BUCKET_NAME
+})
+
+bucket = storage.bucket()
 
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
@@ -47,6 +59,31 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+async def upload_file_to_firebase(file: UploadFile, folder: str) -> str:
+    try:
+        allowed_extensions = [".pdf", ".docx", ".xlsx", ".xls", ".csv", ".txt",".png", ".jpg", ".jpeg"]
+        file_ext = os.path.splitext(file.filename)[1].lower()
+
+        if file_ext not in allowed_extensions:
+            raise ValueError(f"Unsupported file type: {file_ext}")
+
+        unique_name = f"{uuid.uuid4().hex}{file_ext}"
+        blob_path = f"{folder}/{unique_name}"
+        blob = bucket.blob(blob_path)
+
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            tmp.write(await file.read())
+            tmp.seek(0)
+            blob.upload_from_filename(tmp.name, content_type=file.content_type)
+
+        blob.make_public()
+        return blob.public_url
+
+    except ValueError as ve:
+        raise RuntimeError(f"File validation error: {ve}")
+    except Exception as e:
+        raise RuntimeError(f"Failed to upload file: {str(e)}")
 
 # ================= Authentication ====================
 @app.post("/login")
@@ -64,6 +101,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
             "emp_id": employee.get("emp_id"),
             "emp_name": employee.get("emp_name"),
             "emp_dept": employee.get("emp_dept"),
+            "profile": employee.get("profile"),
             "role": employee.get("role")
         }  , "token":access_token
         }
@@ -97,6 +135,7 @@ async def get_all_employees():
                 emp_id=emp["emp_id"],
                 emp_name=emp["emp_name"],
                 role=emp["role"],
+                profile=emp.get("profile", ""),
                 performance_metrics=EmpPerformanceMetrics(**emp.get("performance_metrics", {}))
             )
         )
@@ -118,6 +157,7 @@ async def get_employees_by_department(dept: str):
                 emp_id=emp["emp_id"],
                 emp_name=emp["emp_name"],
                 role=emp["role"],
+                profile=emp.get("profile", ""),
                 performance_metrics=EmpPerformanceMetrics(**emp.get("performance_metrics", {}))
             )
         )
@@ -125,45 +165,70 @@ async def get_employees_by_department(dept: str):
 
 # ================= Add Employee to Department ====================
 @app.post("/add-employee")
-async def add_employee(employee_input: EmployeeInput):
+async def add_employee(
+        emp_name: str = Form(...),
+        emp_dept: str = Form(...),
+        role: str = Form(...),
+        email: EmailStr = Form(...),
+        password: str = Form(...),
+        address: str = Form(...),
+        contact: str = Form(...),
+        joined_on: datetime = Form(...),
+        hired_by: str = Form(...),
+        salary_monthly: float = Form(...),
+        emergency_contact: Optional[str] = Form(None),
+        bank_account_number: Optional[str] = Form(None),
+        bank_ifsc: Optional[str] = Form(None),
+        profile: UploadFile = File(...)
+    ):
     while True:
         random_id = f"EMP{random.randint(1000, 9999)}"
-        existing_employee = await db.Employees.find_one({"emp_id": random_id})
-        if not existing_employee:
+        if not await db.Employees.find_one({"emp_id": random_id}):
             break
+
+    existing_Employees = await db.Employees.find({}).to_list(1000)    
+    for Emp in existing_Employees:
+        if Emp.get("emp_name") == emp_name or Emp.get("email") == email or Emp.get("bank_account_number") == bank_account_number:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Employee already exists.",
+                headers={"X-Frontend-Message": f"Employee already exists."}
+            )  
+            
+    profile_url = await upload_file_to_firebase(profile, folder="PMT/employee_profiles")
+
+    print(profile_url)
 
     employee = Employee(
         emp_id=random_id,
-        emp_name=employee_input.emp_name,
-        emp_dept=employee_input.emp_dept,
-        role=employee_input.role,
-        email=employee_input.email,
-        password=employee_input.password,
-        address=employee_input.address,
-        contact=employee_input.contact,
-        joined_on=employee_input.joined_on,
-        hired_by=employee_input.hired_by,
-        salary_monthly=employee_input.salary_monthly,
+        emp_name=emp_name,
+        emp_dept=emp_dept,
+        role=role,
+        email=email,
+        profile=profile_url,
+        password=password,
+        address=address,
+        contact=contact.strip(),
+        joined_on=joined_on,
+        hired_by=hired_by,
+        salary_monthly=salary_monthly,
         bonus=0.0,
         salary_account=[],
-        performance_metrics=PerformanceMetrics(completed_projects=0, ratings=0, remarks=""),
+        emp_documents= [],
+        performance_metrics=EmpPerformanceMetrics(completed_projects=0, ratings=0, remarks=""),
         status="Active",
         leaves_taken=0,
         current_projects=[],
-        emergency_contact=employee_input.emergency_contact,
-        bank_account_number=employee_input.bank_account_number,
-        bank_ifsc=employee_input.bank_ifsc
+        emergency_contact=emergency_contact,
+        bank_account_number=bank_account_number,
+        bank_ifsc=bank_ifsc
     )
 
-    employee_dict = employee.dict()
+    await db.Employees.insert_one(employee.dict())
 
-    if isinstance(employee_dict['joined_on'], date):
-        employee_dict['joined_on'] = datetime.combine(employee_dict['joined_on'], datetime.min.time())
-
-    await db.Employees.insert_one(employee_dict)
-
+    # Update employee count in department
     await db.Departments.update_one(
-        {"dept_id": employee.emp_dept},
+        {"dept_id": emp_dept},
         {"$inc": {"no_of_employees": 1}}
     )
 
@@ -175,9 +240,14 @@ async def get_employee(emp_id: Optional[str] = None):
     if emp_id is None:
         raise HTTPException(status_code=400, detail="Employee ID is required.")
 
-    employee = await db.Employees.find_one({"emp_id": emp_id},{"password":0})
+    employee = await db.Employees.find_one({"emp_id": emp_id}, {"password": 0})
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found.")
+
+    # Convert joined_on datetime to date if needed
+    if "joined_on" in employee and isinstance(employee["joined_on"], datetime):
+        employee["joined_on"] = employee["joined_on"].date()
+
     return employee
 
 # ================== Update Employee Details =======================
@@ -199,6 +269,35 @@ async def update_employee(emp_id: str, data: dict = Body(...)):
         raise HTTPException(status_code=404, detail="Employee not found.")
 
     return {"message": "Employee updated successfully.", "emp_id": emp_id}
+
+# ================== add Emp Documents =======================
+@app.post("/add-emp-documents")
+async def add_emp_documents(emp_id: str = Form(...), file: UploadFile = File(...)):
+    if not emp_id or not file:
+        raise HTTPException(status_code=400, detail="Employee ID and file are required.")
+
+    emp = await db.Employees.find_one({"emp_id": emp_id})
+    if not emp:
+        raise HTTPException(status_code=404, detail="Employee not found.")
+
+    doc_url = await upload_file_to_firebase(file, folder=f"PMT/employee_documents/{emp_id}")
+
+    document = EmpDocuments(
+        doc_type=file.filename.split('.')[-1],
+        doc_name=file.filename,
+        doc_url=doc_url,
+        uploaded_at=datetime.utcnow()
+    )
+
+    result = await db.Employees.update_one(
+        {"emp_id": emp_id},
+        {"$addToSet": {"emp_documents": document.dict()}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Employee not found.")
+
+    return {"message": "Document added successfully.", "doc_url": doc_url}
 
 # ================= Get All Updates ====================
 @app.get("/get-updates")
@@ -264,13 +363,14 @@ async def get_tasks(emp_id: str):
                     "emp_id": emp["emp_id"],
                     "status": member.get("status"),
                     "emp_name": emp["emp_name"],
-                    "role": emp["role"]
+                    "role": emp["role"],
                 })
         task["members_assigned"] = emps
         task["created_by"] = {
                 "emp_id":created_by["emp_id"],
                 "emp_name":created_by["emp_name"],
-                "role":created_by["role"]
+                "role":created_by["role"],
+                "profile": created_by.get("profile", "")
             }
         if task["status"] != "done":
             tasks.append(task)
@@ -427,9 +527,10 @@ async def add_project(project_data: AddProjectRequest):
                 "emp_id": emp["emp_id"],
                 "name": emp["emp_name"],
                 "role": emp["role"],
-                'dept':emp["emp_dept"]
+                'dept':emp["emp_dept"],
+                'profile': emp.get("profile", "")
             })
-    client_details = {"name": client_data["name"],"logo": client_data["logo_url"],"domain": client_data["industry"]}
+    client_details = { "client_id":client_data["client_id"],"name": client_data["name"],"logo": client_data["logo_url"],"domain": client_data["industry"]}
 
     project = Project(
         project_id=random_id,
@@ -556,8 +657,18 @@ async def add_teammember(data: dict):
         "emp_id": emp["emp_id"],
         "name": emp["emp_name"],
         "role": emp["role"],
-        "dept": emp["emp_dept"]
+        "dept": emp["emp_dept"],
+        "profile": emp.get("profile", "")
     }
+    
+    project = await db.Projects.find_one({"project_id": project_id})
+    for member in project.get("team_members", []):
+        if member.get("emp_id") == emp_id:
+            raise HTTPException(
+                status_code=409,
+                detail=f"{emp['emp_name']} is already a team member of project {project_id}.",
+                headers={"X-Frontend-Message": f"{emp['emp_name']} is already a team member of this project."}
+            )
 
     updated = await db.Projects.update_one(
         {"project_id": project_id},
@@ -724,16 +835,16 @@ async def manage_maintenance_reports(
     if not project_id or not title or not descp:
         raise HTTPException(status_code=400, detail="project_id, title, and descp are required.")
     
-    file_id = await fs_bucket.upload_from_stream(file.filename, await file.read())
+    # file_id = await fs_bucket.upload_from_stream(file.filename, await file.read())
 
-    gridfs_link = f"/files/{str(file_id)}"
+    # gridfs_link = f"/files/{str(file_id)}"
 
     report_entry = {
         "id": f"MAINT{random.randint(1000,9999)}",
         "title": title,
         "descp": descp,
         "issued_date": datetime.utcnow(),
-        "doc_link": gridfs_link 
+        # "doc_link": gridfs_link 
     }
 
     updated = await db.Projects.update_one(
@@ -744,7 +855,7 @@ async def manage_maintenance_reports(
     if updated.modified_count == 0:
         raise HTTPException(status_code=404, detail="Project not found or report not added.")
 
-    return {"message": f"Maintenance report '{title}' added to project {project_id}.", "doc_link": gridfs_link}
+    return {"message": f"Maintenance report '{title}' added to project {project_id}.", "doc_link": "gridfs_link"}
 
 #================= manage hosting details by project_id  ============================
 @app.post("/manage-hostings")
@@ -1038,15 +1149,15 @@ async def add_project_phases(data: ProjectPhaseUpdate):
             "subphases": processed_subphases
         })
 
-    result = db.Projects.update_one(
+    result = await db.Projects.update_one(
         {"project_id": data.project_id},
         {"$set": {"project_status": processed_phases}}
     )
 
-    # if result.modified_count == 0:
-    #     raise HTTPException(status_code=400, detail="Phases data not updated.")
-    # else:
-    return {"message": "Sucessfully added initial phases to project."}
+    if result.modified_count == 0:
+        raise HTTPException(status_code=400, detail="Phases data not updated.")
+    else:
+        return {"message": "Sucessfully added initial phases to project."}
 
 #================ update project phase status ============================
 def infer_status(start: Optional[str], closed: Optional[str]) -> str:
@@ -1084,13 +1195,13 @@ async def update_project_phases(data: ProjectPhaseUpdate):
             "subphases": updated_subphases
         })
 
-    result = db.Projects.update_one(
+    result = await db.Projects.update_one(
         {"project_id": data.project_id},
         {"$set": {"project_status": updated_status}}
     )
 
-    # if result.modified_count == 0:
-    #     raise HTTPException(status_code=400, detail="No changes were made")
+    if result.modified_count == 0:
+        raise HTTPException(status_code=400, detail="No changes were made")
 
     return {"message": "Project phases updated successfully"}
 
@@ -1129,50 +1240,71 @@ async def get_all_details_client(client_id: str):
 
 # ============= Add new client =================
 @app.post("/clients/add")
-async def add_new_client(data: BasicClientInput):
+async def add_new_client(
+    name: str = Form(...),
+    brand_name: str = Form(...),
+    type: str = Form(...),
+    industry: str = Form(...),
+    location: str = Form(...),
+    website: Optional[str] = Form(None),
+    gst_id: str = Form(...),
+    source: str = Form(...),
+    contact_name: str = Form(...),
+    contact_email: EmailStr = Form(...),
+    contact_phone: str = Form(...),
+    contact_designation: str = Form(...),  
+    file: UploadFile = File(...)
+):
     while True:
         random_id = f"CLT{random.randint(1000, 9999)}"
         existing = await db.Clients.find_one({"client_id": random_id})
         if not existing:
             break
+        
+    existing_clients = await db.Clients.find({}).to_list(1000)    
+    for client in existing_clients:
+        if client.get("brand_name") == brand_name or client.get("gst_id") == gst_id:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Client already exists.",
+                headers={"X-Frontend-Message": f"Client already exists."}
+            )  
 
+    logo_url = await upload_file_to_firebase(file, folder=f"PMT/clients/{brand_name}")
+    
     client_data = Client(
         client_id=random_id,
-        name=data.name,
-        brand_name=data.brand_name,
-        logo_url=data.logo_url,
-        type=data.type,
-        industry=data.industry,
-        location=data.location,
-        joined_date = datetime.now(),
-        website=data.website,
-        gst_id=data.gst_id,
-
+        name=name,
+        brand_name=brand_name,
+        logo_url=logo_url,
+        type=type,
+        industry=industry,
+        location=location,
+        website=website,
+        gst_id=gst_id,
         primary_contact=ContactPerson(
-            name=data.contact_name,
-            email=data.contact_email,
-            phone=data.contact_phone,
-            designation=None,
-            linkedin=None
+            name=contact_name,
+            email=contact_email,
+            phone=contact_phone,
+            designation=contact_designation  
         ),
-
         engagement=ClientEngagement(
             joined_date=datetime.utcnow(),
-            source=data.source,
+            source=source,
             onboarding_notes=None,
-            tags=[]
+            tags=[industry, type]
         ),
-
-        documents=ClientDocuments(), 
-        metrics=ClientMetrics() 
+        documents=[],  
+        metrics=ClientMetrics()
     )
 
     await db.Clients.insert_one(client_data.dict())
+
     return {"message": "Client added successfully", "client_id": random_id}
 
-
+# ============= Update existing client =================
 @app.post("/update-client")
-def update_client( data: UpdateClientInput):
+async def update_client( data: UpdateClientInput):
     if not data.client_id:
         raise HTTPException(status_code=400, detail="Client ID is required.")
     
@@ -1181,7 +1313,7 @@ def update_client( data: UpdateClientInput):
         raise HTTPException(status_code=404, detail="Client not found.")
     print (data)
     update_data = {
-        "name": data.name,
+        "name": data.name  if data.brand_name else None,
         "brand_name": data.brand_name if data.brand_name else None,
         "logo_url": data.logo_url if data.logo_url else None,
         "location": data.location if data.location else None,
@@ -1193,10 +1325,105 @@ def update_client( data: UpdateClientInput):
     }
     
     update_fields = {key: value for key, value in update_data.items() if value is not None}
-    result = db.Clients.update_one(
+    result = await db.Clients.update_one(
         {"client_id": data.client_id},
         {"$set": update_fields}
     )
-    # if result.modified_count == 0:
-    #     raise HTTPException(status_code=400, detail="Client not updated.")
+    if result.modified_count == 0:
+        raise HTTPException(status_code=400, detail="Client not updated.")
     return {"message": "Client updated successfully."}
+
+# ============= Add new client documents =================
+@app.post("/add-client-documents")
+async def add_client_documents(
+    doc_name: str = Form(...),
+    doc_type: str = Form(...),
+    client_id: str = Form(...),
+    file: UploadFile = File(...)
+):
+    print("📥 Received request to add client document")
+
+    if not client_id:
+        raise HTTPException(status_code=400, detail="Client ID is required.")
+    
+    client = await db.Clients.find_one({"client_id": client_id})
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found.")
+    
+    if not doc_name or not doc_type:
+        raise HTTPException(status_code=400, detail="Document name and type are required.")
+    
+    for c in client.get("documents", []):
+        if c.get("doc_name").lower() == doc_name.lower() :
+            raise HTTPException(
+                status_code=409,
+                detail=f"Document '{doc_name}' of type '{doc_type}' already exists for this client.",
+                headers={"X-Frontend-Message": f"Document '{doc_name}' already exists."}
+            )
+
+    existing_documents = client.get("documents", [])
+    if not existing_documents:
+        random_id = f"CDOC{random.randint(1000, 9999)}"
+        print("📄 No existing documents, assigned ID:", random_id)
+    else:
+        existing_ids = [doc["id"] for doc in existing_documents if "id" in doc]
+        while True:
+            random_id = f"CDOC{random.randint(1000, 9999)}"
+            if random_id not in existing_ids:
+                print("✅ Unique document ID generated:", random_id)
+                break
+
+    try:
+        print("📤 Uploading document...")
+        doc_link = await upload_file_to_firebase(file, folder=f"PMT/clients/{client['brand_name']}/documents")
+        print("✅ Upload successful")
+    except Exception as e:
+        print("❌ Upload failed:", str(e))
+        raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
+
+
+    document = ClientDocuments(
+        id=random_id,
+        doc_name=doc_name,
+        doc_type=doc_type,
+        doc_url=doc_link,
+        uploaded_at=datetime.now(timezone.utc)
+    ).dict()
+    
+    result = await db.Clients.update_one(
+        {"client_id": client_id},
+        {"$addToSet": {"documents": document}}
+    )
+
+    if result.modified_count == 0:
+        raise HTTPException(status_code=500, detail="Document not added to the client.")
+
+    return {"message": f"✅ Document '{doc_name}' added to client {client_id}.",}
+
+# ============= Add client notes =================
+@app.post("/add-client-notes")
+async def add_client_note(data:dict):
+    if not data.get("client_id"):
+        raise HTTPException(status_code=400, detail="Client ID is required.")
+    
+    if not data.get("note"):
+        raise HTTPException(status_code=400, detail="Note content is required.")
+
+    client = await db.Clients.find_one({"client_id": data.get("client_id")})
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found.")
+
+    note_entry = ClientNote(
+        note= data.get("note"),
+        created_at= datetime.utcnow()
+    ).dict()
+
+    result = await db.Clients.update_one(
+        {"client_id": data.get("client_id")},
+        {"$addToSet": {"notes": note_entry}}
+    )
+
+    if result.modified_count == 0:
+        raise HTTPException(status_code=500, detail="Note not added to the client.")
+
+    return {"message": f"Note added to client {data.get("client_id")}."}

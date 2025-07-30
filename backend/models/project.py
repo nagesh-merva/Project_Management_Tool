@@ -17,6 +17,7 @@ class TeamMember(BaseModel):
     name: str
     role: str
     dept: str
+    profile: Optional[str] = None 
 
 
 class QuickLinks(BaseModel):
@@ -26,13 +27,10 @@ class QuickLinks(BaseModel):
 
 
 class ClientDetails(BaseModel):
+    client_id: str
     name: str
     logo: Optional[str] = None
     domain: Optional[str] = None
-
-class AssignedMember(BaseModel):
-    emp_id: str
-    status: str
 
 class Feature(BaseModel):
     id: str

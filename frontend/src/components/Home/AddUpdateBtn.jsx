@@ -4,7 +4,7 @@ import { useMainContext } from "../../context/MainContext"
 
 const AddUpdateButton = () => {
     const [showPopup, setShowPopup] = useState(false)
-    const { allEmps } = useMainContext()
+    const { allEmps, emp } = useMainContext()
     const [fields, setFields] = useState([
         {
             name: "title",
@@ -17,7 +17,8 @@ const AddUpdateButton = () => {
         },
         {
             name: "update_by",
-            type: "id"
+            type: "stored",
+            value: emp.emp_id
         },
         {
             name: "to",
