@@ -98,7 +98,7 @@ class EmployeeResponse(BaseModel):
     performance_metrics: dict
     status: str
     leaves_taken: int
-    current_projects: Optional[List[str]] = []
+    current_projects: Optional[List[object]] = []
 
 
 # Get Employees by Department

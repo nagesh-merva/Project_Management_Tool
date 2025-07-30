@@ -43,6 +43,15 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
             if (f.name === "to") {
                 newFormData[f.name] = validateTo(newFormData[f.name])
             }
+            if (
+                f.type === "select" && newFormData[f.name] && Array.isArray(newFormData[f.name]) && newFormData[f.name].length === 0) {
+                if (f.multi) {
+                    newFormData[f.name] = [f.fields[0]?.value]
+                } else {
+                    newFormData[f.name] = f.fields[0]?.value
+                }
+
+            }
             if (f.type === "number" && newFormData[f.name] !== undefined) {
                 const val = newFormData[f.name]
                 if (val === "" || val === null) {
@@ -227,9 +236,6 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                             className={`border p-2 rounded w-full ${field.multi ? 'min-h-[100px]' : ''} bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400 scrollbar-thin scrollbar-thumb-blue-300`}
                                             value={formData[field.name] || (field.multi ? [] : '')}
                                         >
-                                            {field.name === "to" && (
-                                                <option key="all" value="all">All</option>
-                                            )}
                                             {field.fields.map((option, idx) => (
                                                 <option key={idx} value={option.value}>
                                                     {option.name}

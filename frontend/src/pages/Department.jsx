@@ -32,6 +32,10 @@ export default function Department() {
                     name: "Maintenance",
                     value: "MAINTENANCE"
                 },
+                {
+                    name: "Administration",
+                    value: "ADMIN"
+                },
             ]
         },
         { name: "role", type: "text", optional: false },

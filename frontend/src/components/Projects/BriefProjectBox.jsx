@@ -48,7 +48,11 @@ const BriefProjectBox = ({ project }) => {
                             className="w-6 h-6 rounded-full bg-gray-300 border border-white text-[10px] flex justify-center items-center"
                             title={member.name}
                         >
-                            {member.name[0]}
+                            {member.profile ? (
+                                <img src={member.profile} alt={member.name} className="w-full h-full rounded-full" />
+                            ) : (
+                                <p> {member.name[0]}</p>
+                            )}
                         </div>
                     ))}
                 </div>

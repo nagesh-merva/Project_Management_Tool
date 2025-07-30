@@ -1,8 +1,10 @@
 import { Eye, Building, Globe, MapPin } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useMainContext } from '../../context/MainContext'
 
 const ClientCard = ({ client }) => {
     const navigate = useNavigate()
+    const { emp } = useMainContext()
 
     const getTypeBadgeColor = (type) => {
         const colors = {
@@ -16,6 +18,10 @@ const ClientCard = ({ client }) => {
     }
 
     const handleViewDetails = () => {
+        if (emp.emp_dept !== "SALES" || emp.role !== "Admin" && emp.role !== "Manager" && emp.role !== "Founder" && emp.role !== "Co-Founder") {
+            alert("You do not have permission to view client details.")
+            return
+        }
         navigate(`/clients/${client.client_id}`)
     }
 

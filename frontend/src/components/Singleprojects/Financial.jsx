@@ -4,6 +4,7 @@ import { Calculator, LucideLandmark, TableRowsSplit, TrendingUp, TrendingDown, C
 import CostBreakdowns from "./CostBreakdowns"
 import SpenditureTable from "./SpenditureTable"
 import FinancialDataForm from "./FinancialDataForm"
+import { useMainContext } from "../../context/MainContext"
 
 const Financial = ({ FinancialData }) => {
     const [data, setData] = useState([
@@ -30,6 +31,7 @@ const Financial = ({ FinancialData }) => {
         }
     ])
     const [ShowForm, setShowForm] = useState(false)
+    const { emp } = useMainContext()
     // console.log(FinancialData)
 
 
@@ -39,6 +41,10 @@ const Financial = ({ FinancialData }) => {
     const isOverBudget = variance < 0
 
     const UpdateFinData = async (payload) => {
+        if (emp.emp_dept !== "SALES" && emp.role !== "Admin" && emp.role !== "Manager" && emp.role !== "Founder") {
+            alert("You are not authorized to update financial data.")
+            return
+        }
         try {
             const response = await fetch("http://127.0.0.1:8000/manage-financial-data", {
                 method: 'PUT',
@@ -64,9 +70,11 @@ const Financial = ({ FinancialData }) => {
                     <h1 className="font-semibold flex items-center gap-1 text-md">
                         <Calculator color="#0C098C" fill="#FF7972" className="w-5 h-5" /> Financial Statements
                     </h1>
-                    <button onClick={() => setShowForm(true)} className="w-auto h-fit px-5 py-1 bg-quickbtn flex items-center justify-center gap-2 rounded-lg hover:bg-btncol/80 transition-all hover:scale-95 text-white">
-                        <LucideLandmark className="w-5 h-5" /> Manage
-                    </button>
+                    {(emp.emp_dept === "SALES" || emp.role === "Manager" || emp.role === "Founder" || emp.role === "Co-Founder") && (
+                        <button onClick={() => setShowForm(true)} className="w-auto h-fit px-5 py-1 bg-quickbtn flex items-center justify-center gap-2 rounded-lg hover:bg-btncol/80 transition-all hover:scale-95 text-white">
+                            <LucideLandmark className="w-5 h-5" /> Manage
+                        </button>
+                    )}
                 </div>
 
                 <div className="h-[124.5px] w-auto flex p-3 justify-around mx-5 gap-6 ">

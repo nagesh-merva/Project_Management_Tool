@@ -24,11 +24,14 @@ import MetricsOverview from '../components/clients/MetricsOverview'
 import Documents from '../components/clients/Documents'
 import Notes from '../components/clients/Notes'
 import BillingAddress from '../components/clients/BillingAddress'
+import { useMainContext } from '../context/MainContext'
 
 
 const ClientDetails = () => {
     const { clientid } = useParams()
     const navigate = useNavigate()
+    const { emp } = useMainContext()
+    const canView = emp.emp_dept === "SALES" && (emp.role === "Admin" || emp.role === "Manager" || emp.role === "Founder" || emp.role === "Co-Founder")
     const [client, setClient] = useState(null)
     const [loading, setLoading] = useState(true)
     const [navOpen, setNavOpen] = useState(false)
@@ -97,6 +100,11 @@ const ClientDetails = () => {
     useEffect(() => {
         const fetchClientDetails = async () => {
             setLoading(true)
+            if (!canView) {
+                alert("You do not have permission to view client details.")
+                navigate('/clients')
+                return
+            }
             try {
                 const response = await fetch(
                     `http://127.0.0.1:8000/client/alldetails?client_id=${clientid}`,
