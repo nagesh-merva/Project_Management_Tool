@@ -9,6 +9,7 @@ import SingleEmployee from "./pages/SingleEmployee"
 import { useMainContext } from "./context/MainContext"
 import ClientsList from "./pages/ClientsList"
 import ClientDetails from "./pages/ClientDetails"
+import Reports from "./pages/reports"
 
 function ProtectedRoute({ children }) {
   const { loggedIn } = useMainContext()
@@ -32,6 +33,7 @@ function App() {
         <Route path="/departments/:id" element={<ProtectedRoute><SingleEmployee /></ProtectedRoute>} />
         <Route path="/clients" element={<ClientsList />} />
         <Route path="/clients/:clientid" element={<ClientDetails />} />
+        <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
       </Routes>
     </div>
   )
