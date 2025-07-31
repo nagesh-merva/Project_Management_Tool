@@ -31,7 +31,7 @@ const ClientDetails = () => {
     const { clientid } = useParams()
     const navigate = useNavigate()
     const { emp } = useMainContext()
-    const canView = emp.emp_dept === "SALES" && (emp.role === "Admin" || emp.role === "Manager" || emp.role === "Founder" || emp.role === "Co-Founder")
+    const canView = emp.emp_dept !== "SALES" || emp.role !== "Admin" || emp.role !== "Manager" || emp.role !== "Founder" || emp.role !== "Co-Founder"
     const [client, setClient] = useState(null)
     const [loading, setLoading] = useState(true)
     const [navOpen, setNavOpen] = useState(false)

@@ -5,6 +5,7 @@ import { useMainContext } from '../../context/MainContext'
 const ClientCard = ({ client }) => {
     const navigate = useNavigate()
     const { emp } = useMainContext()
+    const canView = emp.emp_dept !== "SALES" || emp.role !== "Admin" || emp.role !== "Manager" || emp.role !== "Founder" || emp.role !== "Co-Founder"
 
     const getTypeBadgeColor = (type) => {
         const colors = {
@@ -15,10 +16,12 @@ const ClientCard = ({ client }) => {
             'Government': 'bg-gray-100 text-gray-800 border-gray-200'
         };
         return colors[type] || 'bg-gray-100 text-gray-800 border-gray-200'
+
     }
+    console.log(canView)
 
     const handleViewDetails = () => {
-        if (emp.emp_dept !== "SALES" || emp.role !== "Admin" && emp.role !== "Manager" && emp.role !== "Founder" && emp.role !== "Co-Founder") {
+        if (!canView) {
             alert("You do not have permission to view client details.")
             return
         }
