@@ -18,7 +18,7 @@ const ClientCard = ({ client }) => {
         return colors[type] || 'bg-gray-100 text-gray-800 border-gray-200'
 
     }
-    console.log(canView)
+    // console.log(canView)
 
     const handleViewDetails = () => {
         if (!canView) {

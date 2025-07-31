@@ -432,7 +432,7 @@ const EmployeeDetails = ({ emp }) => {
 
                 <div className="mt-6">
                     <SalaryAccountManager
-                        emp={employeeData}
+                        employee={employeeData}
                         onUpdate={(section, data) => handleUpdate(section, data)}
                     />
                 </div>

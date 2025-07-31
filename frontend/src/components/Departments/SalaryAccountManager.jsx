@@ -1,20 +1,22 @@
 import { useState } from 'react'
 import { DollarSign, Plus, Calendar, CreditCard, Clock, Trash2, Eye, EyeOff } from 'lucide-react'
+import { useMainContext } from '../../context/MainContext'
 
-const SalaryAccountManager = ({ emp, onUpdate }) => {
+const SalaryAccountManager = ({ employee, onUpdate }) => {
     const [showAccount, setShowAccount] = useState(false)
     const [isAddingRecord, setIsAddingRecord] = useState(false)
     const [newRecord, setNewRecord] = useState({
-        salary_paid: emp.salary_monthly || 0,
+        salary_paid: employee.salary_monthly || 0,
         date: new Date().toISOString().split('T')[0],
         reference_id: '',
         working_days: 30
     })
+    const { emp } = useMainContext()
+
 
     const isAdmin = () => {
         try {
-            const user = JSON.parse(localStorage.getItem('emp') || '{}')
-            return user.role === 'admin' || user.emp_dept === "SALES"
+            return emp.emp_dept !== "SALES" || emp.role !== "Admin" || emp.role !== "Manager" || emp.role !== "Founder" || emp.role !== "Co-Founder"
         } catch {
             return false
         }
@@ -25,7 +27,7 @@ const SalaryAccountManager = ({ emp, onUpdate }) => {
             await onUpdate('salary_account', newRecord)
             setIsAddingRecord(false)
             setNewRecord({
-                salary_paid: emp.salary_monthly || 0,
+                salary_paid: employee.salary_monthly || 0,
                 date: new Date().toISOString().split('T')[0],
                 reference_id: '',
                 working_days: 30
@@ -47,12 +49,12 @@ const SalaryAccountManager = ({ emp, onUpdate }) => {
     }
 
     const calculateTotalPaid = () => {
-        return emp.salary_account?.reduce((total, record) => total + record.salary_paid, 0) || 0
+        return employee.salary_account?.reduce((total, record) => total + record.salary_paid, 0) || 0
     }
 
     const getLatestPayment = () => {
-        if (!emp.salary_account || emp.salary_account.length === 0) return null
-        return emp.salary_account.sort((a, b) => new Date(b.date) - new Date(a.date))[0]
+        if (!employee.salary_account || employee.salary_account.length === 0) return null
+        return employee.salary_account.sort((a, b) => new Date(b.date) - new Date(a.date))[0]
     }
 
     const latestPayment = getLatestPayment()
@@ -109,7 +111,7 @@ const SalaryAccountManager = ({ emp, onUpdate }) => {
                         <span className="text-sm font-medium text-purple-800">Records</span>
                     </div>
                     <p className="text-2xl font-bold text-purple-700">
-                        {emp.salary_account?.length || 0}
+                        {employee.salary_account?.length || 0}
                     </p>
                 </div>
             </div>
@@ -211,8 +213,8 @@ const SalaryAccountManager = ({ emp, onUpdate }) => {
                             </tr>
                         </thead>
                         <tbody>
-                            {emp.salary_account && emp.salary_account.length > 0 ? (
-                                emp.salary_account
+                            {employee.salary_account && employee.salary_account.length > 0 ? (
+                                employee.salary_account
                                     .sort((a, b) => new Date(b.date) - new Date(a.date))
                                     .map((record, index) => (
                                         <tr key={index} className="hover:bg-gray-50">
