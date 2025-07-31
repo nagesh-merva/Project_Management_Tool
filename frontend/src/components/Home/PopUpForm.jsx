@@ -33,7 +33,7 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
         const newFormData = { ...formData }
 
         fields.forEach(f => {
-            if (newFormData[f.name] === undefined && !f.optional && f.type !== "stored") {
+            if (newFormData[f.name] === undefined && !f.optional && f.type !== "stored" && (f.type !== "select" && f.multi !== true)) {
                 alert(`Please fill the ${f.name.replace(/_/g, " ")}`)
                 return
             }
@@ -44,7 +44,7 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                 newFormData[f.name] = validateTo(newFormData[f.name])
             }
             if (
-                f.type === "select" && newFormData[f.name] && Array.isArray(newFormData[f.name]) && newFormData[f.name].length === 0) {
+                f.type === "select" && ((Array.isArray(newFormData[f.name]) && newFormData[f.name].length === 0) || newFormData[f.name] === undefined)) {
                 if (f.multi) {
                     newFormData[f.name] = [f.fields[0]?.value]
                 } else {

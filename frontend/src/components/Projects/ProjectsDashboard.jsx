@@ -123,7 +123,7 @@ export default function ProjectsDashboard() {
                         completed.push(data[i])
                     }
                 }
-                console.log("sizes of all", actives.length, issued.length, completed.length)
+                // console.log("sizes of all", actives.length, issued.length, completed.length)
                 setActiveProjs(actives)
                 setIssuedProjs(issued)
                 setCompltProjs(completed)

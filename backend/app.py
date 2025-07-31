@@ -345,6 +345,8 @@ async def get_updates(emp_id: str):
 # ================= Add Update ====================
 @app.post("/add-update")
 async def add_update(update_data: dict):
+    if update_data is None or not update_data.get("to"):
+        raise HTTPException(status_code=400, detail="Update data and recipients are required.")
     update_data["created_on"] = datetime.utcnow()
     while True:
         random_id = f"UPDATE{random.randint(1000, 9999)}"
@@ -397,6 +399,8 @@ async def get_tasks(emp_id: str):
 # ================= Add Task ====================
 @app.post("/add-task")
 async def add_task(task_data: dict):
+    if task_data is None or not task_data.get("members_assigned"):
+        raise HTTPException(status_code=400, detail="Task data and members assigned are required.")
     while True:
         random_id = f"TASK{random.randint(1000, 9999)}"
         existing_task = await db.Tasks.find_one({"task_id": random_id})
