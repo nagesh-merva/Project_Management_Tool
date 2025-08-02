@@ -28,11 +28,13 @@ export default function ProjectsDashboard() {
         },
         {
             name: "start_date",
-            type: "date"
+            type: "date",
+            allowPastDate: false
         },
         {
             name: "deadline",
-            type: "date"
+            type: "date",
+            allowPastDate: false
         },
         {
             name: "team_members",

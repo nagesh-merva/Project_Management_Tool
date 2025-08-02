@@ -209,6 +209,9 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                         }
 
                         if (field.type === "date") {
+                            const now = new Date();
+                            const formattedNow = now.toISOString().slice(0, 16)
+
                             return (
                                 <label key={field.name} className="font-medium">
                                     {field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}:<br />
@@ -218,9 +221,10 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                         required={!field.optional}
                                         onChange={handleChange}
                                         className="border p-2 rounded"
+                                        min={!field.allowPastDate ? formattedNow : undefined}
                                     />
                                 </label>
-                            )
+                            );
                         }
 
                         if (field.type === "select") {

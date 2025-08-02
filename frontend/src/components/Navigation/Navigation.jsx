@@ -1,7 +1,7 @@
 import React from "react"
 import { useNavigate } from "react-router-dom"
 import { useMainContext } from "../../context/MainContext"
-import { Home, PanelsTopLeft, Users, ClipboardPlus, Handshake } from "lucide-react"
+import { Home, PanelsTopLeft, Users, ClipboardPlus, Handshake, FileChartColumn } from "lucide-react"
 
 const Navlinks = [
     {
@@ -15,9 +15,9 @@ const Navlinks = [
         icon: <PanelsTopLeft />
     },
     {
-        name: "Team",
-        link: "/team",
-        icon: <Users />
+        name: "Analytics",
+        link: "/analytics",
+        icon: <FileChartColumn />
     },
     {
         name: "Clients",

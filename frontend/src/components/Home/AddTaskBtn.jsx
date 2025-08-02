@@ -22,7 +22,8 @@ const AddTaskButton = () => {
         },
         {
             name: "deadline",
-            type: "date"
+            type: "date",
+            allowPastDate: false
         },
         {
             name: "members_assigned",

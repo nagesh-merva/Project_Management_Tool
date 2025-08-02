@@ -125,10 +125,10 @@ const ClientsList = () => {
         fetchClients()
     }, [])
 
+
+
     const filteredClients = clients.filter(client => {
-        const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            client.domain.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            client.client_id.toLowerCase().includes(searchTerm.toLowerCase())
+        const matchesSearch = client.domain.toLowerCase().includes(searchTerm.toLowerCase())
 
         const matchesFilter = filterType === 'All' || client.type === filterType
 

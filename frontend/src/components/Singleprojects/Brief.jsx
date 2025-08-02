@@ -29,6 +29,7 @@ const Brief = ({ clientDetails, projBrief, status, start, deadline }) => {
         {
             name: "deadline",
             type: "date",
+            allowPastDate: false
         },
     ])
     const editclientdetails = () => {

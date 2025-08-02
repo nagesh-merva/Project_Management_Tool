@@ -44,7 +44,7 @@ export default function Department() {
         { name: "password", type: "text", optional: false },
         { name: "address", type: "text", optional: false },
         { name: "contact", type: "text", optional: false },
-        { name: "joined_on", type: "date" },
+        { name: "joined_on", type: "date", allowPastDate: true },
         { name: "hired_by", type: "stored", value: emp.emp_id },
         { name: "salary_monthly", type: "number" },
         { name: "emergency_contact", type: "text", optional: true },
