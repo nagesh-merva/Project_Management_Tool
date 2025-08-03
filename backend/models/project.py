@@ -9,6 +9,9 @@ class ProjectStatus(str, Enum):
     active = "active"
     completed = "completed"
     issued = "issued"
+    delayed = "Delayed"
+    on_hold = "On Hold"
+    cancelled = "Cancelled"
 
 
 # ---------- Sub-Classes ----------

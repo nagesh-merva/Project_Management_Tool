@@ -1460,3 +1460,82 @@ async def add_client_note(data:dict):
         raise HTTPException(status_code=500, detail="Note not added to the client.")
 
     return {"message": f"Note added to client {data.get("client_id")}."}
+
+#============================================ ANALYTICS =====================================================================================
+#=============== Get OverviewData ===============================
+@app.get("/overview-analytics-data")
+async def overviewData():
+    now = datetime.now()
+    current_month = now.month
+    current_year = now.year
+
+    employees_cursor = db.Employees.find({"status": "Active"}, {"_id": 0})
+    employees = await employees_cursor.to_list(length=None)
+    total_employees = len(employees)
+
+    Total_performance = sum(emp.get("performance_metrics", {}).get("ratings", 0) for emp in employees)
+    Total_performance = round(Total_performance / total_employees, 2)
+
+    active_projects_cursor = db.Projects.find({"status": "active"}, {"_id": 0})
+    active_projects = await active_projects_cursor.to_list(length=None)
+    count_active_projects = len(active_projects)
+
+    completed_projects_cursor = db.Projects.find({"status": "completed"}, {"_id": 0})
+    completed_projects = await completed_projects_cursor.to_list(length=None)
+    revenue = sum(
+        project.get("financial_data", {}).get("expected_revenue", 0)
+        for project in completed_projects
+        if isinstance(project.get("deadline"), datetime)
+        and project["deadline"].month == current_month
+        and project["deadline"].year == current_year
+    )
+
+    fresh_metrics = {
+        "total_employees": total_employees,
+        "active_projects": count_active_projects,
+        "monthly_completed_project_revenue": revenue,
+        "total_emp_performance": Total_performance
+    }
+
+    analytics_doc = await db.Analytics.find_one({"type": "overview_data"})
+    updated_data = {}
+
+    for key, new_value in fresh_metrics.items():
+        existing = analytics_doc.get("data", {}).get(key) if analytics_doc else None
+
+        if existing:
+            curr_calc_date = existing.get("current_calculated")
+
+            month_diff = 0
+            if isinstance(curr_calc_date, datetime):
+                month_diff = (now.year - curr_calc_date.year) * 12 + (now.month - curr_calc_date.month)
+
+            if month_diff >= 2:
+                updated_data[key] = {
+                    "previous_value": existing.get("current_value"),
+                    "previous_calculated": existing.get("current_calculated"),
+                    "current_value": new_value,
+                    "current_calculated": now
+                }
+            else:
+                updated_data[key] = {
+                    "previous_value": existing.get("previous_value"),
+                    "previous_calculated": existing.get("previous_calculated"),
+                    "current_value": new_value,
+                    "current_calculated": now
+                }
+        else:
+            updated_data[key] = {
+                "previous_value": new_value,
+                "previous_calculated": now,
+                "current_value": new_value,
+                "current_calculated": now
+            }
+
+    await db.Analytics.update_one(
+        {"type": "overview_data"},
+        {"$set": {"data": updated_data}},
+        upsert=True
+    )
+
+    return updated_data
