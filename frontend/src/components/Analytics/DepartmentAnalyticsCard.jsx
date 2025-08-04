@@ -55,22 +55,20 @@ const DepartmentAnalyticsCard = ({ department }) => {
                         <DollarSign className="text-green-600" size={18} />
                         Budget Usage
                     </h4>
-                    <span className={`text-sm font-medium ${getBudgetColor(department.budgetUsage.percentage)}`}>
-                        {department.budgetUsage.percentage}%
-                    </span>
+
                 </div>
                 <div className="relative">
                     <div className="w-full bg-gray-200 rounded-full h-3">
-                        <div
-                            className={`h-3 rounded-full transition-all duration-500 ${department.budgetUsage.percentage >= 90 ? 'bg-red-500' :
-                                department.budgetUsage.percentage >= 70 ? 'bg-yellow-500' : 'bg-green-500'
+                        {/* <div
+                            className={`h-3 rounded-full transition-all duration-500 ${department.budgetUsage?.percentage >= 90 ? 'bg-red-500' :
+                                department.budgetUsage?.percentage >= 70 ? 'bg-yellow-500' : 'bg-green-500'
                                 }`}
                             style={{ width: `${department.budgetUsage.percentage}%` }}
-                        ></div>
+                        ></div> */}
                     </div>
                     <div className="flex justify-between text-xs text-gray-600 mt-1">
-                        <span>₹{department.budgetUsage.used.toLocaleString()}</span>
-                        <span>₹{department.budgetUsage.allocated.toLocaleString()}</span>
+                        <span>₹{department.budgetUsage.toLocaleString()}</span>
+                        {/* <span>₹{department.budgetUsage.allocated.toLocaleString()}</span> */}
                     </div>
                 </div>
             </div>
