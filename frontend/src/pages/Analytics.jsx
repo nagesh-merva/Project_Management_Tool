@@ -14,7 +14,9 @@ import {
     TrendingUp,
     CheckCircle,
     Award,
-    AlertTriangle
+    AlertTriangle,
+    Hammer,
+    SquarePercent
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import EmployeeAnalyticsCard from "../components/Analytics/EmployeeAnalyticsCard"
@@ -22,11 +24,40 @@ import DepartmentAnalyticsCard from "../components/Analytics/DepartmentAnalytics
 import GoalTrackingCard from "../components/Analytics/GoalTrackingCard"
 import ProjectAnalyticsCard from "../components/Analytics/ProjectAnalyticsCard"
 import SalesFinanceCard from "../components/Analytics/SalesFinanceCard"
+import Loading from "../components/Loading"
 
 export default function Analytics() {
     const [navOpen, setNavOpen] = useState(false)
     const [activeTab, setActiveTab] = useState('overview')
     const [searchTerm, setSearchTerm] = useState('')
+    const [loading, setLoading] = useState(false)
+    const [departmentsData, setDepartmentsData] = useState([
+        {
+            id: "SALES",
+            icon: TrendingUp,
+            color: 'bg-green-500',
+        },
+        {
+            id: "DEV",
+            icon: Building,
+            color: 'bg-orange-500',
+        },
+        {
+            id: "DESIGN",
+            icon: Award,
+            color: 'bg-purple-500',
+        },
+        {
+            id: "MAINTENANCE",
+            icon: Hammer,
+            color: 'bg-red-500'
+        },
+        {
+            id: "ADMIN",
+            icon: SquarePercent,
+            color: 'bg-blue-500'
+        }
+    ])
     const [overviewStats, setOverviewStats] = useState([
         {
             title: 'Total Employees',
@@ -34,7 +65,8 @@ export default function Analytics() {
             value: null,
             icon: Users,
             color: 'blue',
-            change: null
+            change: null,
+            preValue: null
         },
         {
             title: 'Active Projects',
@@ -42,7 +74,8 @@ export default function Analytics() {
             value: null,
             icon: FolderOpen,
             color: 'green',
-            change: null
+            change: null,
+            preValue: null
         },
         {
             title: 'Monthly Revenue',
@@ -50,7 +83,8 @@ export default function Analytics() {
             value: null,
             icon: DollarSign,
             color: 'purple',
-            change: null
+            change: null,
+            preValue: null
         },
         {
             title: 'Avg Performance',
@@ -58,12 +92,16 @@ export default function Analytics() {
             value: null,
             icon: Award,
             color: 'orange',
-            change: null
+            change: null,
+            preValue: null
         }
     ])
 
     useEffect(() => {
+        setLoading(true)
         FetchOverviewData()
+        FetchDeptData()
+        setLoading(false)
     }, [])
 
     const FetchOverviewData = async () => {
@@ -85,7 +123,7 @@ export default function Analytics() {
 
                     let percentChange = 0;
                     if (typeof prev === 'number' && prev !== 0) {
-                        percentChange = ((curr - prev) / prev) * 100
+                        percentChange = ((curr - prev) / prev) * 100  // [ change - 1 ]* curr /100
                     }
 
                     let formattedValue = curr;
@@ -98,11 +136,36 @@ export default function Analytics() {
                     return {
                         ...stat,
                         value: formattedValue,
-                        change: `${percentChange >= 0 ? '+' : ''}${percentChange.toFixed(1)}%`
+                        change: `${percentChange >= 0 ? '+' : ''}${percentChange.toFixed(1)}%`,
+                        preValue: prev
                     }
                 })
 
                 setOverviewStats(updatedStats)
+            }
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const FetchDeptData = async () => {
+        try {
+            const response = await fetch("http://127.0.0.1:8000/dept-performance-analytics", {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+            })
+
+            const data = await response.json()
+
+            if (response.status === 200 || response.status === 201) {
+                const mergedData = departmentsData.map(dept => {
+                    const stat = data.find(s => s.id === dept.id || s.name?.toUpperCase().includes(dept.id))
+                    return stat ? { ...dept, ...stat } : dept
+                })
+
+                setDepartmentsData(mergedData)
             }
         } catch (err) {
             console.error(err)
@@ -153,78 +216,6 @@ export default function Analytics() {
             lastPromotion: '2023-03-10',
             leavesTaken: 12,
             documents: ['Sales Reports', 'Contract', 'Training Certificates']
-        }
-    ]
-
-    const departmentsData = [
-        {
-            name: 'Development',
-            icon: Building,
-            color: 'bg-blue-500',
-            totalEmployees: 15,
-            ongoingProjects: 8,
-            performanceScore: 8.2,
-            deliveryRate: 94,
-            budgetUsage: {
-                allocated: 500000,
-                used: 420000,
-                percentage: 84
-            },
-            topPerformers: [
-                { name: 'John Doe', rating: 8.5 },
-                { name: 'Alice Smith', rating: 8.3 },
-                { name: 'Bob Wilson', rating: 8.1 }
-            ],
-            pendingRequests: [
-                { type: 'Approvals', count: 5 },
-                { type: 'Documents', count: 3 }
-            ]
-        },
-        {
-            name: 'Design',
-            icon: Award,
-            color: 'bg-purple-500',
-            totalEmployees: 8,
-            ongoingProjects: 5,
-            performanceScore: 8.8,
-            deliveryRate: 96,
-            budgetUsage: {
-                allocated: 200000,
-                used: 150000,
-                percentage: 75
-            },
-            topPerformers: [
-                { name: 'Sarah Wilson', rating: 9.2 },
-                { name: 'Emma Davis', rating: 8.7 },
-                { name: 'Tom Brown', rating: 8.4 }
-            ],
-            pendingRequests: [
-                { type: 'Reviews', count: 2 },
-                { type: 'Assets', count: 4 }
-            ]
-        },
-        {
-            name: 'Sales',
-            icon: TrendingUp,
-            color: 'bg-green-500',
-            totalEmployees: 12,
-            ongoingProjects: 10,
-            performanceScore: 7.9,
-            deliveryRate: 88,
-            budgetUsage: {
-                allocated: 300000,
-                used: 280000,
-                percentage: 93
-            },
-            topPerformers: [
-                { name: 'Mike Johnson', rating: 7.8 },
-                { name: 'Lisa Garcia', rating: 7.6 },
-                { name: 'David Lee', rating: 7.4 }
-            ],
-            pendingRequests: [
-                { type: 'Proposals', count: 7 },
-                { type: 'Contracts', count: 2 }
-            ]
         }
     ]
 
@@ -373,7 +364,10 @@ export default function Analytics() {
                     <div className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             {overviewStats?.map((stat, index) => (
-                                <div key={index} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                                <div key={index} className="relative group bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                                        last month we had {stat.preValue}
+                                    </div>
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
@@ -402,10 +396,10 @@ export default function Analytics() {
                                                 <div className={`w-8 h-8 rounded-lg ${dept.color} flex items-center justify-center`}>
                                                     <dept.icon className="text-white" size={16} />
                                                 </div>
-                                                <span className="font-medium text-gray-900">{dept.name}</span>
+                                                <span className="font-medium text-gray-900">{dept.name ? dept.name : dept.id}</span>
                                             </div>
                                             <div className="text-right">
-                                                <p className="font-bold text-gray-900">{dept.performanceScore}/10</p>
+                                                <p className="font-bold text-gray-900">{dept.performanceScore}/5</p>
                                                 <p className="text-xs text-gray-600">{dept.totalEmployees} employees</p>
                                             </div>
                                         </div>
@@ -493,7 +487,8 @@ export default function Analytics() {
 
 
     return (
-        <div className="relative h-full w-full flex flex-col bg-gray-100 min-w-[800px]">
+        <div className="relative h-full min-h-screen w-full flex flex-col bg-gray-100 min-w-[800px]">
+
             <button
                 className="fixed top-4 left-4 z-50 md:hidden bg-white p-2 rounded shadow"
                 onClick={() => setNavOpen(!navOpen)}
@@ -522,61 +517,65 @@ export default function Analytics() {
             )}
             <div className="w-full md:w-[87%] h-full pt-20 flex place-self-end justify-center transition-all duration-300">
                 <Header />
-                <div className="md:px-10 w-full h-full min-h-svh">
-                    <div className="p-8">
-                        <div className="mb-8">
-                            <div className="flex items-center justify-between mb-6">
-                                <div>
-                                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Analytics Dashboard</h1>
-                                    <p className="text-gray-600">
-                                        Comprehensive insights into employee performance, projects, and business metrics
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <Download size={16} />
-                                        Export
-                                    </button>
-                                    <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                                        <RefreshCw size={16} />
-                                        Refresh
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
-                                <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg overflow-x-auto">
-                                    {tabs.map((tab) => (
-                                        <button
-                                            key={tab.id}
-                                            onClick={() => setActiveTab(tab.id)}
-                                            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${activeTab === tab.id
-                                                ? 'bg-white text-blue-600 shadow-sm'
-                                                : 'text-gray-600 hover:text-gray-900'
-                                                }`}
-                                        >
-                                            <tab.icon size={16} />
-                                            {tab.label}
-                                        </button>
-                                    ))}
-                                </div>
-
-                                {(activeTab === 'employees' || activeTab === 'projects') && (
-                                    <div className="relative">
-                                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                                        <input
-                                            type="text"
-                                            placeholder={`Search ${activeTab}...`}
-                                            value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                                        />
+                {loading ? (
+                    <Loading />
+                ) : (<>
+                    <div className="md:px-10 w-full h-full min-h-svh">
+                        <div className="p-8">
+                            <div className="mb-8">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div>
+                                        <h1 className="text-3xl font-bold text-gray-900 mb-2">Analytics Dashboard</h1>
+                                        <p className="text-gray-600">
+                                            Comprehensive insights into employee performance, projects, and business metrics
+                                        </p>
                                     </div>
-                                )}
+                                    <div className="flex items-center gap-3">
+                                        <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                            <Download size={16} />
+                                            Export
+                                        </button>
+                                        <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                            <RefreshCw size={16} />
+                                            Refresh
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+                                    <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg overflow-x-auto">
+                                        {tabs.map((tab) => (
+                                            <button
+                                                key={tab.id}
+                                                onClick={() => setActiveTab(tab.id)}
+                                                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${activeTab === tab.id
+                                                    ? 'bg-white text-blue-600 shadow-sm'
+                                                    : 'text-gray-600 hover:text-gray-900'
+                                                    }`}
+                                            >
+                                                <tab.icon size={16} />
+                                                {tab.label}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {(activeTab === 'employees' || activeTab === 'projects') && (
+                                        <div className="relative">
+                                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                                            <input
+                                                type="text"
+                                                placeholder={`Search ${activeTab}...`}
+                                                value={searchTerm}
+                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
                             </div>
+                            {renderTabContent()}
                         </div>
-                        {renderTabContent()}
                     </div>
-                </div>
+                </>)}
             </div>
         </div>
     )

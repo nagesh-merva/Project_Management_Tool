@@ -1539,3 +1539,75 @@ async def overviewData():
     )
 
     return updated_data
+
+@app.get("/dept-performance-analytics")
+async def dept_performance_analytics():
+    departments_cursor = db.Departments.find({}, {"_id": 0})
+    departments = await departments_cursor.to_list(length=None)
+
+    projects_cursor = db.Projects.find({}, {"_id": 0})
+    all_projects = await projects_cursor.to_list(length=None)
+
+    tasks_cursor = db.Tasks.find({}, {"_id": 0})
+    all_tasks = await tasks_cursor.to_list(length=None)
+
+    result = []
+
+    for dept in departments:
+        dept_id = dept["dept_id"]
+        dept_name = dept["dept_name"]
+
+        employees_cursor = db.Employees.find({"emp_dept": dept_id, "status": "Active"}, {"_id": 0})
+        employees = await employees_cursor.to_list(length=None)
+        total_employees = len(employees)
+
+        top_performers = sorted(
+            [{"name": emp["emp_name"], "rating": emp.get("performance_metrics").get("ratings",0)} for emp in employees],
+            key=lambda x: x["rating"],
+            reverse=True
+        )[:3]
+
+        dept_projects = [
+            proj for proj in all_projects
+            if any(member.get("dept") == dept_id for member in proj.get("team_members", []))
+        ]
+        ongoing_projects = sum(1 for p in dept_projects if p.get("status") == "active")
+
+        budget_used = 0
+        for proj in all_projects:
+            financial_data = proj.get("financial_data") or {}
+            spenditure_analysis = financial_data.get("spenditure_analysis", [])
+            for s in spenditure_analysis:
+                if s.get("dept") == dept_id:
+                    budget_used += int(s.get("cost"))
+        
+        dept_tasks = [t for t in all_tasks if t.get("department") == dept_id]
+        completed_tasks = sum(1 for t in dept_tasks if t.get("status") == "Completed")
+        total_tasks = len(dept_tasks)
+        delivery_rate = round((completed_tasks / total_tasks) * 100, 2) if total_tasks else 0
+
+        pending_requests = {}
+        for task in dept_tasks:
+            if task.get("status") == "assigned" or task.get("status") == "uncomplete":
+                req_type = task.get("type", "Other")
+                pending_requests[req_type] = pending_requests.get(req_type, 0) + 1
+
+        pending_requests_list = [{"type": k, "count": v} for k, v in pending_requests.items()]
+
+
+        ratings = [emp.get("performance_metrics",{}).get("ratings",0) for emp in employees]
+        performance_score = round(sum(ratings) / len(ratings), 1) if ratings else 0
+
+        result.append({
+            "id":dept_id,
+            "name":dept_name ,
+            "totalEmployees": total_employees,
+            "ongoingProjects": ongoing_projects,
+            "performanceScore": performance_score,
+            "deliveryRate": delivery_rate,
+            "budgetUsage": budget_used,
+            "topPerformers": top_performers,
+            "pendingRequests": pending_requests_list
+        })
+
+    return result
