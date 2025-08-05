@@ -3,7 +3,7 @@ import { Calendar, Timer, SquarePen } from "lucide-react";
 import { useState } from "react";
 import PopupForm from "../Home/PopUpForm";
 import { useParams } from "react-router-dom";
-const Brief = ({ clientDetails, projBrief, status, start, deadline }) => {
+const Brief = ({ clientDetails, project_name, projBrief, status, start, deadline }) => {
     const [showPopup, setShowPopup] = useState(false)
     const { id } = useParams()
     const [fields, setFields] = useState([
@@ -14,7 +14,8 @@ const Brief = ({ clientDetails, projBrief, status, start, deadline }) => {
         },
         {
             name: "descp",
-            type: "textarea"
+            type: "textarea",
+            optional: true
         },
         {
             name: "status",
@@ -24,12 +25,14 @@ const Brief = ({ clientDetails, projBrief, status, start, deadline }) => {
                 { name: "inactive", value: "inactive" },
                 { name: "completed", value: "completed" }
             ],
-            multi: false
+            multi: false,
+            optional: true
         },
         {
             name: "deadline",
             type: "date",
-            allowPastDate: false
+            allowPastDate: false,
+            optional: true
         },
     ])
     const editclientdetails = () => {
@@ -41,16 +44,16 @@ const Brief = ({ clientDetails, projBrief, status, start, deadline }) => {
                 <div className="flex h-fit items-center justify-between">
                     <div className="flex items-center mx-6 my-3 space-x-5">
                         <h1 className=" text-xl font-semibold">{clientDetails?.name}</h1>
-                        {/* {clientDetails.logo ? (
-                        <img src={clientDetails.logo} alt="client logo" />
-                    ) : ( */}
+                        {/* {clientDetails.logo !== null ? (
+                            <img src={clientDetails.logo} alt="client logo" />
+                        ) : ( */}
                         <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xl font-bold">
                             {clientDetails?.name[0]}
                         </div>
                         {/* )} */}
                     </div>
                     <div className="flex mx-4">
-                        <button className="mx-4 my-3 px-10 py-2 flex items-center bg-green-200 rounded-3xl text-nowrap h-8 w-34 text-green-600 group group-hover:scale-95 hover:bg-btncol/80 transition-all font-normal">
+                        <button className={` ${status === "inactive" ? "text-gray-500 bg-gray-200" : (status === "delayed" || status === "uncomplete") ? "text-red-500 bg-red-200" : "text-green-600 bg-green-200"} mx-4 my-3 px-10 py-2 flex items-center rounded-3xl text-nowrap h-8 w-34 group group-hover:scale-95 hover:bg-btncol/80 transition-all font-normal`}>
                             <h1 className="font-semibold group-hover:text-white transition-colors">{status}</h1>
                         </button>
 
@@ -58,6 +61,7 @@ const Brief = ({ clientDetails, projBrief, status, start, deadline }) => {
                     </div>
                 </div>
                 <div className="w-4/5 mt-3 mb-6 mr-20 ml-6 font-medium text-gray-400">
+                    <h1>{project_name}</h1>
                     <p>{projBrief}</p>
                 </div>
                 <div className="flex justify-between">

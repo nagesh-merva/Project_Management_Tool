@@ -85,7 +85,7 @@ function Singleproject() {
                     <>
                         <Header />
                         <div className="w-full h-full space-y-5">
-                            <Brief clientDetails={projectDetails.client_details} projBrief={projectDetails.descp} status={projectDetails.status} start={projectDetails.start_date} deadline={projectDetails.deadline} />
+                            <Brief clientDetails={projectDetails.client_details} project_name={projectDetails.project_name} projBrief={projectDetails.descp} status={projectDetails.status} start={projectDetails.start_date} deadline={projectDetails.deadline} />
                             <div className="w-full h-80 flex ">
                                 <Teammember members={projectDetails.team_members} />
                                 <Features features={projectDetails.features} />

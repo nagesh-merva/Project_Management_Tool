@@ -117,9 +117,9 @@ export default function ProjectsDashboard() {
                 const issued = []
                 const completed = []
                 for (let i = 0; i < data.length; i++) {
-                    if (data[i].status === "active") {
+                    if (data[i].status === "active" || data[i].status === "delayed") {
                         actives.push(data[i])
-                    } else if (data[i].status === "issued") {
+                    } else if (data[i].status === "issued" || data[i].status == "inactive") {
                         issued.push(data[i])
                     } else {
                         completed.push(data[i])
