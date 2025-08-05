@@ -1560,12 +1560,18 @@ async def dept_performance_analytics():
         employees_cursor = db.Employees.find({"emp_dept": dept_id, "status": "Active"}, {"_id": 0})
         employees = await employees_cursor.to_list(length=None)
         total_employees = len(employees)
+        
+        top_performers_raw = []
+        total_Salary_Account = 0
 
-        top_performers = sorted(
-            [{"name": emp["emp_name"], "rating": emp.get("performance_metrics").get("ratings",0)} for emp in employees],
-            key=lambda x: x["rating"],
-            reverse=True
-        )[:3]
+        for emp in employees:
+            total_Salary_Account += emp.get("salary_monthly", 0)
+            top_performers_raw.append({
+                "name": emp["emp_name"],
+                "rating": emp.get("performance_metrics", {}).get("ratings", 0)
+            })
+
+        top_performers = sorted(top_performers_raw, key=lambda x: x["rating"], reverse=True)[:3]
 
         dept_projects = [
             proj for proj in all_projects
@@ -1581,18 +1587,20 @@ async def dept_performance_analytics():
                 if s.get("dept") == dept_id:
                     budget_used += int(s.get("cost"))
         
-        dept_tasks = [t for t in all_tasks if t.get("department") == dept_id]
-        completed_tasks = sum(1 for t in dept_tasks if t.get("status") == "Completed")
+        dept_emp_ids = {emp["emp_id"] for emp in employees}
+        dept_tasks = [
+            t for t in all_tasks
+            if any(member.get("emp_id") in dept_emp_ids for member in t.get("members_assigned", []))
+        ]
+
+        completed_tasks = sum(1 for t in dept_tasks if t.get("status") == "done")
         total_tasks = len(dept_tasks)
         delivery_rate = round((completed_tasks / total_tasks) * 100, 2) if total_tasks else 0
 
-        pending_requests = {}
+        pending_requests = []
         for task in dept_tasks:
             if task.get("status") == "assigned" or task.get("status") == "uncomplete":
-                req_type = task.get("type", "Other")
-                pending_requests[req_type] = pending_requests.get(req_type, 0) + 1
-
-        pending_requests_list = [{"type": k, "count": v} for k, v in pending_requests.items()]
+                pending_requests.append(task)
 
 
         ratings = [emp.get("performance_metrics",{}).get("ratings",0) for emp in employees]
@@ -1606,8 +1614,9 @@ async def dept_performance_analytics():
             "performanceScore": performance_score,
             "deliveryRate": delivery_rate,
             "budgetUsage": budget_used,
+            "totalSalaryAccount":total_Salary_Account,
             "topPerformers": top_performers,
-            "pendingRequests": pending_requests_list
+            "pendingRequests": pending_requests
         })
 
     return result

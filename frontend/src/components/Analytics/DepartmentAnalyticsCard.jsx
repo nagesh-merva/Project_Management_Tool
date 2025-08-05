@@ -10,11 +10,25 @@ import {
 } from 'lucide-react'
 
 const DepartmentAnalyticsCard = ({ department }) => {
-    const getBudgetColor = (percentage) => {
-        if (percentage >= 90) return 'text-red-600'
-        if (percentage >= 70) return 'text-yellow-600'
-        return 'text-green-600'
+    const salary = department.totalSalaryAccount
+    const budget = department.budgetUsage
+
+    const efficiencyRatio = budget / salary
+    const usagePercent = Math.min((salary * 100) / budget, 100)
+
+    let barColor = 'bg-green-500'
+    let extraRevenue = 0
+
+    if (efficiencyRatio < 1) {
+        barColor = 'bg-red-500'
+    } else if (efficiencyRatio < 1.3) {
+        barColor = 'bg-yellow-500'
+    } else {
+        barColor = 'bg-green-500'
+        extraRevenue = budget - salary
     }
+
+    // console.log(department.topPerformers)
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -58,17 +72,26 @@ const DepartmentAnalyticsCard = ({ department }) => {
 
                 </div>
                 <div className="relative">
-                    <div className="w-full bg-gray-200 rounded-full h-3">
-                        {/* <div
-                            className={`h-3 rounded-full transition-all duration-500 ${department.budgetUsage?.percentage >= 90 ? 'bg-red-500' :
-                                department.budgetUsage?.percentage >= 70 ? 'bg-yellow-500' : 'bg-green-500'
-                                }`}
-                            style={{ width: `${department.budgetUsage.percentage}%` }}
-                        ></div> */}
+                    <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                        <div
+                            className={`h-3 rounded-full transition-all duration-500 ${barColor}`}
+                            style={{ width: `${usagePercent}%` }}
+                        ></div>
                     </div>
                     <div className="flex justify-between text-xs text-gray-600 mt-1">
-                        <span>₹{department.budgetUsage.toLocaleString()}</span>
-                        {/* <span>₹{department.budgetUsage.allocated.toLocaleString()}</span> */}
+                        <span>
+                            <strong>Fixed Salary Cost:</strong> ₹{salary.toLocaleString()}
+                        </span>
+                        <span>
+                            <strong>Budget Usage:</strong> ₹{budget.toLocaleString()}
+                        </span>
+                    </div>
+                    <div className="text-xs text-gray-700 mt-1 italic">
+                        {efficiencyRatio < 1
+                            ? `${(efficiencyRatio * 100).toFixed(1)}% of salary recovered — underperforming`
+                            : efficiencyRatio < 1.3
+                                ? `Break-even zone — ${(efficiencyRatio * 100).toFixed(1)}% efficiency`
+                                : `Profitable — ₹${extraRevenue.toLocaleString()} extra revenue generated`}
                     </div>
                 </div>
             </div>
@@ -101,7 +124,7 @@ const DepartmentAnalyticsCard = ({ department }) => {
                     ))}
                 </div>
             </div>
-            <div>
+            {/* <div>
                 <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                     <Clock className="text-orange-600" size={18} />
                     Pending Requests
@@ -117,7 +140,7 @@ const DepartmentAnalyticsCard = ({ department }) => {
                         </div>
                     ))}
                 </div>
-            </div>
+            </div> */}
         </div>
     )
 }
