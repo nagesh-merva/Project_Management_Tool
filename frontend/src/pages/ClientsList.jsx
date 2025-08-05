@@ -24,8 +24,8 @@ const ClientsList = () => {
             optional: false
         },
         {
-            name: "logo_url",
-            type: "text",
+            name: "file",
+            type: "file",
             optional: false
         },
         {
@@ -33,6 +33,10 @@ const ClientsList = () => {
             type: "select",
             multi: false,
             fields: [
+                { name: "LLC", value: "LLC" },
+                { name: "PVT-LTD", value: "PVT-LTD" },
+                { name: "Partnership", value: "Partnership" },
+                { name: "Sole-Proprietorship", value: "Sole-Proprietorship" },
                 { name: "Startup", value: "Startup" },
                 { name: "NGO", value: "NGO" },
                 { name: "Enterprise", value: "Enterprise" },
@@ -78,12 +82,19 @@ const ClientsList = () => {
             optional: false
         },
         {
+            name: "contact_designation",
+            type: "text",
+            optional: false
+        },
+        {
             name: "contact_email",
-            type: "email"
+            type: "email",
+            optional: false
         },
         {
             name: "contact_phone",
-            type: "text"
+            type: "text",
+            optional: false
         }
     ])
 
@@ -114,10 +125,10 @@ const ClientsList = () => {
         fetchClients()
     }, [])
 
+
+
     const filteredClients = clients.filter(client => {
-        const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            client.domain.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            client.client_id.toLowerCase().includes(searchTerm.toLowerCase())
+        const matchesSearch = client.domain.toLowerCase().includes(searchTerm.toLowerCase())
 
         const matchesFilter = filterType === 'All' || client.type === filterType
 

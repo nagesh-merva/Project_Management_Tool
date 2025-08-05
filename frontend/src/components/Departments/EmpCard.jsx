@@ -12,13 +12,17 @@ const EmployeeCard = ({ employee, dept }) => {
         <div className="relative bg-white w-full h-full rounded-2xl shadow-xl p-4 ">
             <div className="w-2/5 flex justify-center items-center">
                 <div className="h-16 w-16 rounded-full border-2 border-violet-500 bg-btncol/20 flex justify-center items-center scale-75 md:scale-90 lg:scale-100">
-                    <p className="text-2xl font-bold text-btncol">{employee.emp_name[0]}</p>
+                    {employee.profile ? (
+                        <img src={employee.profile} alt="Profile" className="h-full w-full rounded-full object-cover" />
+                    ) : (
+                        <p className="text-2xl font-bold text-btncol">{employee.emp_name[0]}</p>
+                    )}
                 </div>
                 <div className="absolute top-0 right-4 bg-blue-100 w-1/2 h-[100px] rounded-t-lg flex flex-col items-center justify-center ">
                     <button onClick={() => ViewEmployee(employee.emp_id)}><Settings size={20} className="absolute right-1 top-1 text-gray-500 hover:text-black cursor-pointer text-md" /></button>
-                    <div className="flex justify-center">
+                    <div className="flex justify-center ">
                         {Array.from({ length: employee.performance_metrics.ratings }).map((_, index) => (
-                            <Star key={index} className="text-violet-500 text-lg mx-[1px]" />
+                            <Star key={index} className="text-violet-500 text-sm lg:text-md xl:text-lg mx-[1px]" />
                         ))}
                     </div>
                     <p className="text-sm font-semibold mt-1 px-2 text-center" >{employee.role}</p>
@@ -31,7 +35,7 @@ const EmployeeCard = ({ employee, dept }) => {
                     <p><span className="font-semibold">Department :</span> {dept}</p>
                     <p><span className="font-semibold">Performance :</span> {employee.performance_metrics.ratings}</p>
                     <p><span className="font-semibold">Remark :</span></p>
-                    <p>{employee.performance_metrics.remarks}</p>
+                    <p className="line-clamp-2 text-ellipsis">{employee.performance_metrics.remarks}</p>
                 </div>
             </div>
         </div>

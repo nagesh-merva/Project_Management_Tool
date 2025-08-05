@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional, Dict
 from datetime import datetime
 from enum import Enum
@@ -9,6 +9,9 @@ class ProjectStatus(str, Enum):
     active = "active"
     completed = "completed"
     issued = "issued"
+    delayed = "Delayed"
+    on_hold = "On Hold"
+    cancelled = "Cancelled"
 
 
 # ---------- Sub-Classes ----------
@@ -17,6 +20,7 @@ class TeamMember(BaseModel):
     name: str
     role: str
     dept: str
+    profile: Optional[str] = None 
 
 
 class QuickLinks(BaseModel):
@@ -26,13 +30,10 @@ class QuickLinks(BaseModel):
 
 
 class ClientDetails(BaseModel):
+    client_id: str
     name: str
     logo: Optional[str] = None
     domain: Optional[str] = None
-
-class AssignedMember(BaseModel):
-    emp_id: str
-    status: str
 
 class Feature(BaseModel):
     id: str
@@ -41,7 +42,7 @@ class Feature(BaseModel):
     status: str
     created_by: str
     tasks : List[str]
-    verifiend: bool
+    verified: bool
 
 
 class SRS(BaseModel):
@@ -79,10 +80,11 @@ class TemplateFields(BaseModel):
     id : str
     title : str
     descp : str
-    remark : str
+    remark : bool
 
 class Template(BaseModel):
-    fields : TemplateFields
+    id: str
+    fields : List[TemplateFields]
     template_name: str
     department: str
     phase: str
@@ -95,19 +97,23 @@ class CustomLink(BaseModel):
 
 # ---------- Restricted Data ----------
 class CostBreakdown(BaseModel):
-    cost: float
-    title: str
-    id: str
-    calc_brief: str
+    cost: Optional[float] = 0
+    title: Optional[str] = None
+    id: Optional[str] = None
+    calc_brief: Optional[str] = None
     
-
+class SpenditureAnalysis(BaseModel):
+    month: Optional[str] = None
+    dept: Optional[str] = None
+    cost: Optional[float] = None
+    id:Optional[str] = None
 
 class FinancialData(BaseModel):
-    total_budget: float
-    expected_revenue: float
-    profit_margin: float
-    cost_breakdown: List[CostBreakdown]
-    spenditure_analysis: List[Dict[str, str]]  # {month, dept, cost}
+    total_budget: Optional[float] = 0
+    expected_revenue: Optional[float] = 0
+    profit_margin: Optional[float] = 0
+    cost_breakdown: List[CostBreakdown] = Field(default_factory=list)
+    spenditure_analysis: List[SpenditureAnalysis] = Field(default_factory=list)
 
 
 class PerformanceMetrics(BaseModel):
@@ -132,17 +138,17 @@ class Project(BaseModel):
     team_members: List[TeamMember]
     quick_links: QuickLinks
     client_details: ClientDetails
-    features: List[Feature]
-    srs: SRS
-    project_status: List[ProjectPhase]
-    issues_and_maintenance_reports: List[IssueMaintenanceReport]
-    hosting_details: List[HostingDetail]
-    templates: List[Template]
-    links: List[CustomLink]
-
-    # Restricted Data
-    financial_data: Optional[FinancialData] = None
-    performance_metrics: Optional[PerformanceMetrics] = None
+    features: List[Feature] = Field(default_factory=list)
+    srs: SRS = Field(default_factory=SRS)
+    project_status: List[ProjectPhase] = Field(default_factory=list)
+    issues_and_maintenance_reports: List[IssueMaintenanceReport] = Field(default_factory=list)
+    hosting_details: List[HostingDetail] = Field(default_factory=list)
+    templates: List[Template] = Field(default_factory=list)
+    links: List[CustomLink] = Field(default_factory=list)
+    quick_links: QuickLinks = Field(default_factory=QuickLinks)
+    #financial data
+    financial_data: FinancialData = Field(default_factory=FinancialData)
+    performance_metrics: PerformanceMetrics = Field(default_factory=PerformanceMetrics)
 
 
 class AddProjectRequest(BaseModel):
@@ -152,3 +158,18 @@ class AddProjectRequest(BaseModel):
     deadline: datetime
     team_members: List[str]
     client_details: str
+    
+class SubPhaseInput(BaseModel):
+    subphase: str
+    start_date: Optional[str] = None
+    closed_date: Optional[str] = None
+    remarks: Optional[str] = None
+
+class PhaseInput(BaseModel):
+    parent_phase: str
+    subphases: List[SubPhaseInput]
+    
+class ProjectPhaseUpdate(BaseModel):
+    project_id: str
+    phases: List[PhaseInput]
+

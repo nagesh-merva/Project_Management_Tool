@@ -1,7 +1,16 @@
 
-import { Menu, Search, User } from "lucide-react";
+import { Menu, Search, User } from "lucide-react"
+import { useMainContext } from "../context/MainContext"
 
 function Header() {
+  const { logout } = useMainContext()
+
+  const handleLogout = () => {
+    if (window.confirm("DO YOU WANT TO LOGOUT?")) {
+      logout()
+      window.location.href = "/"
+    }
+  }
   const user = JSON.parse(localStorage.getItem("emp"))
   return (
     <header
@@ -25,7 +34,7 @@ function Header() {
         </div>
       </div>
       <div className="flex items-center space-x-5">
-        <button className="p-3 rounded-full hover:bg-gray-100 transition">
+        <button onClick={handleLogout} className="p-3 rounded-full hover:bg-gray-100 transition">
           <User
             className="h-5 w-5 text-gray-600 hover:text-purple-600"
           />

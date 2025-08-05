@@ -1,8 +1,11 @@
 import { Eye, Building, Globe, MapPin } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useMainContext } from '../../context/MainContext'
 
 const ClientCard = ({ client }) => {
     const navigate = useNavigate()
+    const { emp } = useMainContext()
+    const canView = emp.emp_dept !== "SALES" || emp.role !== "Admin" || emp.role !== "Manager" || emp.role !== "Founder" || emp.role !== "Co-Founder"
 
     const getTypeBadgeColor = (type) => {
         const colors = {
@@ -13,9 +16,15 @@ const ClientCard = ({ client }) => {
             'Government': 'bg-gray-100 text-gray-800 border-gray-200'
         };
         return colors[type] || 'bg-gray-100 text-gray-800 border-gray-200'
+
     }
+    // console.log(canView)
 
     const handleViewDetails = () => {
+        if (!canView) {
+            alert("You do not have permission to view client details.")
+            return
+        }
         navigate(`/clients/${client.client_id}`)
     }
 
@@ -27,7 +36,7 @@ const ClientCard = ({ client }) => {
                         <img
                             src={client.logo_url}
                             alt={`${client.name} logo`}
-                            className="w-full h-full object-cover"
+                            className="w-full h-fit object-cover"
                         />
                     ) : (
                         <Building className="text-white" size={24} />

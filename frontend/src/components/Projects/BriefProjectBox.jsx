@@ -48,12 +48,16 @@ const BriefProjectBox = ({ project }) => {
                             className="w-6 h-6 rounded-full bg-gray-300 border border-white text-[10px] flex justify-center items-center"
                             title={member.name}
                         >
-                            {member.name[0]}
+                            {member.profile ? (
+                                <img src={member.profile} alt={member.name} className="w-full h-full rounded-full" />
+                            ) : (
+                                <p> {member.name[0]}</p>
+                            )}
                         </div>
                     ))}
                 </div>
             </div>
-            <p className="text-sm text-gray-700 break-words mb-8">{`Description: ${descp}`}</p>
+            <p className="text-sm text-gray-700 break-words mb-8  text-ellipsis line-clamp-4">{`Description: ${descp}`}</p>
             <div className="absolute bottom-2 right-2 flex items-center justify-between">
                 <div className="flex place-self-end">
                     <button onClick={viewFull} className="p-1 rounded-lg hover:bg-gray-100/50 hover:scale-105 transition-all">

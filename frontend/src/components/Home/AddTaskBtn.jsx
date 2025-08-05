@@ -4,7 +4,7 @@ import { useMainContext } from "../../context/MainContext"
 
 const AddTaskButton = () => {
     const [showPopup, setShowPopup] = useState(false)
-    const { allEmps } = useMainContext()
+    const { allEmps, emp } = useMainContext()
     const [fields, setFields] = useState([
         {
             name: "title",
@@ -17,11 +17,13 @@ const AddTaskButton = () => {
         },
         {
             name: "created_by",
-            type: "id"
+            type: "stored",
+            value: emp.emp_id
         },
         {
             name: "deadline",
-            type: "date"
+            type: "date",
+            allowPastDate: false
         },
         {
             name: "members_assigned",
@@ -42,7 +44,7 @@ const AddTaskButton = () => {
     }, [])
 
     const setEmployees = () => {
-        const selectOptions = allEmps.map(emp => ({
+        const selectOptions = allEmps?.map(emp => ({
             name: `${emp.emp_id} - ${emp.emp_name} - ${emp.role}`,
             value: emp.emp_id
         }))

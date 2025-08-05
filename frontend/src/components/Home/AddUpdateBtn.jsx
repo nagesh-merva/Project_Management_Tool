@@ -4,7 +4,7 @@ import { useMainContext } from "../../context/MainContext"
 
 const AddUpdateButton = () => {
     const [showPopup, setShowPopup] = useState(false)
-    const { allEmps } = useMainContext()
+    const { allEmps, emp } = useMainContext()
     const [fields, setFields] = useState([
         {
             name: "title",
@@ -17,7 +17,8 @@ const AddUpdateButton = () => {
         },
         {
             name: "update_by",
-            type: "id"
+            type: "stored",
+            value: emp.emp_id
         },
         {
             name: "to",
@@ -38,10 +39,13 @@ const AddUpdateButton = () => {
     }, [])
 
     const setEmployees = () => {
-        const selectOptions = allEmps.map(emp => ({
-            name: `${emp.emp_id} - ${emp.emp_name} - ${emp.role}`,
-            value: emp.emp_id
-        }))
+        const selectOptions = [
+            { name: "All", value: "all" },
+            ...(allEmps?.map(emp => ({
+                name: `${emp.emp_id} - ${emp.emp_name} - ${emp.role}`,
+                value: emp.emp_id
+            })) || [])
+        ]
         setFields(prevFields =>
             prevFields.map(field =>
                 field.name === "to"

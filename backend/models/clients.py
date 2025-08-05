@@ -1,10 +1,14 @@
-from pydantic import BaseModel, EmailStr, HttpUrl
+from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from datetime import datetime
 from enum import Enum
 
 
 class ClientType(str, Enum):
+    llc = "LLC"
+    pvt_ltd = "PVT-LTD"
+    partnership = "Partnership"
+    sole_proprietorship = "Sole-Proprietorship"
     startup = "Startup"
     enterprise = "Enterprise"
     individual = "Individual"
@@ -16,7 +20,6 @@ class ContactPerson(BaseModel):
     designation: Optional[str]
     email: EmailStr
     phone: int
-    linkedin: Optional[str]
 
 
 class ClientEngagement(BaseModel):
@@ -27,11 +30,15 @@ class ClientEngagement(BaseModel):
 
 
 class ClientDocuments(BaseModel):
-    nda_link: Optional[str] = None
-    agreement_link: Optional[str] = None
-    billing_address: Optional[str] = None
-    extra_notes: Optional[str] = None
+    id: Optional[str] = None
+    doc_type: str
+    doc_name: str
+    doc_url: str
+    uploaded_at: Optional[datetime] = None
 
+class ClientNote(BaseModel):
+    note: str
+    created_at: Optional[datetime] = None
 
 class ClientMetrics(BaseModel):
     total_projects: int = 0
@@ -58,8 +65,9 @@ class Client(BaseModel):
     gst_id: Optional[str]
     primary_contact: ContactPerson
     engagement: ClientEngagement
-    documents: Optional[ClientDocuments]
+    documents: Optional[List[ClientDocuments]] = []
     metrics: ClientMetrics
+    notes: Optional[List[ClientNote]] = []
 
 class BasicClientInput(BaseModel):
     name: str
@@ -74,3 +82,16 @@ class BasicClientInput(BaseModel):
     contact_email: EmailStr
     contact_phone: str
     source :str
+    
+class UpdateClientInput(BaseModel):
+    client_id: str
+    name: Optional[str] = None
+    brand_name: Optional[str] = None
+    logo_url: Optional[str] = None
+    location: Optional[str] = None
+    website: Optional[str] = None
+    gst_id: Optional[str] = None
+    contact_name: Optional[str] = None
+    contact_email: Optional[EmailStr] = None
+    contact_phone: Optional[str] = None
+    

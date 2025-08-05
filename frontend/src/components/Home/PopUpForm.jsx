@@ -3,12 +3,12 @@ import { useState } from "react"
 import { useParams } from "react-router-dom"
 function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess }) {
     const [formData, setFormData] = useState({})
-    const { id } = useParams()
     const handleChange = (e) => {
         const { name, value } = e.target
         setFormData({ ...formData, [name]: value })
     }
-    console.log(id)
+    const [isSubmiting, setIsSubmiting] = useState(false)
+    // console.log(id)
 
     const handleSelectChange = (e, name, isMulti) => {
         if (isMulti) {
@@ -27,56 +27,91 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
     }
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
+        e.preventDefault()
+        setIsSubmiting(true)
         const emp = JSON.parse(localStorage.getItem("emp"))
         const newFormData = { ...formData }
 
         fields.forEach(f => {
-            if (f.type === "id") {
-                newFormData[f.name] = emp.emp_id
+            if (newFormData[f.name] === undefined && !f.optional && f.type !== "stored" && (f.type !== "select" && f.multi !== true)) {
+                alert(`Please fill the ${f.name.replace(/_/g, " ")}`)
+                return
             }
-            if (f.name === "project_id") {
-                newFormData[f.name] = id
+            if (f.type === "stored") {
+                newFormData[f.name] = f.value
             }
             if (f.name === "to") {
                 newFormData[f.name] = validateTo(newFormData[f.name])
             }
-            if (f.type === "number" && newFormData[f.name] !== undefined) {
-                const val = newFormData[f.name];
-                if (val === "" || val === null) {
-                    newFormData[f.name] = null;
-                } else if (val.toString().includes(".")) {
-                    newFormData[f.name] = parseFloat(val);
+            if (
+                f.type === "select" && ((Array.isArray(newFormData[f.name]) && newFormData[f.name].length === 0) || newFormData[f.name] === undefined)) {
+                if (f.multi) {
+                    newFormData[f.name] = [f.fields[0]?.value]
                 } else {
-                    newFormData[f.name] = parseInt(val, 10);
+                    newFormData[f.name] = f.fields[0]?.value
+                }
+
+            }
+            if (f.type === "number" && newFormData[f.name] !== undefined) {
+                const val = newFormData[f.name]
+                if (val === "" || val === null) {
+                    newFormData[f.name] = null
+                } else if (val.toString().includes(".")) {
+                    newFormData[f.name] = parseFloat(val)
+                } else {
+                    newFormData[f.name] = parseInt(val, 10)
                 }
             }
         })
 
-        console.table(newFormData)
+        const hasFile = fields.some(f => f.type === "file")
+        console.log(newFormData)
         try {
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newFormData),
-            })
+            let response
+            if (hasFile) {
+                const formDataToSend = new FormData()
+                for (const key in newFormData) {
+                    formDataToSend.append(key, newFormData[key])
+                }
 
-            if (response.ok) {
-                alert('Successfully submitted!')
-                onClose();
-                if (onSuccess) onSuccess()
+                response = await fetch(endpoint, {
+                    method: "POST",
+                    body: formDataToSend,
+                })
             } else {
-                alert('Failed to submit!')
+                response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newFormData),
+                })
+            }
+
+            if (response === 200 || response === 201 || response.ok) {
+                alert('Successfully submitted!')
+                onClose()
+                window.location.reload()
+                if (onSuccess) onSuccess()
+            }
+
+            if (response.status === 409) {
+                const message = await response.json()
+                alert(message.detail || message.message || 'Conflict occurred!')
+                return
+            }
+            if (!response.ok) {
+                alert('Failed to perform the task!' + response.message)
             }
         } catch (err) {
-            alert(err.message)
+            alert('Failed to submit!' + err.message || err.statusText || err.headers)
+        } finally {
+            setIsSubmiting(false)
         }
     }
 
     if (!isVisible) return null
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 g-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white w-[90%] md:w-[600px] p-6 rounded-lg shadow-lg relative overflow-y-auto max-h-[90%]">
                 <button
                     onClick={onClose}
@@ -89,7 +124,7 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     {fields.map(field => {
-                        if (field.type === "id") return null
+                        if (field.type === "stored") return null
 
                         if (field.type === "text") {
                             return (
@@ -117,7 +152,8 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                     type="email"
                                     name={field.name}
                                     required={!field.optional}
-                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) + "*"}
+                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) +
+                                        (field.optional === false ? "*" : "")}
                                     onChange={handleChange}
                                     className="border p-2 rounded"
                                 />
@@ -131,7 +167,8 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                     type="number"
                                     name={field.name}
                                     required={!field.optional}
-                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) + "*"}
+                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) +
+                                        (field.optional === false ? "*" : "")}
                                     onChange={handleChange}
                                     className="border p-2 rounded"
                                 />
@@ -144,14 +181,37 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                     key={field.name}
                                     name={field.name}
                                     required={!field.optional}
-                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) + "*"}
+                                    placeholder={field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) +
+                                        (field.optional === false ? "*" : "")}
                                     onChange={handleChange}
                                     className="border p-2 rounded resize-none"
                                 />
                             )
                         }
 
+                        if (field.type === "file") {
+                            return (
+                                <div key={field.name}>
+                                    <label className="block mb-1 font-medium">
+                                        {field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}:
+                                    </label>
+                                    <input
+                                        type="file"
+                                        name={field.name}
+                                        required={!field.optional}
+                                        onChange={(e) =>
+                                            setFormData({ ...formData, [field.name]: e.target.files[0] })
+                                        }
+                                        className="border p-2 rounded w-full"
+                                    />
+                                </div>
+                            )
+                        }
+
                         if (field.type === "date") {
+                            const now = new Date();
+                            const formattedNow = now.toISOString().slice(0, 16)
+
                             return (
                                 <label key={field.name} className="font-medium">
                                     {field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}:<br />
@@ -161,9 +221,10 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                         required={!field.optional}
                                         onChange={handleChange}
                                         className="border p-2 rounded"
+                                        min={!field.allowPastDate ? formattedNow : undefined}
                                     />
                                 </label>
-                            )
+                            );
                         }
 
                         if (field.type === "select") {
@@ -179,9 +240,6 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                             className={`border p-2 rounded w-full ${field.multi ? 'min-h-[100px]' : ''} bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400 scrollbar-thin scrollbar-thumb-blue-300`}
                                             value={formData[field.name] || (field.multi ? [] : '')}
                                         >
-                                            {field.name === "to" && (
-                                                <option key="all" value="all">All</option>
-                                            )}
                                             {field.fields.map((option, idx) => (
                                                 <option key={idx} value={option.value}>
                                                     {option.name}
@@ -202,9 +260,10 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
 
                     <button
                         type="submit"
+                        disabled={isSubmiting}
                         className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded"
                     >
-                        Submit
+                        {isSubmiting ? 'Submitting...' : 'Submit'}
                     </button>
                 </form>
             </div>

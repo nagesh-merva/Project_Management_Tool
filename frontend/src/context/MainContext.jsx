@@ -24,7 +24,7 @@ export const MainProvider = ({ children }) => {
 
     // Selected Department
     const [selectedDepartment, setDepart] = useState(() => {
-        const stored = sessionStorage.getItem("selectedDepartment")
+        const stored = localStorage.getItem("selectedDepartment")
         return stored ? stored : ""
     })
 
@@ -42,7 +42,8 @@ export const MainProvider = ({ children }) => {
     }
 
     // sync loggedin to localStorage
-    const LogIn = (token) => {
+    const LogIn = (emp, token) => {
+        setEmp(emp)
         const data = { logged: true, token: token }
         setLoggedIn(data)
         localStorage.setItem("logged", JSON.stringify(data))
@@ -52,9 +53,9 @@ export const MainProvider = ({ children }) => {
     const setAllEmployees = (empObj) => {
         setEmps(empObj)
         if (empObj) {
-            localStorage.setItem("all-emps", JSON.stringify(empObj))
+            sessionStorage.setItem("all-emps", JSON.stringify(empObj))
         } else {
-            localStorage.removeItem("all-emps")
+            sessionStorage.removeItem("all-emps")
         }
     }
 
@@ -69,7 +70,7 @@ export const MainProvider = ({ children }) => {
     const setDepartment = (dept) => {
         setDepart(dept)
         if (dept) {
-            sessionStorage.setItem("selectedDepartment", dept)
+            localStorage.setItem("selectedDepartment", dept)
         }
     }
 
@@ -89,7 +90,7 @@ export const MainProvider = ({ children }) => {
 
     useEffect(() => {
         const cached = sessionStorage.getItem("all-emps")
-        if (cached) {
+        if (cached || cached !== null) {
             setAllEmployees(JSON.parse(cached))
         } else {
             fetchEmployees()

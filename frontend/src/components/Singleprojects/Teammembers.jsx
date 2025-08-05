@@ -1,15 +1,18 @@
 import Member from "./Member"
-import { Users } from "lucide-react"
+import { Users, Users2 } from "lucide-react"
 import PopupForm from "../Home/PopUpForm"
 import { useState, useEffect } from "react"
 import { useMainContext } from "../../context/MainContext"
+import { useParams } from "react-router-dom"
 const Teammember = ({ members }) => {
     const [showPopup, setShowPopup] = useState(false)
     const { allEmps } = useMainContext()
+    const { id } = useParams()
     const [fields, setFields] = useState([
         {
             name: "project_id",
-            type: "id",
+            type: "stored",
+            value: id
         },
         {
             name: "team_members",
@@ -47,7 +50,8 @@ const Teammember = ({ members }) => {
                         <Users color="#FF911B" className="h-5 w-5 " />
                         <h1 className="font-semibold text-base">Team Members</h1>
                     </div>
-                    <button onClick={() => setShowPopup(true)} className="flex items-center bg-blue-700 rounded-full text-sm h-8 px-4 text-white hover:scale-95 transition-all shadow-lg">
+                    <button onClick={() => setShowPopup(true)} className="flex items-center bg-btncol rounded-full text-sm h-8 px-4 text-white hover:scale-95 transition-all shadow-lg">
+                        <Users2 className="h-4 w-4 mr-2" />
                         <h1>Add</h1>
                     </button>
                 </div>

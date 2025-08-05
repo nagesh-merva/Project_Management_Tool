@@ -17,6 +17,8 @@ export default function SingleEmployee() {
         GetEmployee()
     }, [id])
 
+    console.log(emp)
+
     const GetEmployee = async () => {
         setLoading(true)
         try {

@@ -1,8 +1,17 @@
 import { saveAs } from "file-saver"
+import { useState } from "react"
+import { useParams } from "react-router-dom"
 import * as XLSX from "xlsx"
 import TemplateBox from "./TemplateBox"
+import CreateTemplateForm from "./CreateTemplateForm"
+import FillTemplateForm from "./FillTemplateForm"
+import { BadgePlus, LayoutPanelTop } from "lucide-react"
 
 const Templates = ({ templates }) => {
+    const { id } = useParams()
+    const [showForm, setShowForm] = useState(false)
+    const [templateData, setTemplateData] = useState(null)
+    const [isFillTmpOpen, setIsTmpOpen] = useState(false)
 
     const downloadTemplate = (template) => {
         const { template_name, department, phase, fields } = template
@@ -66,32 +75,37 @@ const Templates = ({ templates }) => {
         saveAs(blob, `${template_name}.xlsx`)
     }
 
-    const openTemple = () => {
-        return
+    const openTemplate = (template) => {
+        setTemplateData(template)
+        setIsTmpOpen(true)
     }
 
     return (
-        <div className="w-full h-auto rounded-lg p-5 bg-white shadow-lg">
-            <div className="font-bold text-xl flex gap-1">
-                <img src="/temd.png" className="w-[24px] h-[24px]" />
-                Templates
-            </div>
+        <>
+            <div className="w-full h-auto rounded-lg p-5 bg-white shadow-lg">
+                <div className="font-bold text-xl flex items-center gap-1">
+                    <LayoutPanelTop fill="#4A5568" className="w-5 h-5 " />
+                    Templates
+                </div>
 
-            <div className="w-full mt-5 grid grid-cols-2 grid-rows-auto gap-4">
-                {templates?.map((temp, idx) => (
-                    <div key={idx} className="flex flex-col bg-gray-50 rounded-lg p-3 shadow border border-gray-200">
-                        <TemplateBox head={temp.fields.title} par={temp.department} download={() => downloadTemplate(temp)} fillTemplate={openTemple} />
-                    </div>
-                ))}
-            </div>
+                <div className="w-full mt-5 grid grid-cols-2 grid-rows-auto gap-4">
+                    {templates?.map((temp, idx) => (
+                        <div key={idx} className="flex flex-col bg-gray-50 rounded-lg p-3 shadow border border-gray-200">
+                            <TemplateBox head={temp.template_name} par={temp.department} download={() => downloadTemplate(temp)} fillTemplate={() => openTemplate(temp)} />
+                        </div>
+                    ))}
+                </div>
 
-            <div className="w-full flex justify-center mt-6">
-                <div className="w-[374.78px] h-[37.51px] bg-quickbtn flex items-center justify-center gap-1 rounded-xl hover:bg-btncol/80 transition-all hover:scale-95 mb-3">
-                    <img src="/Create.png" className="w-[18px] h-[18px]" />
-                    <button className="text-white">Create Template</button>
+                <div className="w-full flex justify-center mt-6">
+                    <button onClick={() => setShowForm(true)} className="w-[374.78px] h-[37.51px] bg-quickbtn flex items-center justify-center gap-1 rounded-xl hover:bg-btncol/80 transition-all hover:scale-95 mb-3">
+                        <BadgePlus className="w-6 h-6 text-white" />
+                        <div className="text-white">Create Template</div>
+                    </button>
                 </div>
             </div>
-        </div>
+            {showForm && <CreateTemplateForm project_id={id} close={() => setShowForm(false)} />}
+            {isFillTmpOpen && (<FillTemplateForm template={templateData} close={() => setIsTmpOpen(false)} />)}
+        </>
     )
 }
 
