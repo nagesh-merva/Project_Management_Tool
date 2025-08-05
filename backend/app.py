@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends,Body ,UploadFile , File,Form
 from fastapi.security import OAuth2PasswordRequestForm
 from motor.motor_asyncio import AsyncIOMotorClient
-from models.dept import Department, EmpPerformanceMetrics ,EmployeeInput, EmployeeSummary,EmployeeResponse,EmployeesByDeptResponse ,EmpDocuments ,Employee
+from models.dept import Department, EmpPerformanceMetrics ,EmployeeInput, EmployeeSummary,EmployeeResponse,EmployeesByDeptResponse ,EmpDocuments ,Employee ,PromotionInput
 from models.updatesAndtask import  UpdateTask,AddComment
 from models.project import Project,AddProjectRequest ,QuickLinks ,SRS ,FinancialData,PerformanceMetrics,ProjectPhaseUpdate
 from models.clients import Client, ClientMetrics, ClientDocuments, ContactPerson, ClientEngagement ,BasicClientInput,UpdateClientInput ,ClientDocuments ,ClientNote
@@ -221,7 +221,8 @@ async def add_employee(
         current_projects=[],
         emergency_contact=emergency_contact,
         bank_account_number=bank_account_number,
-        bank_ifsc=bank_ifsc
+        bank_ifsc=bank_ifsc,
+        promotion_record=[]
     )
 
     await db.Employees.insert_one(employee.dict())
@@ -314,6 +315,55 @@ async def add_emp_documents(emp_id: str = Form(...), file: UploadFile = File(...
         raise HTTPException(status_code=404, detail="Employee not found.")
 
     return {"message": "Document added successfully.", "doc_url": doc_url}
+
+# ================== add Employee promotion =======================
+@app.post("/add-emp-promotion")
+async def add_emp_promotion(data: PromotionInput):
+    employee = await db.Employees.find_one({"emp_id": data.emp_id})
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+
+    prev_role = employee["role"]
+    prev_salary = employee["salary_monthly"]
+    joined_on = employee["joined_on"]
+
+    if not employee.get("promotion_record") or employee.get("promotion_record") == []:
+        working_as_from = datetime.combine(joined_on.date(), datetime.min.time())
+    else:
+        working_as_from = datetime.combine(date.today(), datetime.min.time())
+
+    promotion_entry = {
+        "prev_role": prev_role,
+        "prev_salary": prev_salary,
+        "working_as_from": working_as_from
+    }
+
+    if not employee.get("promotion_record"):
+        update_data = {
+            "$set": {
+                "role": data.role,
+                "salary_monthly": data.salary,
+                "promotion_record": [promotion_entry]
+            }
+        }
+    else:
+        update_data = {
+            "$set": {
+                "role": data.role,
+                "salary_monthly": data.salary
+            },
+            "$push": {
+                "promotion_record": promotion_entry
+            }
+        }
+        
+    print("Promoting employee with id ",data.emp_id ," to " ,update_data)
+    result = await db.Employees.update_one({"emp_id": data.emp_id}, update_data)
+
+    print("\n",result)
+
+    return {"message": "Promotion recorded successfully", "emp_id": data.emp_id}
+
 
 # ================= Get All Updates ====================
 @app.get("/get-updates")
@@ -512,6 +562,12 @@ async def get_projects_byid(emp_id:str):
 
     async for project in projects_cursor:
         project["_id"] = str(project["_id"])  
+        try:
+            if project["deadline"] < datetime.now() and project["status"] == "active":
+                project["status"] = "delayed"
+        except ValueError:
+            print("Invalid deadline format:", project["deadline"])
+            project["status"] = "unknown"
 
         projects.append({
             "project_id": project["project_id"],
@@ -604,6 +660,15 @@ async def get_project(project_id: str):
 
     if not project:
         raise HTTPException(status_code=404, detail="Project not found.")
+    
+    try:
+        # print(project["deadline"] > datetime.now(), project["deadline"], datetime.now())
+        if project["deadline"] < datetime.now() and project["status"] == "active":
+            project["status"] = "delayed"
+    except ValueError:
+        print("Invalid deadline format:", project["deadline"])
+        project["status"] = "unknown"
+
 
     project["_id"] = str(project["_id"])
     return project
@@ -614,7 +679,6 @@ async def get_active_projects(emp_id: str):
     if not emp_id:
         raise HTTPException(status_code=400, detail="Employee ID is required.")
 
-    # Find all active projects where emp_id is assigned in any feature
     projects_cursor = db.Projects.find({
         "status": "active",
         "team_members.emp_id": emp_id
@@ -645,14 +709,28 @@ async def edit_project_brief(data: dict):
     project_id = data.get("project_id")
     if not project_id:
         raise HTTPException(status_code=400, detail="Project ID is required.")
+    
+    project = await db.Projects.find_one({"project_id": project_id})
+    
+    if not project:
+        raise HTTPException(status_code=400, detail="Project doesnt exist, error finding project!.")
 
     update_fields = {}
+    
+    # print(data)
 
     if "descp" in data and data["descp"]:
         update_fields["descp"] = data["descp"]
     if "deadline" in data and data["deadline"]:
         update_fields["deadline"] = data["deadline"]
     if "status" in data and data["status"]:
+        if data["status"] == "completed":
+            for emp in project["team_members"]:
+                db.Employees.update_one(
+                    {"emp_id": emp["emp_id"]},
+                    {"$pull": {"current_projects": project_id}}
+                )
+                # print("removed ",project_id," from ", emp["emp_id"])
         update_fields["status"] = data["status"]
 
     if not update_fields:
@@ -1482,13 +1560,20 @@ async def overviewData():
 
     completed_projects_cursor = db.Projects.find({"status": "completed"}, {"_id": 0})
     completed_projects = await completed_projects_cursor.to_list(length=None)
-    revenue = sum(
-        project.get("financial_data", {}).get("expected_revenue", 0)
-        for project in completed_projects
-        if isinstance(project.get("deadline"), datetime)
-        and project["deadline"].month == current_month
-        and project["deadline"].year == current_year
-    )
+    
+    revenue = 0
+    used_projects = []
+
+    for project in completed_projects:
+        deadline = project.get("deadline")
+        if isinstance(deadline, datetime) and deadline.month == current_month and deadline.year == current_year:
+            project_id = project.get("project_id", "Unknown ID")
+            expected = project.get("financial_data", {}).get("expected_revenue", 0)
+            
+            # print(f"Added project {project_id} with expected revenue: {expected}")
+            used_projects.append(project_id)
+            revenue += expected
+
 
     fresh_metrics = {
         "total_employees": total_employees,
@@ -1591,7 +1676,7 @@ async def dept_performance_analytics():
         dept_tasks = [
             t for t in all_tasks
             if any(member.get("emp_id") in dept_emp_ids for member in t.get("members_assigned", []))
-        ]
+        ][:250]
 
         completed_tasks = sum(1 for t in dept_tasks if t.get("status") == "done")
         total_tasks = len(dept_tasks)
@@ -1620,3 +1705,47 @@ async def dept_performance_analytics():
         })
 
     return result
+
+
+@app.get("/employee-analytics")
+async def get_employee_analytics():
+    employees_cursor = db.Employees.find({"status": "Active"}, {"_id": 0})
+    employees = await employees_cursor.to_list(length=None)
+    
+    analytics_data = []
+
+    for emp in employees:
+        emp_id = emp.get("emp_id")
+        emp_name = emp.get("emp_name")
+        role = emp.get("role")
+        department = emp.get("emp_dept")
+        performance = emp.get("performance_metrics", {})
+        salary_account = emp.get("salary_account", [])
+        emp_documents = emp.get("emp_documents", [])
+        
+        promotion_history = []
+
+        for record in emp.get("promotion_record", []):
+            promotion_history.append({
+                "date": record["working_as_from"].strftime("%Y-%m-%d"),
+                "role": record["prev_role"]
+            })
+
+        promotion_history.sort(key=lambda x: x["date"])
+
+        analytics_data.append({
+            "id": emp_id,
+            "name": emp_name,
+            "role": role,
+            "department": department,
+            "totalProjects": len(emp.get("current_projects", [])) + performance.get("completed_projects", 0),
+            "completedProjects": performance.get("completed_projects", 0),
+            "performanceScore": round((performance.get("ratings", 0) or 0), 2), 
+            "attendance": 96,  
+            "salaryHistory": [entry["salary_paid"] for entry in salary_account],
+            "leavesTaken": emp.get("leaves_taken", 0),
+            "documents": [doc["doc_name"] for doc in emp_documents],
+            "PromotionHistory": promotion_history
+        })
+
+    return analytics_data

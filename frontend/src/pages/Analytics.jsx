@@ -31,6 +31,7 @@ export default function Analytics() {
     const [activeTab, setActiveTab] = useState('overview')
     const [searchTerm, setSearchTerm] = useState('')
     const [loading, setLoading] = useState(false)
+    const [employeesData, setEmployeesData] = useState([])
     const [departmentsData, setDepartmentsData] = useState([
         {
             id: "SALES",
@@ -101,6 +102,7 @@ export default function Analytics() {
         setLoading(true)
         FetchOverviewData()
         FetchDeptData()
+        FetchEmpsData()
         setLoading(false)
     }, [])
 
@@ -174,50 +176,24 @@ export default function Analytics() {
         }
     }
 
-    const employeesData = [
-        {
-            id: 'EMP001',
-            name: 'John Doe',
-            role: 'Senior Developer',
-            department: 'Development',
-            totalProjects: 12,
-            completedProjects: 10,
-            performanceScore: 8.5,
-            attendance: 95,
-            salaryHistory: [45000, 48000, 52000, 55000, 58000, 62000],
-            lastPromotion: '2023-06-15',
-            leavesTaken: 8,
-            documents: ['Resume', 'Contract', 'Performance Review']
-        },
-        {
-            id: 'EMP002',
-            name: 'Sarah Wilson',
-            role: 'UI/UX Designer',
-            department: 'Design',
-            totalProjects: 8,
-            completedProjects: 7,
-            performanceScore: 9.2,
-            attendance: 98,
-            salaryHistory: [40000, 42000, 45000, 48000, 52000],
-            lastPromotion: '2023-08-20',
-            leavesTaken: 5,
-            documents: ['Portfolio', 'Contract', 'Certifications']
-        },
-        {
-            id: 'EMP003',
-            name: 'Mike Johnson',
-            role: 'Sales Manager',
-            department: 'Sales',
-            totalProjects: 15,
-            completedProjects: 13,
-            performanceScore: 7.8,
-            attendance: 92,
-            salaryHistory: [50000, 53000, 56000, 60000, 65000],
-            lastPromotion: '2023-03-10',
-            leavesTaken: 12,
-            documents: ['Sales Reports', 'Contract', 'Training Certificates']
+    const FetchEmpsData = async () => {
+        try {
+            const response = await fetch("http://127.0.0.1:8000/employee-analytics", {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+            })
+
+            const data = await response.json()
+
+            if (response.status === 200 || response.status === 201) {
+                setEmployeesData(data)
+            }
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setLoading(false)
         }
-    ]
+    }
 
     const projectsData = [
         {

@@ -11,13 +11,13 @@ export default function SingleEmployee() {
     const [navOpen, setNavOpen] = useState(false)
     const [emp, setEmp] = useState({})
     const [loading, setLoading] = useState(false)
-    console.log(id)
+    // console.log(id)
 
     useEffect(() => {
         GetEmployee()
     }, [id])
 
-    console.log(emp)
+    // console.log(emp)
 
     const GetEmployee = async () => {
         setLoading(true)

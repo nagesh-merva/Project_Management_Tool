@@ -281,7 +281,7 @@ const EmployeeDetails = ({ emp }) => {
         }
     ]
 
-    console.log(employeeData.emp_documents)
+    // console.log(employeeData.emp_documents)
 
     const empDocumentsFields = [
         {
