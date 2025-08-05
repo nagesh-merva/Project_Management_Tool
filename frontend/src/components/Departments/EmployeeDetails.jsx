@@ -25,7 +25,7 @@ import PopupForm from '../Home/PopUpForm'
 const EmployeeDetails = ({ emp }) => {
     const [notifications, setNotifications] = useState([])
     const [employeeData, setEmployeeData] = useState(emp)
-    const [showDocPopup, setShowDocPopup] = useState(false);
+    const [showDocPopup, setShowDocPopup] = useState(false)
 
     React.useEffect(() => {
         setEmployeeData(emp)
@@ -185,7 +185,7 @@ const EmployeeDetails = ({ emp }) => {
         {
             name: 'role',
             label: 'Role',
-            type: 'text',
+            type: 'display',
             icon: Award,
             placeholder: 'Enter role'
         },
@@ -338,7 +338,7 @@ const EmployeeDetails = ({ emp }) => {
             />
 
             <div className="max-w-6xl mx-auto">
-                <EmployeeHeader emp={employeeData} />
+                <EmployeeHeader employee={employeeData} />
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <DynamicSection
@@ -444,7 +444,7 @@ const EmployeeDetails = ({ emp }) => {
                 endpoint="http://127.0.0.1:8000/add-emp-documents"
                 fields={empDocumentFields}
                 onSuccess={() => {
-                    setShowDocPopup(false);
+                    setShowDocPopup(false)
                 }}
             />
         </div>

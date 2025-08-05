@@ -39,6 +39,10 @@ class EmpPerformanceMetrics(BaseModel):
     ratings: float  # Average rating out of 5
     remarks: Optional[str] = None
 
+class EmpPromotionRecord(BaseModel):
+    prev_role: str
+    prev_salary: float
+    working_as_from : date
 
 # Employee Model
 class Employee(BaseModel):
@@ -64,6 +68,7 @@ class Employee(BaseModel):
     emergency_contact: Optional[str] = None
     bank_account_number: Optional[str] = None
     bank_ifsc: Optional[str] = None
+    promotion_record : Optional[List[EmpPromotionRecord]] = []
 
 class EmployeeInput(BaseModel):
     emp_name: str
@@ -112,3 +117,8 @@ class EmployeeSummary(BaseModel):
 class EmployeesByDeptResponse(BaseModel):
     employees: List[EmployeeSummary]
     details: Optional[Department]
+    
+class PromotionInput(BaseModel):
+    emp_id: str
+    role: str
+    salary: float
