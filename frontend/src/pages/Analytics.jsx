@@ -32,6 +32,7 @@ export default function Analytics() {
     const [searchTerm, setSearchTerm] = useState('')
     const [loading, setLoading] = useState(false)
     const [employeesData, setEmployeesData] = useState([])
+    const [salesData, setSalesData] = useState({})
     const [departmentsData, setDepartmentsData] = useState([
         {
             id: "SALES",
@@ -103,6 +104,7 @@ export default function Analytics() {
         FetchOverviewData()
         FetchDeptData()
         FetchEmpsData()
+        FetchSalesData()
         setLoading(false)
     }, [])
 
@@ -195,6 +197,25 @@ export default function Analytics() {
         }
     }
 
+    const FetchSalesData = async () => {
+        try {
+            const response = await fetch("http://127.0.0.1:8000/analytics-sales-finance", {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+            })
+
+            const data = await response.json()
+
+            if (response.status === 200 || response.status === 201) {
+                setSalesData(data)
+            }
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setLoading(false)
+        }
+    }
+
     const projectsData = [
         {
             id: 'PRJ001',
@@ -246,27 +267,81 @@ export default function Analytics() {
         }
     ]
 
-    const salesData = {
-        totalDeals: 45,
-        monthlyRevenue: 850000,
-        quarterlyGrowth: 12.5,
-        costPerClient: 15000,
-        revenueTrend: [650000, 720000, 680000, 750000, 820000, 850000],
-        topClients: [
-            { name: 'TechCorp Inc.', region: 'North', revenue: 250000, projects: 3 },
-            { name: 'Global Solutions', region: 'East', revenue: 180000, projects: 2 },
-            { name: 'Innovation Labs', region: 'West', revenue: 150000, projects: 4 }
-        ],
-        salesByRegion: [
-            { region: 'North', sales: 320000 },
-            { region: 'South', sales: 280000 },
-            { region: 'East', sales: 150000 },
-            { region: 'West', sales: 100000 }
-        ],
-        pendingInvoices: 8,
-        pendingAmount: 125000,
-        pendingClearances: 3
-    }
+    // const salesData = {
+    //     revenue: {
+    //         total: 49187998.0,
+    //         monthlyTrend: {
+    //             "2025-07": 49187998.0
+    //         },
+    //         avgProjectValue: 12296999.5,
+    //         regionWise: {
+    //             "California, Silicon Valley , USA": 49034998.0,
+    //             "Chicago, Illinois, USA": 0.0,
+    //             "Dallas, Texas, USA": 0.0,
+    //             "Munich, Germany": 0.0,
+    //             "Atlanta, Georgia, USA": 0.0,
+    //             "Canton, Massachusetts, USA": 0.0,
+    //             "Khandepar Ponda Goa 403406": 153000.0
+    //         }
+    //     },
+    //     finance: {
+    //         totalCost: 298099.0,
+    //         costToRevenueRatio: 0.01,
+    //         avgProfitMargin: 15.55
+    //     },
+    //     clients: {
+    //         total: 7,
+    //         repeatClients: 2,
+    //         newClientsThisQuarter: 7,
+    //         topClientsByRevenue: [
+    //             {
+    //                 client_name: "Google LLC",
+    //                 total_billed: 49034998.0,
+    //                 total_projects: 2
+    //             },
+    //             {
+    //                 client_name: "Shyam Merva",
+    //                 total_billed: 153000.0,
+    //                 total_projects: 2
+    //             },
+    //             {
+    //                 client_name: "McDonald's Corporation",
+    //                 total_billed: 0.0,
+    //                 total_projects: 0
+    //             },
+    //             {
+    //                 client_name: "AT&T Inc. ",
+    //                 total_billed: 0.0,
+    //                 total_projects: 0
+    //             },
+    //             {
+    //                 client_name: "Bayerische Motoren Werke Aktiengesellschaft (BMW AG)",
+    //                 total_billed: 0.0,
+    //                 total_projects: 0
+    //             }
+    //         ]
+    //     },
+    //     projects: {
+    //         total: 17,
+    //         completionRate: 47.06,
+    //         delayedProjects: 3,
+    //         avgDurationDays: 97.53,
+    //         roiPerProject: [
+    //             {
+    //                 project_id: "PRJ1001",
+    //                 roi: 4.33
+    //             },
+    //             {
+    //                 project_id: "PRJ1002",
+    //                 roi: 3.25
+    //             },
+    //             {
+    //                 project_id: "PRJ1413",
+    //                 roi: 1.34
+    //             }
+    //         ]
+    //     }
+    // }
 
     const goalsData = [
         {
@@ -511,7 +586,7 @@ export default function Analytics() {
                                             <Download size={16} />
                                             Export
                                         </button>
-                                        <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                        <button onClick={() => window.location.reload()} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                                             <RefreshCw size={16} />
                                             Refresh
                                         </button>
