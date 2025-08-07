@@ -66,6 +66,7 @@ class ProjectPhase(BaseModel):
 class IssueMaintenanceReport(BaseModel):
     id: str
     title: str
+    type : str
     descp: str
     issued_date: datetime
     doc_link: Optional[str] = None
@@ -121,8 +122,7 @@ class PerformanceMetrics(BaseModel):
     cost_variance: Optional[str] = None
     quality: Optional[str] = None
     risk: Optional[str] = None
-    stakeholder_satisfaction: Optional[str] = None
-
+    stakeholder_satisfaction: Optional[float] = None
 
 # ---------- Main Project Model ----------
 class Project(BaseModel):
@@ -134,7 +134,6 @@ class Project(BaseModel):
     start_date: datetime
     deadline: datetime
     progress: int
-
     team_members: List[TeamMember]
     quick_links: QuickLinks
     client_details: ClientDetails
@@ -146,7 +145,6 @@ class Project(BaseModel):
     templates: List[Template] = Field(default_factory=list)
     links: List[CustomLink] = Field(default_factory=list)
     quick_links: QuickLinks = Field(default_factory=QuickLinks)
-    #financial data
     financial_data: FinancialData = Field(default_factory=FinancialData)
     performance_metrics: PerformanceMetrics = Field(default_factory=PerformanceMetrics)
 

@@ -33,6 +33,7 @@ export default function Analytics() {
     const [loading, setLoading] = useState(false)
     const [employeesData, setEmployeesData] = useState([])
     const [salesData, setSalesData] = useState({})
+    const [ projectsData,setProjectsData] = useState([])
     const [departmentsData, setDepartmentsData] = useState([
         {
             id: "SALES",
@@ -100,12 +101,18 @@ export default function Analytics() {
     ])
 
     useEffect(() => {
-        setLoading(true)
-        FetchOverviewData()
-        FetchDeptData()
-        FetchEmpsData()
-        FetchSalesData()
-        setLoading(false)
+        const fetchData = async () => {
+            setLoading(true)
+            await Promise.all([
+                FetchOverviewData(),
+                FetchDeptData(),
+                FetchEmpsData(),
+                FetchSalesData(),
+                FetchProjectsData()
+            ])
+            setLoading(false)
+        }
+        fetchData()
     }, [])
 
     const formatCurrency = (amount) => {
@@ -134,7 +141,7 @@ export default function Analytics() {
 
                     let percentChange = 0;
                     if (typeof prev === 'number' && prev !== 0) {
-                        percentChange = ((curr - prev) / prev) * 100  // [ change - 1 ]* curr /100
+                        percentChange = ((curr - prev) / prev) * 100 
                     }
 
                     let formattedValue = curr;
@@ -223,7 +230,26 @@ export default function Analytics() {
         }
     }
 
-    const projectsData = [
+     const FetchProjectsData = async () => {
+        try {
+            const response = await fetch("http://127.0.0.1:8000/analytics-projects-data", {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+            })
+
+            const data = await response.json()
+
+            if (response.status === 200 || response.status === 201) {
+                setProjectsData(data.projectsData)
+            }
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const projectsData2 = [
         {
             id: 'PRJ001',
             name: 'E-commerce Platform',
@@ -467,7 +493,44 @@ export default function Analytics() {
         }
     }
 
+    if (loading) {
+        return (
+            <div className="relative h-full min-h-screen w-full flex flex-col bg-gray-100 min-w-[800px]">
+                <button
+                    className="fixed top-4 left-4 z-50 md:hidden bg-white p-2 rounded shadow"
+                    onClick={() => setNavOpen(!navOpen)}
+                    aria-label="Toggle navigation"
+                >
+                    {navOpen ? <X size={32} /> : <Menu size={32} />}
+                </button>
 
+                <div
+                    className={`
+                        fixed top-0 left-0 h-full w-[30%] z-40 transition-transform duration-300
+                        ${navOpen ? "translate-x-0" : "-translate-x-full"}
+                        md:fixed md:top-0 md:left-0 md:h-full md:w-[13%] md:z-40 md:translate-x-0 md:block
+                    `}
+                >
+                    <Navigation />
+                </div>
+
+                {navOpen && (
+                    <div
+                        className="fixed inset-0 bg-black bg-opacity-30 z-30 md:hidden"
+                        onClick={() => setNavOpen(false)}
+                    />
+                )}
+
+                <div className="w-full md:w-[87%] h-full pt-20 flex place-self-end justify-center transition-all duration-300">
+                    <Header />
+                    <div className="md:px-10 w-full h-full min-h-svh">
+                        <Loading />
+                    </div>
+                </div>
+            </div>
+        )
+    }
+    
     return (
         <div className="relative h-full min-h-screen w-full flex flex-col bg-gray-100 min-w-[800px]">
 

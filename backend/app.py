@@ -945,21 +945,26 @@ async def manage_maintenance_reports(
     project_id: str = Form(...),
     title: str = Form(...),
     descp: str = Form(...),
+    type: str = Form(...),
     file: UploadFile = File(...)
 ):
-    if not project_id or not title or not descp:
+    if not project_id or not title or not descp or not type:
+        print("hit not included")
         raise HTTPException(status_code=400, detail="project_id, title, and descp are required.")
-    
-    # file_id = await fs_bucket.upload_from_stream(file.filename, await file.read())
 
-    # gridfs_link = f"/files/{str(file_id)}"
+    if type != "Maintenance" and type != "Issue":
+        print("hit type")
+        raise HTTPException(status_code=400, detail="Unvalid report type submitted.")
+    
+    doc_url = await upload_file_to_firebase(file, folder=f"PMT/ProjectReports/{project_id}")
 
     report_entry = {
         "id": f"MAINT{random.randint(1000,9999)}",
         "title": title,
         "descp": descp,
+        "type": type,
         "issued_date": datetime.utcnow(),
-        # "doc_link": gridfs_link 
+        "doc_link": doc_url 
     }
 
     updated = await db.Projects.update_one(
@@ -970,7 +975,7 @@ async def manage_maintenance_reports(
     if updated.modified_count == 0:
         raise HTTPException(status_code=404, detail="Project not found or report not added.")
 
-    return {"message": f"Maintenance report '{title}' added to project {project_id}.", "doc_link": "gridfs_link"}
+    return {"message": f"Maintenance report '{title}' added to project {project_id}."}
 
 #================= manage hosting details by project_id  ============================
 @app.post("/manage-hostings")
@@ -1888,3 +1893,66 @@ async def generate_sales_finance_metrics():
             "roiPerProject": roi_per_project
         }
     }
+
+@app.get("/analytics-projects-data")
+async def get_project_metrics():
+    projects_cursor = db.Projects.find()
+    projects = await projects_cursor.to_list(length=None)
+
+    processed_projects = []
+
+    for project in projects:
+        start = project.get("start_date")
+        deadline = project.get("deadline")
+        progress = project.get("progress", 0)
+        financial = project.get("financial_data") or {}
+        spend = financial.get("spenditure_analysis", [])
+        team_size = len(project.get("team_members", []))
+        project_id = project.get("project_id")
+
+        actual_cost = 0
+        for entry in spend:
+            try:
+                actual_cost += int(entry["cost"])
+            except:
+                pass
+
+        budget = financial.get("total_budget", 0)
+        revenue = financial.get("expected_revenue", 0)
+        profitability = None
+        if budget:
+            profitability = round(((revenue - actual_cost) / budget) * 100, 2)
+
+        issues = project.get("issues_and_maintenance_reports", [])
+        issue_count = sum(1 for issue in issues if issue.get("type","") == "Issue") 
+
+        performanceMetrics =project.get("performance_metrics") or {}
+        client_satisfaction = performanceMetrics.get("stakeholder_satisfaction") or 2
+
+        roadblocks = project.get("roadblocks", [])
+
+        status = project.get("status", "unknown")
+
+        start_str = start.isoformat() if start else None
+        deadline_str = deadline.isoformat() if deadline else None
+
+        project_obj = {
+            "id": project_id,
+            "name": project.get("project_name"),
+            "current_phase": project.get("current_phase", ""),
+            "status": status,
+            "progress": progress,
+            "teamSize": team_size,
+            "budget": budget,
+            "actualCost": actual_cost,
+            "clientSatisfaction": client_satisfaction,
+            "profitability": profitability,
+            "issues": issue_count,
+            "startDate": start_str,
+            "dueDate": deadline_str,
+            "roadblocks": roadblocks,
+        }
+
+        processed_projects.append(project_obj)
+
+    return {"projectsData": processed_projects}

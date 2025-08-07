@@ -40,7 +40,7 @@ const ProjectAnalyticsCard = ({ project }) => {
             <div className="flex items-center gap-4 mb-4">
                 <div className="flex items-center gap-2">
                     <FolderOpen className="text-gray-400" size={16} />
-                    <span className="text-sm text-gray-600">{project.department}</span>
+                    <span className="text-sm text-gray-600">{project.current_phase}</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <Users className="text-gray-400" size={16} />
@@ -124,11 +124,11 @@ const ProjectAnalyticsCard = ({ project }) => {
             <div className="flex items-center justify-between text-xs text-gray-600">
                 <div className="flex items-center gap-1">
                     <Calendar size={12} />
-                    <span>Start: {project.startDate}</span>
+                    <span>Start: {project.startDate.split("T")[0]}</span>
                 </div>
                 <div className="flex items-center gap-1">
                     <Clock size={12} />
-                    <span>Due: {project.dueDate}</span>
+                    <span>Deadline: {project.dueDate.split("T")[0]}</span>
                 </div>
             </div>
             {project.roadblocks && project.roadblocks.length > 0 && (

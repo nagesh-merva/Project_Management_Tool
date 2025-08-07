@@ -40,6 +40,20 @@ const Maintenance = ({ MaintObj, HostingObj }) => {
 
                 },
                 {
+                    name : "type",
+                    type: "select",
+                    fields : [
+                        {
+                            name : "Maintenance",
+                            value : "Maintenance"
+                        },
+                        {
+                            name : "Issue",
+                            value : "Issue"
+                        }
+                    ]
+                },
+                {
                     name: "descp",
                     type: "textarea",
                     optional: false
