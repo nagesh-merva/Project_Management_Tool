@@ -722,7 +722,11 @@ async def edit_project_brief(data: dict):
     if "descp" in data and data["descp"]:
         update_fields["descp"] = data["descp"]
     if "deadline" in data and data["deadline"]:
-        update_fields["deadline"] = data["deadline"]
+        try:
+            update_fields["deadline"] = datetime.fromisoformat(data["deadline"].replace("Z", "+00:00"))
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format")
+
     if "status" in data and data["status"]:
         if data["status"] == "completed":
             for emp in project["team_members"]:
@@ -1566,7 +1570,7 @@ async def overviewData():
 
     for project in completed_projects:
         deadline = project.get("deadline")
-        if isinstance(deadline, datetime) and deadline.month == current_month and deadline.year == current_year:
+        if isinstance(deadline, datetime) and deadline.month == current_month and deadline.year == current_year and project.get("status") == "completed":
             project_id = project.get("project_id", "Unknown ID")
             expected = project.get("financial_data", {}).get("expected_revenue", 0)
             
@@ -1761,10 +1765,15 @@ async def generate_sales_finance_metrics():
     total_projects = 0
     total_costs = 0
     repeat_clients = 0
-    revenue_by_region = {}
-    monthly_revenue_trend = {}
     new_clients = 0
     now = datetime.utcnow()
+
+    monthly_revenue_trend = {}
+    
+    for i in range(6):
+        month_date = now - timedelta(days=30 * i)
+        month_key = month_date.strftime("%Y-%m")
+        monthly_revenue_trend[month_key] = 0
 
     client_stats = []
 
@@ -1772,17 +1781,7 @@ async def generate_sales_finance_metrics():
         metrics = client.get("metrics", {})
         revenue = metrics.get("total_billed", 0)
         project_count = metrics.get("total_projects", 0)
-        region = client.get("location", "Unknown")
         joined_date = client.get("engagement", {}).get("joined_date")
-        last_project_date = metrics.get("last_project_date")
-
-        if region not in revenue_by_region:
-            revenue_by_region[region] = 0
-        revenue_by_region[region] += revenue
-
-        if last_project_date:
-            month_key = last_project_date.strftime("%Y-%m")
-            monthly_revenue_trend[month_key] = monthly_revenue_trend.get(month_key, 0) + revenue
 
         total_revenue += revenue
         total_projects += project_count
@@ -1806,13 +1805,27 @@ async def generate_sales_finance_metrics():
     total_duration = 0
     roi_per_project = []
     profit_margin_total = 0
+    this_month_revenue = 0
+    current_month_key = now.strftime("%Y-%m")
 
     for project in projects:
         status = project.get("status")
+        fin = project.get("financial_data") or {}
+        deadline = project.get("deadline")
+        
+        if status == "completed" and deadline:
+            expected_revenue = fin.get("expected_revenue", 0) or 0
+            project_month_key = deadline.strftime("%Y-%m")
+            
+            if project_month_key in monthly_revenue_trend:
+                monthly_revenue_trend[project_month_key] += expected_revenue
+            
+            if project_month_key == current_month_key:
+                this_month_revenue += expected_revenue
+
         if status == "completed":
             project_completion += 1
 
-        deadline = project.get("deadline")
         if deadline and deadline < now and status != "completed":
             delayed_projects += 1
 
@@ -1821,7 +1834,6 @@ async def generate_sales_finance_metrics():
             duration = (deadline - start_date).days
             total_duration += duration
 
-        fin = project.get("financial_data") or {}
         cost = sum(
             float(c.get("cost", 0) or 0)
             for c in fin.get("spenditure_analysis", [])
@@ -1832,9 +1844,18 @@ async def generate_sales_finance_metrics():
 
         if cost > 0:
             roi = (expected_revenue - cost) / cost
-            roi_per_project.append({"project_id": project["project_id"], "roi": round(roi, 2)})
+            roi_per_project.append({
+                "project_id": project["project_id"],
+                "project_name": project["project_name"],
+                "client_name": project["client_details"]["name"], 
+                "roi": round(roi, 2),
+                "cost": cost
+            })
 
         profit_margin_total += margin
+
+    sorted_months = sorted(monthly_revenue_trend.keys(), reverse=True)[:6]
+    monthly_trend_list = [monthly_revenue_trend[month] for month in reversed(sorted_months)]
 
     completion_rate = (project_completion / len(projects)) * 100 if projects else 0
     avg_duration = total_duration / len(projects) if projects else 0
@@ -1843,9 +1864,10 @@ async def generate_sales_finance_metrics():
     return {
         "revenue": {
             "total": total_revenue,
-            "monthlyTrend": monthly_revenue_trend,
+            "total_this_month": this_month_revenue,
+            "monthlyTrend": monthly_trend_list, 
+            "monthlyTrendDict": monthly_revenue_trend,  
             "avgProjectValue": avg_project_value,
-            "regionWise": revenue_by_region
         },
         "finance": {
             "totalCost": total_costs,

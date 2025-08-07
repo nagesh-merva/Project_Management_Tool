@@ -40,6 +40,14 @@ const Financial = ({ FinancialData }) => {
     const variance = FinancialData?.total_budget - totalSpent
     const isOverBudget = variance < 0
 
+    // console.log("Spenditure  : ", spenditure, "\n Total Spent:",totalSpent ,"\nvariance :",variance)
+    const formatCurrency = (amount) => {
+        if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(1)}Cr`
+        if (amount >= 100000) return `₹${(amount / 100000).toFixed(1)}L`
+        if (amount >= 1000) return `₹${(amount / 1000).toFixed(1)}K`
+        return `₹${amount.toLocaleString()}`
+    }
+
     const UpdateFinData = async (payload) => {
         if (emp.emp_dept !== "SALES" && emp.role !== "Admin" && emp.role !== "Manager" && emp.role !== "Founder") {
             alert("You are not authorized to update financial data.")
@@ -108,12 +116,12 @@ const Financial = ({ FinancialData }) => {
                             {isOverBudget ? (
                                 <>
                                     <TrendingUp className="w-5 h-5" />
-                                    Over Budget by ₹{Math.abs(variance)}
+                                    Over Budget by {formatCurrency(Math.abs(variance))}
                                 </>
                             ) : (
                                 <>
                                     <TrendingDown className="w-5 h-5" />
-                                    Under Budget by ₹{variance}
+                                    Under Budget by {formatCurrency(variance)}
                                 </>
                             )}
                         </div>

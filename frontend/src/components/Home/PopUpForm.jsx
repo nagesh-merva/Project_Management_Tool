@@ -43,6 +43,11 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
             if (f.name === "to") {
                 newFormData[f.name] = validateTo(newFormData[f.name])
             }
+            if (f.type === "date") {
+                const rawDate = newFormData[f.name]
+                const parsedDate = new Date(rawDate)
+                newFormData[f.name] = parsedDate
+            }
             if (
                 f.type === "select" && ((Array.isArray(newFormData[f.name]) && newFormData[f.name].length === 0) || newFormData[f.name] === undefined)) {
                 if (f.multi) {

@@ -108,6 +108,13 @@ export default function Analytics() {
         setLoading(false)
     }, [])
 
+    const formatCurrency = (amount) => {
+        if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(1)}Cr`
+        if (amount >= 100000) return `₹${(amount / 100000).toFixed(1)}L`
+        if (amount >= 1000) return `₹${(amount / 1000).toFixed(1)}K`
+        return `₹${amount.toLocaleString()}`
+    }
+
     const FetchOverviewData = async () => {
         try {
             const response = await fetch("http://127.0.0.1:8000/overview-analytics-data", {
@@ -132,7 +139,7 @@ export default function Analytics() {
 
                     let formattedValue = curr;
                     if (stat.type === 'monthly_completed_project_revenue') {
-                        formattedValue = `₹${(curr / 100000).toFixed(1)}L`
+                        formattedValue = formatCurrency(curr)
                     } else if (stat.type === 'total_emp_performance') {
                         formattedValue = `${curr.toFixed(1)}/5`
                     }
@@ -266,82 +273,6 @@ export default function Analytics() {
             roadblocks: ['Budget Constraints', 'Resource Allocation Issues']
         }
     ]
-
-    // const salesData = {
-    //     revenue: {
-    //         total: 49187998.0,
-    //         monthlyTrend: {
-    //             "2025-07": 49187998.0
-    //         },
-    //         avgProjectValue: 12296999.5,
-    //         regionWise: {
-    //             "California, Silicon Valley , USA": 49034998.0,
-    //             "Chicago, Illinois, USA": 0.0,
-    //             "Dallas, Texas, USA": 0.0,
-    //             "Munich, Germany": 0.0,
-    //             "Atlanta, Georgia, USA": 0.0,
-    //             "Canton, Massachusetts, USA": 0.0,
-    //             "Khandepar Ponda Goa 403406": 153000.0
-    //         }
-    //     },
-    //     finance: {
-    //         totalCost: 298099.0,
-    //         costToRevenueRatio: 0.01,
-    //         avgProfitMargin: 15.55
-    //     },
-    //     clients: {
-    //         total: 7,
-    //         repeatClients: 2,
-    //         newClientsThisQuarter: 7,
-    //         topClientsByRevenue: [
-    //             {
-    //                 client_name: "Google LLC",
-    //                 total_billed: 49034998.0,
-    //                 total_projects: 2
-    //             },
-    //             {
-    //                 client_name: "Shyam Merva",
-    //                 total_billed: 153000.0,
-    //                 total_projects: 2
-    //             },
-    //             {
-    //                 client_name: "McDonald's Corporation",
-    //                 total_billed: 0.0,
-    //                 total_projects: 0
-    //             },
-    //             {
-    //                 client_name: "AT&T Inc. ",
-    //                 total_billed: 0.0,
-    //                 total_projects: 0
-    //             },
-    //             {
-    //                 client_name: "Bayerische Motoren Werke Aktiengesellschaft (BMW AG)",
-    //                 total_billed: 0.0,
-    //                 total_projects: 0
-    //             }
-    //         ]
-    //     },
-    //     projects: {
-    //         total: 17,
-    //         completionRate: 47.06,
-    //         delayedProjects: 3,
-    //         avgDurationDays: 97.53,
-    //         roiPerProject: [
-    //             {
-    //                 project_id: "PRJ1001",
-    //                 roi: 4.33
-    //             },
-    //             {
-    //                 project_id: "PRJ1002",
-    //                 roi: 3.25
-    //             },
-    //             {
-    //                 project_id: "PRJ1413",
-    //                 roi: 1.34
-    //             }
-    //         ]
-    //     }
-    // }
 
     const goalsData = [
         {
@@ -517,7 +448,7 @@ export default function Analytics() {
 
             case 'sales':
                 return (
-                    <div className="max-w-4xl mx-auto">
+                    <div className="max-w-7xl mx-auto">
                         <SalesFinanceCard salesData={salesData} />
                     </div>
                 )
