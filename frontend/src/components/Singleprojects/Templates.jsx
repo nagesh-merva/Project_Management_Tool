@@ -91,7 +91,7 @@ const Templates = ({ templates }) => {
                 <div className="w-full mt-5 grid grid-cols-2 grid-rows-auto gap-4">
                     {templates?.map((temp, idx) => (
                         <div key={idx} className="flex flex-col bg-gray-50 rounded-lg p-3 shadow border border-gray-200">
-                            <TemplateBox head={temp.template_name} par={temp.department} download={() => downloadTemplate(temp)} fillTemplate={() => openTemplate(temp)} />
+                            <TemplateBox head={temp.template_name} par={temp.department} phase={temp.phase} download={() => downloadTemplate(temp)} fillTemplate={() => openTemplate(temp)} />
                         </div>
                     ))}
                 </div>

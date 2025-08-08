@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends,Body ,UploadFile , File,Form
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import BackgroundTasks
 from motor.motor_asyncio import AsyncIOMotorClient
 from models.dept import Department, EmpPerformanceMetrics ,EmployeeInput, EmployeeSummary,EmployeeResponse,EmployeesByDeptResponse ,EmpDocuments ,Employee ,PromotionInput
 from models.updatesAndtask import  UpdateTask,AddComment
@@ -1036,8 +1037,11 @@ async def get_phases_project(project_id: str):
         raise HTTPException(status_code=404, detail="No phases found for this project.")
     
     phases = []
-    for phase in project_phases:
-        phases.append(phase["parent_phase"] if "parent_phase" in phase else "")
+    for Parentphase in project_phases:
+        subphases = Parentphase.get("subphases")
+        for phase in subphases:
+            # print(phase)
+            phases.append(phase.get("subphase") if "subphase" in phase else "")
     return phases
 
 
@@ -1049,6 +1053,8 @@ async def add_template(data: dict):
     department = data.get("department")
     phase = data.get("phase")
     fields = data.get("fields")
+
+    print(data)
 
     if not project_id or not template_name or not department or not phase or not fields:
         raise HTTPException(status_code=400, detail="All fields are required.")
@@ -1085,6 +1091,22 @@ async def add_template(data: dict):
         "department": department,
         "phase": phase
     }
+    
+    await db.Projects.update_one(
+        {
+            "project_id": project_id,
+            "project_status.subphases.subphase": phase
+        },
+        {
+            "$set": {
+                "project_status.$[parent].subphases.$[sub].status": "in_progress"
+            }
+        },
+        array_filters=[
+            {"parent.subphases.subphase": phase},
+            {"sub.subphase": phase}
+        ]
+    )
 
     updated = await db.Projects.update_one(
         {"project_id": project_id},
@@ -1096,9 +1118,62 @@ async def add_template(data: dict):
 
     return {"message": f"Template '{template_name}' added to project {project_id}."}
 
-#================= Mark the Remark fields of a template  ============================
+#================= fucntion to update subphases status based on templates  ============================
+async def update_subphase_status_background(project_id: str):
+    """Background task to update subphase status"""
+    try:
+        project = await db.Projects.find_one({"project_id": project_id})
+        if not project:
+            return
+
+        templates = project.get("templates", [])
+        project_status = project.get("project_status", [])
+
+        templates_by_phase = {}
+        for template in templates:
+            phase = template.get("phase")
+            if phase:
+                if phase not in templates_by_phase:
+                    templates_by_phase[phase] = []
+                templates_by_phase[phase].append(template)
+
+        for parent_phase in project_status:
+            parent_phase_name = parent_phase.get("parent_phase")
+            subphases = parent_phase.get("subphases", [])
+            
+            for subphase in subphases:
+                subphase_name = subphase.get("subphase")
+                current_status = subphase.get("status")
+                
+                if current_status == "completed":
+                    continue
+                
+                if subphase_name in templates_by_phase:
+                    subphase_templates = templates_by_phase[subphase_name]
+                    
+                    all_verified = all(template.get("verified", False) for template in subphase_templates)
+                    
+                    if all_verified and len(subphase_templates) > 0:
+                        await db.Projects.update_one(
+                            {"project_id": project_id},
+                            {
+                                "$set": {
+                                    f"project_status.$[parent].subphases.$[sub].status": "completed",
+                                    f"project_status.$[parent].subphases.$[sub].closed_date": datetime.utcnow()
+                                }
+                            },
+                            array_filters=[
+                                {"parent.parent_phase": parent_phase_name},
+                                {"sub.subphase": subphase_name}
+                            ]
+                        )
+
+    except Exception as e:
+        print(f"Error updating subphase status: {str(e)}")
+
+#================================ Route to mark the template remarks ==========================
 @app.post("/mark-template-remarks")
-async def mark_template_remarks(data: dict):
+async def mark_template_remarks(data: dict,background_tasks: BackgroundTasks):
     project_id = data.get("project_id")
     template_id = data.get("template_id")
     verified_ids = data.get("verified_ids")
@@ -1106,28 +1181,26 @@ async def mark_template_remarks(data: dict):
     if not project_id or not template_id or not verified_ids:
         raise HTTPException(status_code=400, detail="project_id, template_id, and verified_ids are required.")
 
-    project = await db.Projects.find_one({"project_id": project_id})
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found.")
-
-    templates = project.get("templates", [])
-    template_index = None
-    for i, template in enumerate(templates):
-        if template.get("id") == template_id:
-            template_index = i
-            break
-
-    if template_index is None:
-        raise HTTPException(status_code=404, detail="Template not found.")
-
-
     for field_id in verified_ids:
-        update_path = f"templates.{template_index}.fields.$[field].remark"
-        db.Projects.update_one(
-            {"project_id": project_id},
-            {"$set": {update_path: True}},
-            array_filters=[{"field.id": field_id}]
+        await db.Projects.update_one(
+            {"project_id": project_id, "templates.id": template_id},
+            {"$set": {"templates.$[template].fields.$[field].remark": True}},
+            array_filters=[
+                {"template.id": template_id},
+                {"field.id": field_id}
+            ]
         )
+
+    project = await db.Projects.find_one({"project_id": project_id})
+    template = next((t for t in project.get("templates", []) if t["id"] == template_id), None)
+    
+    if template and all(field.get("remark") is True for field in template.get("fields", [])):
+        await db.Projects.update_one(
+            {"project_id": project_id, "templates.id": template_id},
+            {"$set": {"templates.$.verified": True}}
+        )
+
+    background_tasks.add_task(update_subphase_status_background, project_id)
 
     return {"message": f"Remark fields updated for template {template_id} in project {project_id}."}
 
@@ -1155,7 +1228,6 @@ async def manage_financial_data(data: dict):
         except Exception:
             profit_margin = None
 
-    # Update client's total_billed in metrics
     client_details = project.get("client_details", {})
     client_name = client_details.get("name")
     if client_name:

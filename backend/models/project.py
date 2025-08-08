@@ -89,6 +89,7 @@ class Template(BaseModel):
     template_name: str
     department: str
     phase: str
+    verified : bool
 
 
 class CustomLink(BaseModel):

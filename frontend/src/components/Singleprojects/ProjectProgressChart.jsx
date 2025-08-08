@@ -105,7 +105,7 @@ const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
 
     if (showForm || !projectPhases || projectPhases.length === 0) {
         return (
-            <div className="w-full max-w-4xl mx-auto bg-white p-6 rounded-xl shadow-md">
+            <div className="w-full max-w-4xl mx-auto bg-white p-6 rounded-xl shadow-md pb-20">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold text-gray-800">Manage Project</h2>
                     <button

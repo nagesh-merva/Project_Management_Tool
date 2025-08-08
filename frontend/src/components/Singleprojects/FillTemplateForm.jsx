@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { CheckSquare, Square, X } from "lucide-react"
 import clsx from "clsx"
 import { useParams } from "react-router-dom"
@@ -10,6 +10,16 @@ const FillTemplateForm = ({ template, close }) => {
     const handleToggle = (id) => {
         setRemarks(prev => ({ ...prev, [id]: !prev[id] }))
     }
+
+    useEffect(() => {
+        if (template?.fields) {
+            const initialRemarks = {}
+            for (const field of template.fields) {
+                initialRemarks[field.id] = field.remark || false
+            }
+            setRemarks(initialRemarks)
+        }
+    }, [template])
 
     console.log("Template Data:", template)
 
@@ -66,15 +76,21 @@ const FillTemplateForm = ({ template, close }) => {
                                     <td className="p-2">{index + 1}</td>
                                     <td className="p-2">{item.title}</td>
                                     <td className="p-2">
-                                        {item.remark ? (
-                                            <CheckSquare className="text-green-600 h-5 w-5" />
+                                        {remarks[item.id] ? (
+                                            <CheckSquare
+                                                className="text-green-600 h-5 w-5 cursor-pointer"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleToggle(item.id);
+                                                }}
+                                            />
                                         ) : (
                                             <Square
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    handleToggle(item.id)
-                                                }}
                                                 className="text-gray-600 h-5 w-5 hover:text-blue-500 cursor-pointer"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleToggle(item.id);
+                                                }}
                                             />
                                         )}
                                     </td>
