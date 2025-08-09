@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { CheckCircle, Circle, Calendar, Target, Plus, Save } from 'lucide-react'
 
-const ManageProjectForm = ({ projectId, projectPhases, isInitialized, setInitialized }) => {
+const ManageProjectForm = ({ projectId, projectPhases, isInitialized, setInitialized, overallProgress }) => {
   const [formData, setFormData] = useState([
-    { parent_phase: '', subphases: [{ subphase: '', template_id: '', remarks: '' }] },
+    { parent_phase: '', subphases: [{ subphase: '', remarks: '' }] },
   ])
 
-  const [templates, setTemplates] = useState([])
   const [editablePhases, setEditablePhases] = useState(projectPhases || [])
   const [isSaving, setIsSaving] = useState(false)
 
@@ -36,35 +35,27 @@ const ManageProjectForm = ({ projectId, projectPhases, isInitialized, setInitial
   }
 
   const submitInitialPhases = async () => {
+    setIsSaving(true)
+    console.log(formData)
     try {
-      const phasesWithTemplates = formData.map(phase => ({
-        ...phase,
-        subphases: phase.subphases.map(sub => {
-          const template = templates.find(t => t.id === sub.template_id)
-          return {
-            ...sub,
-            status: 'not_started',
-            start_date: null,
-            progress: 0,
-            template: template || null,
-            checklist: template ? template.fields.map(f => ({ ...f, completed: false })) : []
-          }
-        })
-      }))
-
       const response = await fetch('http://127.0.0.1:8000/add-initial-phases', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           project_id: projectId,
-          phases: phasesWithTemplates,
+          phases: formData,
         }),
       })
 
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
-      setInitialized(true)
+      if (response.ok) {
+        setInitialized(true)
+        setEditablePhases(formData)
+      }
     } catch (err) {
       console.error('Phase Initialization Error:', err)
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -114,8 +105,16 @@ const ManageProjectForm = ({ projectId, projectPhases, isInitialized, setInitial
         }),
       })
 
+      if (response.status === 404 | response.status === 400) {
+        alert(response.message)
+      }
+
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
-      alert('Project phases updated successfully!')
+      if (response.ok) {
+        alert('Project phases updated successfully!')
+        window.location.reload()
+      }
+
     } catch (err) {
       console.error('Save Error:', err)
       alert('Failed to save updates. Try again.')
@@ -125,7 +124,7 @@ const ManageProjectForm = ({ projectId, projectPhases, isInitialized, setInitial
 
   if (!isInitialized) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 w-full h-full overflow-auto scrollbar-thin">
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <h2 className="text-lg font-semibold text-blue-900 mb-2">Define Initial Project Phases</h2>
           <p className="text-blue-700 text-sm">Create phases and assign templates for automatic progress tracking</p>
@@ -150,18 +149,6 @@ const ManageProjectForm = ({ projectId, projectPhases, isInitialized, setInitial
                   onChange={(e) => handleSubphaseChange(i, j, 'subphase', e.target.value)}
                   className="border border-gray-300 px-3 py-2 rounded-md focus:border-blue-500 focus:outline-none"
                 />
-                <select
-                  value={sub.template_id}
-                  onChange={(e) => handleSubphaseChange(i, j, 'template_id', e.target.value)}
-                  className="border border-gray-300 px-3 py-2 rounded-md focus:border-blue-500 focus:outline-none"
-                >
-                  <option value="">Select Template</option>
-                  {templates?.map(template => (
-                    <option key={template.id} value={template.id}>
-                      {template.name} ({template.fields.length} items)
-                    </option>
-                  ))}
-                </select>
                 <input
                   type="text"
                   placeholder="Remarks (optional)"
@@ -198,13 +185,9 @@ const ManageProjectForm = ({ projectId, projectPhases, isInitialized, setInitial
       </div>
     )
   }
-  const overallProgress = editablePhases.reduce((total, phase) => {
-    const phaseProgress = phase.subphases.reduce((subTotal, sub) => subTotal + (sub.progress || 0), 0)
-    return total + (phaseProgress / phase.subphases.length)
-  }, 0) / editablePhases.length
 
   return (
-    <div className="space-y-6 w-full h-full overflow-auto">
+    <div className="space-y-6 w-full h-full overflow-auto scrollbar-thin">
       <div className="bg-green-50 border border-green-200 rounded-lg p-4">
         <div className="flex items-center justify-between">
           <div>
@@ -212,7 +195,7 @@ const ManageProjectForm = ({ projectId, projectPhases, isInitialized, setInitial
             <p className="text-green-700 text-sm">Track progress through template-based checklists</p>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold text-green-600">{Math.round(overallProgress)}%</div>
+            <div className="text-2xl font-bold text-green-600">{Math.round(overallProgress, 2)}%</div>
             <div className="text-sm text-green-700">Overall Progress</div>
           </div>
         </div>

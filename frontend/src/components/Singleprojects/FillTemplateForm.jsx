@@ -2,13 +2,23 @@ import { useEffect, useState } from "react"
 import { CheckSquare, Square, X } from "lucide-react"
 import clsx from "clsx"
 import { useParams } from "react-router-dom"
+import { useMainContext } from "../../context/MainContext"
 
 const FillTemplateForm = ({ template, close }) => {
     const [remarks, setRemarks] = useState({})
     const { id } = useParams()
+    const { emp } = useMainContext()
 
     const handleToggle = (id) => {
         setRemarks(prev => ({ ...prev, [id]: !prev[id] }))
+    }
+
+    const CanVerify = () => {
+        if (emp.emp_dept === template.department) {
+            return true
+        } else {
+            return false
+        }
     }
 
     useEffect(() => {
@@ -48,7 +58,7 @@ const FillTemplateForm = ({ template, close }) => {
             alert("Error occurred during submission.")
         }
     }
-
+    console.log(CanVerify())
 
     return (
         <div className="fixed -top-12 inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -75,25 +85,37 @@ const FillTemplateForm = ({ template, close }) => {
                                 <tr key={item.id} className="bg-violet-100">
                                     <td className="p-2">{index + 1}</td>
                                     <td className="p-2">{item.title}</td>
-                                    <td className="p-2">
+                                    {CanVerify() ? (
+                                        <td className="p-2">
+                                            {remarks[item.id] ? (
+                                                <CheckSquare
+                                                    className="text-green-600 h-5 w-5 cursor-pointer"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleToggle(item.id);
+                                                    }}
+                                                />
+                                            ) : (
+                                                <Square
+                                                    className="text-gray-600 h-5 w-5 hover:text-blue-500 cursor-pointer"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleToggle(item.id);
+                                                    }}
+                                                />
+                                            )}
+                                        </td>
+                                    ) : (<td className="p-2">
                                         {remarks[item.id] ? (
                                             <CheckSquare
-                                                className="text-green-600 h-5 w-5 cursor-pointer"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleToggle(item.id);
-                                                }}
+                                                className="text-green-600 h-5 w-5"
                                             />
                                         ) : (
                                             <Square
-                                                className="text-gray-600 h-5 w-5 hover:text-blue-500 cursor-pointer"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleToggle(item.id);
-                                                }}
+                                                className="text-gray-600 h-5 w-5"
                                             />
                                         )}
-                                    </td>
+                                    </td>)}
                                 </tr>
                             ))}
                         </tbody>

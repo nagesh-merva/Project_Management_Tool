@@ -25,7 +25,7 @@ const BriefProjectBox = ({ project }) => {
         <div className="relative w-full h-full flex flex-col border-2 border-black p-3 md:p-4 rounded-lg shadow-md bg-white transition-all">
             <div className="w-full flex justify-between border-b border-black pb-2 mb-3">
                 <h1 className="text-base font-semibold font-sans truncate">{project_name}</h1>
-                <p className="text-sm font-semibold font-sans text-orange-600">{progress}%</p>
+                <p className="text-sm font-semibold font-sans text-orange-600">{Math.round(progress, 2)}%</p>
             </div>
 
             <div className="flex justify-between items-start mb-3 flex-wrap gap-2">

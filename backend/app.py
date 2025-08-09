@@ -1099,7 +1099,8 @@ async def add_template(data: dict):
         },
         {
             "$set": {
-                "project_status.$[parent].subphases.$[sub].status": "in_progress"
+                "project_status.$[parent].subphases.$[sub].status": "in_progress",
+                "project_status.$[parent].subphases.$[sub].start_date" : datetime.now()
             }
         },
         array_filters=[
@@ -1216,6 +1217,8 @@ async def manage_financial_data(data: dict):
         raise HTTPException(status_code=404, detail="Project not found.")
 
     financial_data = project.get("financial_data", {})
+    
+    print(data)
 
     total_budget = data.get("total_budget", financial_data.get("total_budget"))
     expected_revenue = data.get("expected_revenue", financial_data.get("expected_revenue"))
@@ -1325,7 +1328,7 @@ async def add_project_phases(data: ProjectPhaseUpdate):
             sub_dict = {
                 "subphase": sub.subphase,
                 "status": "not_started", 
-                "start_date": sub.start_date if sub.start_date else None,
+                "start_date": None,
                 "closed_date": None,
                 "remarks": sub.remarks or ""
             }
@@ -1365,16 +1368,21 @@ async def update_project_phases(data: ProjectPhaseUpdate):
     project = db.Projects.find_one({"project_id": data.project_id})
 
     if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+        raise HTTPException(status_code=404, detail="Project not found",message ="Project not found")
 
     updated_status = []
+    completed = 0
+    subphases =0 
     for phase in data.phases:
         updated_subphases = []
         for sub in phase.subphases:
+            subphases+=1
             start_date = datetime.fromisoformat(sub.start_date) if sub.start_date else None
             closed_date = datetime.fromisoformat(sub.closed_date) if sub.closed_date else None
 
             status = infer_status(start_date, closed_date)
+            if status == "completed" : completed+=1
+            elif status == "in_progress" : completed += 0.5
             updated_subphases.append({
                 "subphase": sub.subphase,
                 "status": status,
@@ -1386,14 +1394,17 @@ async def update_project_phases(data: ProjectPhaseUpdate):
             "parent_phase": phase.parent_phase,
             "subphases": updated_subphases
         })
+        
+    
+    progress = ((completed / subphases * 100) if subphases > 0 and completed > 0 else 5)
 
     result = await db.Projects.update_one(
         {"project_id": data.project_id},
-        {"$set": {"project_status": updated_status}}
+        {"$set": {"project_status": updated_status ,"progress":progress}}
     )
 
     if result.modified_count == 0:
-        raise HTTPException(status_code=400, detail="No changes were made")
+        raise HTTPException(status_code=400, detail="No changes were made",message="No changes were made")
 
     return {"message": "Project phases updated successfully"}
 
