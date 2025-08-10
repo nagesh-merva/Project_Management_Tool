@@ -29,45 +29,59 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
     const handleSubmit = async (e) => {
         e.preventDefault()
         setIsSubmiting(true)
-        const emp = JSON.parse(localStorage.getItem("emp"))
         const newFormData = { ...formData }
 
-        fields.forEach(f => {
-            if (newFormData[f.name] === undefined && !f.optional && f.type !== "stored" && (f.type !== "select" && f.multi !== true)) {
-                alert(`Please fill the ${f.name.replace(/_/g, " ")}`)
-                return
-            }
-            if (f.type === "stored") {
-                newFormData[f.name] = f.value
-            }
-            if (f.name === "to") {
-                newFormData[f.name] = validateTo(newFormData[f.name])
-            }
-            if (f.type === "date") {
-                const rawDate = newFormData[f.name]
-                const parsedDate = new Date(rawDate)
-                newFormData[f.name] = parsedDate
-            }
+        for (const f of fields) {
             if (
-                f.type === "select" && ((Array.isArray(newFormData[f.name]) && newFormData[f.name].length === 0) || newFormData[f.name] === undefined)) {
-                if (f.multi) {
-                    newFormData[f.name] = [f.fields[0]?.value]
-                } else {
-                    newFormData[f.name] = f.fields[0]?.value
-                }
+                newFormData[f.name] === undefined &&
+                !f.optional &&
+                f.type !== "stored" &&
+                (f.type !== "select" || f.multi !== true)
+            ) {
+                alert(`Please fill the ${f.name.replace(/_/g, " ")}`);
+                setIsSubmiting(false);
+                return;
+            }
 
+            if (f.type === "stored") {
+                newFormData[f.name] = f.value;
             }
-            if (f.type === "number" && newFormData[f.name] !== undefined) {
-                const val = newFormData[f.name]
-                if (val === "" || val === null) {
-                    newFormData[f.name] = null
-                } else if (val.toString().includes(".")) {
-                    newFormData[f.name] = parseFloat(val)
+
+            if (f.name === "to") {
+                newFormData[f.name] = validateTo(newFormData[f.name]);
+            }
+
+            if (f.type === "date") {
+                const rawDate = newFormData[f.name];
+                const parsedDate = new Date(rawDate);
+                newFormData[f.name] = parsedDate;
+            }
+
+            if (
+                f.type === "select" &&
+                ((Array.isArray(newFormData[f.name]) && newFormData[f.name].length === 0) ||
+                    newFormData[f.name] === undefined)
+            ) {
+                if (f.multi) {
+                    newFormData[f.name] = [f.fields[0]?.value];
                 } else {
-                    newFormData[f.name] = parseInt(val, 10)
+                    alert("Please select " + f.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()));
+                    setIsSubmiting(false);
+                    return;
                 }
             }
-        })
+
+            if (f.type === "number" && newFormData[f.name] !== undefined) {
+                const val = newFormData[f.name];
+                if (val === "" || val === null) {
+                    newFormData[f.name] = null;
+                } else if (val.toString().includes(".")) {
+                    newFormData[f.name] = parseFloat(val);
+                } else {
+                    newFormData[f.name] = parseInt(val, 10);
+                }
+            }
+        }
 
         const hasFile = fields.some(f => f.type === "file")
         console.log(newFormData)
@@ -245,6 +259,7 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                                             className={`border p-2 rounded w-full ${field.multi ? 'min-h-[100px]' : ''} bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400 scrollbar-thin scrollbar-thumb-blue-300`}
                                             value={formData[field.name] || (field.multi ? [] : '')}
                                         >
+                                            {!field.multi && (<option value={""}>Please Select {field.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}</option>)}
                                             {field.fields.map((option, idx) => (
                                                 <option key={idx} value={option.value}>
                                                     {option.name}
