@@ -31,6 +31,16 @@ export const MainProvider = ({ children }) => {
     // Loading state
     const [loading, setLoading] = useState(false)
 
+    // Analytics tab 
+    const [activeTab, setActiveTab] = useState(() => {
+        const stored = sessionStorage.getItem("analytics-tabs")
+        return stored ? stored : "overview"
+    });
+
+    useEffect(() => {
+        sessionStorage.setItem("analytics-tabs", activeTab)
+    }, [activeTab])
+
     // Sync emp to localStorage
     const setEmp = (empObj) => {
         setEmpState(empObj)
@@ -109,7 +119,9 @@ export const MainProvider = ({ children }) => {
                 selectedDepartment,
                 setDepartment,
                 loggedIn,
-                LogIn
+                LogIn,
+                activeTab,
+                setActiveTab
             }}
         >
             {children}

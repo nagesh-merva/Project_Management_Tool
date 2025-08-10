@@ -1,3 +1,4 @@
+from bson import ObjectId
 from fastapi import FastAPI, HTTPException, Depends,Body ,UploadFile , File,Form
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import BackgroundTasks
@@ -6,8 +7,10 @@ from models.dept import Department, EmpPerformanceMetrics ,EmployeeInput, Employ
 from models.updatesAndtask import  UpdateTask,AddComment
 from models.project import Project,AddProjectRequest ,QuickLinks ,SRS ,FinancialData,PerformanceMetrics,ProjectPhaseUpdate
 from models.clients import Client, ClientMetrics, ClientDocuments, ContactPerson, ClientEngagement ,BasicClientInput,UpdateClientInput ,ClientDocuments ,ClientNote
+from models.goals import Goal, CreateGoalInput, UpdateGoalInput, AddProgressInput, AddMilestoneInput, UpdateMilestoneInput, AddAuditInput,GoalResponse, GoalSummary, ProgressEntry, AuditEntry, Milestone, Risk
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
+from calendar import monthrange
 from pydantic import EmailStr
 # from bson import ObjectId
 from jose import JWTError, jwt # type: ignore
@@ -18,6 +21,7 @@ import os
 import tempfile
 from dotenv import load_dotenv
 import random
+import string
 import uuid
 
 load_dotenv()
@@ -1121,7 +1125,6 @@ async def add_template(data: dict):
 
 #================= fucntion to update subphases status based on templates  ============================
 async def update_subphase_status_background(project_id: str):
-    """Background task to update subphase status"""
     try:
         project = await db.Projects.find_one({"project_id": project_id})
         if not project:
@@ -1544,7 +1547,7 @@ async def add_client_documents(
     client_id: str = Form(...),
     file: UploadFile = File(...)
 ):
-    #print("📥 Received request to add client document")
+    #print("Received request to add client document")
 
     if not client_id:
         raise HTTPException(status_code=400, detail="Client ID is required.")
@@ -1567,21 +1570,21 @@ async def add_client_documents(
     existing_documents = client.get("documents", [])
     if not existing_documents:
         random_id = f"CDOC{random.randint(1000, 9999)}"
-        #print("📄 No existing documents, assigned ID:", random_id)
+        #print("No existing documents, assigned ID:", random_id)
     else:
         existing_ids = [doc["id"] for doc in existing_documents if "id" in doc]
         while True:
             random_id = f"CDOC{random.randint(1000, 9999)}"
             if random_id not in existing_ids:
-                #print("✅ Unique document ID generated:", random_id)
+                #print("Unique document ID generated:", random_id)
                 break
 
     try:
-        #print("📤 Uploading document...")
+        #print("Uploading document...")
         doc_link = await upload_file_to_firebase(file, folder=f"PMT/clients/{client['brand_name']}/documents")
-        #print("✅ Upload successful")
+        #print("Upload successful")
     except Exception as e:
-        #print("❌ Upload failed:", str(e))
+        #print("Upload failed:", str(e))
         raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
 
 
@@ -1601,7 +1604,7 @@ async def add_client_documents(
     if result.modified_count == 0:
         raise HTTPException(status_code=500, detail="Document not added to the client.")
 
-    return {"message": f"✅ Document '{doc_name}' added to client {client_id}.",}
+    return {"message": f"Document '{doc_name}' added to client {client_id}.",}
 
 # ============= Add client notes =================
 @app.post("/add-client-notes")
@@ -1639,6 +1642,9 @@ async def overviewData():
     current_month = now.month
     current_year = now.year
 
+    prev_month = current_month - 1 if current_month > 1 else 12
+    prev_year = current_year if current_month > 1 else current_year - 1
+
     employees_cursor = db.Employees.find({"status": "Active"}, {"_id": 0})
     employees = await employees_cursor.to_list(length=None)
     total_employees = len(employees)
@@ -1652,26 +1658,27 @@ async def overviewData():
 
     completed_projects_cursor = db.Projects.find({"status": "completed"}, {"_id": 0})
     completed_projects = await completed_projects_cursor.to_list(length=None)
-    
-    revenue = 0
-    used_projects = []
+
+    current_revenue = 0
+    previous_revenue = 0
 
     for project in completed_projects:
         deadline = project.get("deadline")
-        if isinstance(deadline, datetime) and deadline.month == current_month and deadline.year == current_year and project.get("status") == "completed":
-            project_id = project.get("project_id", "Unknown ID")
-            expected = project.get("financial_data", {}).get("expected_revenue", 0)
-            
-            # print(f"Added project {project_id} with expected revenue: {expected}")
-            used_projects.append(project_id)
-            revenue += expected
-
+        if isinstance(deadline, datetime):
+            if deadline.month == current_month and deadline.year == current_year:
+                current_revenue += project.get("financial_data", {}).get("expected_revenue", 0)
+            elif deadline.month == prev_month and deadline.year == prev_year:
+                previous_revenue += project.get("financial_data", {}).get("expected_revenue", 0)
 
     fresh_metrics = {
         "total_employees": total_employees,
         "active_projects": count_active_projects,
-        "monthly_completed_project_revenue": revenue,
+        "monthly_completed_project_revenue": current_revenue,
         "total_emp_performance": Total_performance
+    }
+
+    previous_metrics = {
+        "monthly_completed_project_revenue": previous_revenue
     }
 
     analytics_doc = await db.Analytics.find_one({"type": "overview_data"})
@@ -1689,8 +1696,8 @@ async def overviewData():
 
             if month_diff >= 2:
                 updated_data[key] = {
-                    "previous_value": existing.get("current_value"),
-                    "previous_calculated": existing.get("current_calculated"),
+                    "previous_value": previous_metrics.get(key, existing.get("current_value")),
+                    "previous_calculated": datetime(prev_year, prev_month, monthrange(prev_year, prev_month)[1]),
                     "current_value": new_value,
                     "current_calculated": now
                 }
@@ -1703,8 +1710,8 @@ async def overviewData():
                 }
         else:
             updated_data[key] = {
-                "previous_value": new_value,
-                "previous_calculated": now,
+                "previous_value": previous_metrics.get(key),
+                "previous_calculated": datetime(prev_year, prev_month, monthrange(prev_year, prev_month)[1]),
                 "current_value": new_value,
                 "current_calculated": now
             }
@@ -2039,3 +2046,428 @@ async def get_project_metrics():
         processed_projects.append(project_obj)
 
     return {"projectsData": processed_projects}
+
+
+#============================= GOALS ================================
+async def generate_unique_id(collection, prefix: str, length: int = 8) -> str:
+    while True:
+        random_part = ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
+        unique_id = f"{prefix}_{random_part}"
+        
+        existing = await collection.find_one({"id": unique_id})
+        if not existing:
+            return unique_id
+
+#=================== Create a new goal==============================
+@app.post("/goals/", response_model=GoalResponse)
+async def create_goal(goal_input: CreateGoalInput):
+    try:
+        unique_id = await generate_unique_id(db.Goals, "GOAL")
+        
+        goal_dict = goal_input.dict()
+        goal_dict["id"] = unique_id
+        goal_dict["created_at"] = datetime.utcnow()
+        goal_dict["updated_at"] = datetime.utcnow()
+        
+        result = await db.Goals.insert_one(goal_dict)
+        created_goal = await db.Goals.find_one({"id": unique_id})
+        
+        return GoalResponse(**created_goal)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error creating goal: {str(e)}")
+
+
+#==========================Get all goals with optional filters==========================
+@app.get("/goals/", response_model=List[GoalSummary])
+async def get_goals(
+    category: Optional[str] = None,
+    department: Optional[str] = None,
+    status: Optional[str] = None,
+    limit: int = 50,
+    skip: int = 0
+):
+    try:
+        query = {}
+        if category:
+            query["goal_category"] = category
+        if department:
+            query["responsible_department"] = department
+        if status:
+            query["status"] = status
+        
+        cursor = db.Goals.find(query).skip(skip).limit(limit).sort("created_at", -1)
+        goals = await cursor.to_list(length=limit)
+        
+        goal_summaries = []
+        for goal in goals:
+            milestones_completed = sum(1 for m in goal.get("milestones", []) if m.get("completed", False))
+            total_milestones = len(goal.get("milestones", []))
+            
+            summary = GoalSummary(
+                id=goal["id"],
+                name=goal["name"],
+                goal_category=goal["goal_category"],
+                current_progress=goal["current_progress"],
+                responsible_department=goal["responsible_department"],
+                deadline=goal["deadline"],
+                success_probability=goal["success_probability"],
+                status=goal["status"],
+                milestones_completed=milestones_completed,
+                total_milestones=total_milestones
+            )
+            goal_summaries.append(summary)
+        
+        return goal_summaries
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error fetching goals: {str(e)}")
+
+#=========================Get dashboard analytics for goals===========================
+@app.get("/goals/analytics/dashboard")
+async def get_goals_dashboard():
+    try:
+        pipeline = [
+            {
+                "$group": {
+                    "_id": None,
+                    "total_goals": {"$sum": 1},
+                    "active_goals": {
+                        "$sum": {"$cond": [{"$eq": ["$status", "active"]}, 1, 0]}
+                    },
+                    "completed_goals": {
+                        "$sum": {"$cond": [{"$eq": ["$status", "completed"]}, 1, 0]}
+                    },
+                    "avg_progress": {"$avg": "$current_progress"},
+                    "avg_success_probability": {"$avg": "$success_probability"}
+                }
+            }
+        ]
+        
+        result = await db.Goals.aggregate(pipeline).to_list(length=1)
+        
+        if result:
+            stats = result[0]
+            del stats["_id"]
+        else:
+            stats = {
+                "total_goals": 0,
+                "active_goals": 0,
+                "completed_goals": 0,
+                "avg_progress": 0,
+                "avg_success_probability": 0
+            }
+        
+        category_pipeline = [
+            {
+                "$group": {
+                    "_id": "$goal_category",
+                    "count": {"$sum": 1},
+                    "avg_progress": {"$avg": "$current_progress"}
+                }
+            }
+        ]
+        
+        category_stats = await db.Goals.aggregate(category_pipeline).to_list(length=10)
+        
+        dept_pipeline = [
+            {
+                "$group": {
+                    "_id": "$responsible_department",
+                    "count": {"$sum": 1},
+                    "avg_progress": {"$avg": "$current_progress"}
+                }
+            }
+        ]
+        
+        dept_stats = await db.Goals.aggregate(dept_pipeline).to_list(length=20)
+        
+        return {
+            "overall_stats": stats,
+            "by_category": category_stats,
+            "by_department": dept_stats
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error fetching dashboard: {str(e)}")
+
+
+#======================Get a specific goal by ID===========================
+@app.get("/goals/{goal_id}", response_model=GoalResponse)
+async def get_goal_by_id(goal_id: str):
+    try:
+        goal = await db.Goals.find_one({"id": goal_id})
+        if not goal:
+            raise HTTPException(status_code=404, detail="Goal not found")
+        
+        return GoalResponse(**goal)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error fetching goal: {str(e)}")
+
+#=======================Update a goal============================
+@app.put("/goals/{goal_id}", response_model=GoalResponse)
+async def update_goal(goal_id: str, update_input: UpdateGoalInput):
+    try:
+        update_data = {k: v for k, v in update_input.dict().items() if v is not None}
+        if not update_data:
+            raise HTTPException(status_code=400, detail="No data provided for update")
+        
+        update_data["updated_at"] = datetime.utcnow()
+        
+        result = await db.Goals.update_one(
+            {"id": goal_id},
+            {"$set": update_data}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Goal not found")
+        
+        updated_goal = await db.Goals.find_one({"id": goal_id})
+        return GoalResponse(**updated_goal)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error updating goal: {str(e)}")
+
+#======================Add progress entry to a goal==============================
+@app.post("/goals/progress/")
+async def add_progress(progress_input: AddProgressInput):
+    try:
+        goal_id = progress_input.goal_id
+        
+        progress_entry = ProgressEntry(
+            date=date.today(),
+            progress_percentage=progress_input.progress_percentage,
+            notes=progress_input.notes,
+            updated_by=progress_input.updated_by
+        )
+        
+        result = await db.Goals.update_one(
+            {"id": goal_id},
+            {
+                "$push": {"progress_history": progress_entry.dict()},
+                "$set": {
+                    "current_progress": progress_input.progress_percentage,
+                    "updated_at": datetime.utcnow()
+                }
+            }
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Goal not found")
+        
+        return {"message": "Progress added successfully", "goal_id": goal_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error adding progress: {str(e)}")
+
+#=======================Add milestone to a goal============================
+@app.post("/goals/milestones/")
+async def add_milestone(milestone_input: AddMilestoneInput):
+    try:
+        goal_id = milestone_input.goal_id
+        
+        result = await db.Goals.update_one(
+            {"id": goal_id},
+            {
+                "$push": {"milestones": milestone_input.milestone.dict()},
+                "$set": {"updated_at": datetime.utcnow()}
+            }
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Goal not found")
+        
+        return {"message": "Milestone added successfully", "goal_id": goal_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error adding milestone: {str(e)}")
+
+#======================== Update milestone status =============================
+@app.put("/goals/milestones/")
+async def update_milestone(milestone_update: UpdateMilestoneInput):
+    try:
+        goal_id = milestone_update.goal_id
+        
+        update_fields = {
+            "milestones.$.completed": milestone_update.completed,
+        }
+        
+        if milestone_update.completion_date:
+            update_fields["milestones.$.completion_date"] = milestone_update.completion_date
+        
+        result = await db.Goals.update_one(
+            {
+                "id": goal_id,
+                "milestones.name": milestone_update.milestone_name
+            },
+            {
+                "$set": {
+                    **update_fields,
+                    "updated_at": datetime.utcnow()
+                }
+            }
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Goal or milestone not found")
+        
+        return {"message": "Milestone updated successfully", "goal_id": goal_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error updating milestone: {str(e)}")
+
+
+#=====================Add audit entry to a goal==========================
+@app.post("/goals/audit/")
+async def add_audit_entry(audit_input: AddAuditInput):
+    try:
+        goal_id = audit_input.goal_id
+        
+        goal = await db.Goals.find_one({"id": goal_id})
+        if not goal:
+            raise HTTPException(status_code=404, detail="Goal not found")
+        
+        milestones = goal.get("milestones", [])
+        milestones_completed = sum(1 for m in milestones if m.get("completed", False))
+        total_milestones = len(milestones)
+        
+        audit_entry = AuditEntry(
+            audit_date=date.today(),
+            auditor=audit_input.auditor,
+            current_progress=audit_input.current_progress,
+            milestones_completed=milestones_completed,
+            total_milestones=total_milestones,
+            success_probability=audit_input.success_probability,
+            notes=audit_input.notes,
+            recommendations=audit_input.recommendations,
+            risks_identified=audit_input.risks_identified
+        )
+        
+        result = await db.Goals.update_one(
+            {"id": goal_id},
+            {
+                "$push": {"audit_history": audit_entry.dict()},
+                "$set": {
+                    "current_progress": audit_input.current_progress,
+                    "success_probability": audit_input.success_probability,
+                    "updated_at": datetime.utcnow()
+                }
+            }
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Goal not found")
+        
+        return {"message": "Audit entry added successfully", "goal_id": goal_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error adding audit entry: {str(e)}")
+
+#====================Delete a goal==============================
+@app.delete("/goals/{goal_id}")
+async def delete_goal(goal_id: str):
+    try:
+        result = await db.Goals.delete_one({"id": goal_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Goal not found")
+        
+        return {"message": "Goal deleted successfully", "goal_id": goal_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error deleting goal: {str(e)}")
+
+@app.post("/goals/bulk/")
+async def create_bulk_goals(goals_input: List[CreateGoalInput]):
+    try:
+        created_goals = []
+        
+        for goal_input in goals_input:
+            unique_id = await generate_unique_id(db.Goals, "GOAL")
+            
+            goal_dict = goal_input.dict()
+            goal_dict["id"] = unique_id
+            goal_dict["created_at"] = datetime.utcnow()
+            goal_dict["updated_at"] = datetime.utcnow()
+            
+            created_goals.append(goal_dict)
+        
+        result = await db.Goals.insert_many(created_goals)
+        
+        return {
+            "message": f"Successfully created {len(created_goals)} goals",
+            "goal_ids": [goal["id"] for goal in created_goals]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error creating bulk goals: {str(e)}")
+
+@app.get("/goals/search/")
+async def search_goals(
+    q: str,
+    category: Optional[str] = None,
+    department: Optional[str] = None,
+    status: Optional[str] = None,
+    limit: int = 20
+):
+    try:
+        query = {
+            "$or": [
+                {"name": {"$regex": q, "$options": "i"}},
+                {"target_metric": {"$regex": q, "$options": "i"}},
+                {"responsible_department": {"$regex": q, "$options": "i"}}
+            ]
+        }
+        
+        if category:
+            query["goal_category"] = category
+        if department:
+            query["responsible_department"] = department
+        if status:
+            query["status"] = status
+        
+        cursor = db.Goals.find(query).limit(limit).sort("created_at", -1)
+        goals = await cursor.to_list(length=limit)
+        
+        goal_summaries = []
+        for goal in goals:
+            milestones_completed = sum(1 for m in goal.get("milestones", []) if m.get("completed", False))
+            total_milestones = len(goal.get("milestones", []))
+            
+            summary = GoalSummary(
+                id=goal["id"],
+                name=goal["name"],
+                goal_category=goal["goal_category"],
+                current_progress=goal["current_progress"],
+                responsible_department=goal["responsible_department"],
+                deadline=goal["deadline"],
+                success_probability=goal["success_probability"],
+                status=goal["status"],
+                milestones_completed=milestones_completed,
+                total_milestones=total_milestones
+            )
+            goal_summaries.append(summary)
+        
+        return {
+            "results": goal_summaries,
+            "total_found": len(goal_summaries),
+            "search_term": q
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error searching goals: {str(e)}")
+
+@app.get("/goals/check-id/{goal_id}")
+async def check_id_availability(goal_id: str):
+    try:
+        existing = await db.Goals.find_one({"id": goal_id})
+        return {
+            "id": goal_id,
+            "available": existing is None,
+            "exists": existing is not None
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error checking ID: {str(e)}")
