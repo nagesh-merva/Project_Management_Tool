@@ -15,17 +15,17 @@ class Risk(BaseModel):
 
 class ProgressEntry(BaseModel):
     date: date
-    progress_percentage: float = Field(ge=0, le=100)
+    progress_percentage: float 
     notes: Optional[str] = None
     updated_by: str
 
 class AuditEntry(BaseModel):
     audit_date: date
     auditor: str
-    current_progress: float = Field(ge=0, le=100)
+    current_progress: float 
     milestones_completed: int
     total_milestones: int
-    success_probability: float = Field(ge=0, le=100)
+    success_probability: float
     notes: Optional[str] = None
     recommendations: Optional[str] = None
     risks_identified: List[Risk] = []
@@ -35,10 +35,10 @@ class Goal(BaseModel):
     name: str
     target_metric: str
     goal_category: Literal["yearly", "6months", "quarterly"]
-    current_progress: float = Field(default=0, ge=0, le=100)
+    current_progress: float 
     responsible_department: str
     deadline: date
-    success_probability: float = Field(default=50, ge=0, le=100)
+    success_probability: float 
     audit_period: Literal["weekly", "monthly", "quarterly"]
     milestones: List[Milestone] = []
     risks: List[Risk] = []
@@ -58,7 +58,7 @@ class CreateGoalInput(BaseModel):
     goal_category: Literal["yearly", "6months", "quarterly"]
     responsible_department: str
     deadline: date
-    success_probability: float = Field(default=50, ge=0, le=100)
+    success_probability: float
     audit_period: Literal["weekly", "monthly", "quarterly"]
     milestones: List[Milestone] = []
     risks: List[Risk] = []
@@ -69,13 +69,13 @@ class UpdateGoalInput(BaseModel):
     target_metric: Optional[str] = None
     responsible_department: Optional[str] = None
     deadline: Optional[date] = None
-    success_probability: Optional[float] = Field(None, ge=0, le=100)
+    success_probability: Optional[float] 
     audit_period: Optional[Literal["weekly", "monthly", "quarterly"]] = None
     status: Optional[Literal["active", "completed", "paused", "cancelled"]] = None
 
 class AddProgressInput(BaseModel):
     goal_id: str
-    progress_percentage: float = Field(ge=0, le=100)
+    progress_percentage: float
     notes: Optional[str] = None
     updated_by: str
 
@@ -92,8 +92,8 @@ class UpdateMilestoneInput(BaseModel):
 class AddAuditInput(BaseModel):
     goal_id: str
     auditor: str
-    current_progress: float = Field(ge=0, le=100)
-    success_probability: float = Field(ge=0, le=100)
+    current_progress: float 
+    success_probability: float 
     notes: Optional[str] = None
     recommendations: Optional[str] = None
     risks_identified: List[Risk] = []

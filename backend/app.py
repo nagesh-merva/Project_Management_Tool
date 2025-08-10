@@ -1407,7 +1407,7 @@ async def update_project_phases(data: ProjectPhaseUpdate):
     )
 
     if result.modified_count == 0:
-        raise HTTPException(status_code=400, detail="No changes were made",message="No changes were made")
+        raise HTTPException(status_code=400, detail="No changes were made")
 
     return {"message": "Project phases updated successfully"}
 
@@ -2078,7 +2078,7 @@ async def create_goal(goal_input: CreateGoalInput):
 
 
 #==========================Get all goals with optional filters==========================
-@app.get("/goals/", response_model=List[GoalSummary])
+@app.get("/goals/", response_model=List[GoalResponse])
 async def get_goals(
     category: Optional[str] = None,
     department: Optional[str] = None,
@@ -2094,30 +2094,36 @@ async def get_goals(
             query["responsible_department"] = department
         if status:
             query["status"] = status
-        
+
         cursor = db.Goals.find(query).skip(skip).limit(limit).sort("created_at", -1)
         goals = await cursor.to_list(length=limit)
-        
-        goal_summaries = []
+
+        goal_responses = []
         for goal in goals:
-            milestones_completed = sum(1 for m in goal.get("milestones", []) if m.get("completed", False))
-            total_milestones = len(goal.get("milestones", []))
-            
-            summary = GoalSummary(
+            # milestones_completed = sum(1 for m in goal.get("milestones", []) if m.get("completed", False))
+            # total_milestones = len(goal.get("milestones", []))
+
+            goal_responses.append(GoalResponse(
                 id=goal["id"],
-                name=goal["name"],
-                goal_category=goal["goal_category"],
-                current_progress=goal["current_progress"],
-                responsible_department=goal["responsible_department"],
-                deadline=goal["deadline"],
-                success_probability=goal["success_probability"],
-                status=goal["status"],
-                milestones_completed=milestones_completed,
-                total_milestones=total_milestones
-            )
-            goal_summaries.append(summary)
-        
-        return goal_summaries
+                name=goal.get("name"),
+                target_metric=goal.get("target_metric"),
+                goal_category=goal.get("goal_category"),
+                current_progress=goal.get("current_progress"),
+                responsible_department=goal.get("responsible_department"),
+                deadline=goal.get("deadline"),
+                success_probability=goal.get("success_probability"),
+                audit_period=goal.get("audit_period"),
+                milestones=goal.get("milestones", []),
+                risks=goal.get("risks", []),
+                progress_history=goal.get("progress_history", []),
+                audit_history=goal.get("audit_history", []),
+                created_at=goal.get("created_at"),
+                updated_at=goal.get("updated_at"),
+                created_by=goal.get("created_by"),
+                status=goal.get("status")
+            ))
+
+        return goal_responses
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error fetching goals: {str(e)}")
 
@@ -2207,44 +2213,55 @@ async def get_goal_by_id(goal_id: str):
 @app.put("/goals/{goal_id}", response_model=GoalResponse)
 async def update_goal(goal_id: str, update_input: UpdateGoalInput):
     try:
-        update_data = {k: v for k, v in update_input.dict().items() if v is not None}
+        update_data = {
+            k: (datetime.combine(v, datetime.min.time()) if isinstance(v, date) else v) for k, v in update_input.dict().items() if v is not None
+        }
+
         if not update_data:
+            print("No data provided for update")
             raise HTTPException(status_code=400, detail="No data provided for update")
-        
+
         update_data["updated_at"] = datetime.utcnow()
-        
+
         result = await db.Goals.update_one(
             {"id": goal_id},
             {"$set": update_data}
         )
-        
+
         if result.matched_count == 0:
+            print("Goal not found")
             raise HTTPException(status_code=404, detail="Goal not found")
-        
+
         updated_goal = await db.Goals.find_one({"id": goal_id})
         return GoalResponse(**updated_goal)
+
     except HTTPException:
         raise
     except Exception as e:
+        print(f"Error updating goal: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Error updating goal: {str(e)}")
 
 #======================Add progress entry to a goal==============================
 @app.post("/goals/progress/")
 async def add_progress(progress_input: AddProgressInput):
+    print(progress_input)
     try:
         goal_id = progress_input.goal_id
         
         progress_entry = ProgressEntry(
-            date=date.today(),
+            date=datetime.now().date(),
             progress_percentage=progress_input.progress_percentage,
             notes=progress_input.notes,
             updated_by=progress_input.updated_by
         )
+        progress_dict = progress_entry.dict()
+        progress_dict["date"] = datetime.combine(progress_dict["date"], datetime.min.time())
         
+        print(progress_entry)
         result = await db.Goals.update_one(
             {"id": goal_id},
             {
-                "$push": {"progress_history": progress_entry.dict()},
+                "$push": {"progress_history":progress_dict},
                 "$set": {
                     "current_progress": progress_input.progress_percentage,
                     "updated_at": datetime.utcnow()
@@ -2255,7 +2272,7 @@ async def add_progress(progress_input: AddProgressInput):
         if result.matched_count == 0:
             raise HTTPException(status_code=404, detail="Goal not found")
         
-        return {"message": "Progress added successfully", "goal_id": goal_id}
+        return {"message": "Progress added successfully", "goal_id": goal_id , "data":progress_dict}
     except HTTPException:
         raise
     except Exception as e:
