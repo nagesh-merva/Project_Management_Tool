@@ -129,7 +129,7 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
     if (!isVisible) return null
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 -top-12 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white w-[90%] md:w-[600px] p-6 rounded-lg shadow-lg relative overflow-y-auto max-h-[90%]">
                 <button
                     onClick={onClose}
