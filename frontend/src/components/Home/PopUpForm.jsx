@@ -1,6 +1,5 @@
-import { use } from "react"
 import { useState } from "react"
-import { useParams } from "react-router-dom"
+
 function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess }) {
     const [formData, setFormData] = useState({})
     const handleChange = (e) => {
