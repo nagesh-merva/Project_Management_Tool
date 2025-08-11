@@ -1,9 +1,9 @@
-import { Calendar, Timer, SquarePen, CheckCircle, AlertCircle, Pause } from "lucide-react"
+import { Calendar, Timer, SquarePen, CheckCircle, AlertCircle, Pause, Globe, SquareDashedBottomCode } from "lucide-react"
 import { useState } from "react"
 import PopupForm from "../Home/PopUpForm"
 import { useParams } from "react-router-dom"
 
-const Brief = ({ clientDetails, project_name, projBrief, status, start, deadline }) => {
+const Brief = ({ clientDetails, project_name, projBrief, status, start, deadline, quickLinks }) => {
     const [showPopup, setShowPopup] = useState(false)
     const { id } = useParams()
 
@@ -16,6 +16,16 @@ const Brief = ({ clientDetails, project_name, projBrief, status, start, deadline
         {
             name: "descp",
             type: "textarea",
+            optional: true
+        },
+        {
+            name: "code_resource_base",
+            type: "text",
+            optional: true
+        },
+        {
+            name: "live_demo",
+            type: "text",
             optional: true
         },
         {
@@ -36,6 +46,8 @@ const Brief = ({ clientDetails, project_name, projBrief, status, start, deadline
             optional: true
         },
     ])
+
+    console.log(quickLinks)
 
     const editclientdetails = () => {
         setShowPopup(true)
@@ -101,12 +113,28 @@ const Brief = ({ clientDetails, project_name, projBrief, status, start, deadline
                             <StatusIcon size={12} />
                             {statusConfig.label}
                         </span>
-                        <button
-                            onClick={editclientdetails}
-                            className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                        >
-                            <SquarePen size={16} />
-                        </button>
+                        <div className="flex h-auto items-center justify-between">
+                            <div className="flex place-self-end">
+                                <button
+                                    onClick={editclientdetails}
+                                    className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                                >
+                                    <SquarePen size={20} />
+                                </button>
+                                <div className="w-px h-6 bg-black"></div>
+                                <a href={quickLinks?.code_resource_base} target="_blank" rel="noopener noreferrer">
+                                    <button className="p-1 rounded-lg hover:bg-gray-100/50 hover:scale-105 transition-all">
+                                        <SquareDashedBottomCode size={20} color="#47FF72" />
+                                    </button>
+                                </a>
+                                <div className="w-px h-6 bg-black"></div>
+                                <a href={quickLinks?.live_demo} target="_blank" rel="noopener noreferrer">
+                                    <button className="p-1 rounded-lg hover:bg-gray-100/50 hover:scale-105 transition-all">
+                                        <Globe color="#0C098C" size={20} />
+                                    </button>
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 {projBrief && (

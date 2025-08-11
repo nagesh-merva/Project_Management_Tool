@@ -726,6 +726,7 @@ async def edit_project_brief(data: dict):
 
     if "descp" in data and data["descp"]:
         update_fields["descp"] = data["descp"]
+    
     if "deadline" in data and data["deadline"]:
         try:
             update_fields["deadline"] = datetime.fromisoformat(data["deadline"].replace("Z", "+00:00"))
@@ -742,12 +743,38 @@ async def edit_project_brief(data: dict):
                 # print("removed ",project_id," from ", emp["emp_id"])
         update_fields["status"] = data["status"]
 
+    quick_links_updates = {}
+    
+    if "code_resource_base" in data:
+        if data["code_resource_base"]:
+            quick_links_updates["quick_links.code_resource_base"] = data["code_resource_base"]
+        else:
+            quick_links_updates["quick_links.code_resource_base"] = None
+    
+    if "live_demo" in data:
+        if data["live_demo"]:
+            quick_links_updates["quick_links.live_demo"] = data["live_demo"]
+        else:
+            quick_links_updates["quick_links.live_demo"] = None
+    
+    if quick_links_updates:
+        update_fields.update(quick_links_updates)
+
     if not update_fields:
         raise HTTPException(status_code=400, detail="No valid fields provided to update.")
 
+    set_fields = {k: v for k, v in update_fields.items() if v is not None}
+    unset_fields = {k: "" for k, v in update_fields.items() if v is None}
+    
+    update_operations = {}
+    if set_fields:
+        update_operations["$set"] = set_fields
+    if unset_fields:
+        update_operations["$unset"] = unset_fields
+
     updated = await db.Projects.update_one(
         {"project_id": project_id},
-        {"$set": update_fields}
+        update_operations
     )
 
     if updated.modified_count == 0:

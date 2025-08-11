@@ -35,11 +35,11 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                 newFormData[f.name] === undefined &&
                 !f.optional &&
                 f.type !== "stored" &&
-                (f.type !== "select" || f.multi !== true)
+                !(f.type === "select" && f.optional === true)
             ) {
-                alert(`Please fill the ${f.name.replace(/_/g, " ")}`);
-                setIsSubmiting(false);
-                return;
+                alert(`Please fill the ${f.name.replace(/_/g, " ")}`)
+                setIsSubmiting(false)
+                return
             }
 
             if (f.type === "stored") {
@@ -64,9 +64,11 @@ function PopupForm({ isVisible, onClose, formTitle, endpoint, fields, onSuccess 
                 if (f.multi) {
                     newFormData[f.name] = [f.fields[0]?.value];
                 } else {
-                    alert("Please select " + f.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()));
-                    setIsSubmiting(false);
-                    return;
+                    if (!f.optional) {
+                        alert("Please select " + f.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()))
+                        setIsSubmiting(false)
+                        return
+                    }
                 }
             }
 
