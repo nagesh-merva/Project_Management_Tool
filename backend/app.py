@@ -14,7 +14,7 @@ from calendar import monthrange
 from pydantic import EmailStr
 # from bson import ObjectId
 from jose import JWTError, jwt # type: ignore
-from datetime import datetime, timedelta,date ,timezone
+from datetime import datetime, timedelta,date ,timezone ,time
 import firebase_admin # type: ignore
 from firebase_admin import credentials, storage # type: ignore
 import os
@@ -2063,17 +2063,36 @@ async def generate_unique_id(collection, prefix: str, length: int = 8) -> str:
 async def create_goal(goal_input: CreateGoalInput):
     try:
         unique_id = await generate_unique_id(db.Goals, "GOAL")
-        
+
         goal_dict = goal_input.dict()
+
+        # Convert top-level date
+        goal_dict["deadline"] = datetime.combine(goal_input.deadline, time.min) if goal_input.deadline else None
+
+        # Convert milestone dates
+        for m in goal_dict["milestones"]:
+            m["due_date"] = datetime.combine(m["due_date"], time.min) if m["due_date"] else None
+            m["completion_date"] = datetime.combine(m["completion_date"], time.min) if m["completion_date"] else None
+
         goal_dict["id"] = unique_id
         goal_dict["created_at"] = datetime.utcnow()
         goal_dict["updated_at"] = datetime.utcnow()
-        
+
+        goal_dict["id"] = unique_id
+        goal_dict["created_at"] = datetime.utcnow()
+        goal_dict["updated_at"] = datetime.utcnow()
+        goal_dict["current_progress"] = 0.0
+        goal_dict["progress_history"] = []
+        goal_dict["audit_history"] = []
+        goal_dict["status"] = "active"
+
+
         result = await db.Goals.insert_one(goal_dict)
         created_goal = await db.Goals.find_one({"id": unique_id})
-        
+
         return GoalResponse(**created_goal)
     except Exception as e:
+        print(str(e))
         raise HTTPException(status_code=400, detail=f"Error creating goal: {str(e)}")
 
 
@@ -2100,9 +2119,6 @@ async def get_goals(
 
         goal_responses = []
         for goal in goals:
-            # milestones_completed = sum(1 for m in goal.get("milestones", []) if m.get("completed", False))
-            # total_milestones = len(goal.get("milestones", []))
-
             goal_responses.append(GoalResponse(
                 id=goal["id"],
                 name=goal.get("name"),
@@ -2256,16 +2272,24 @@ async def add_progress(progress_input: AddProgressInput):
         )
         progress_dict = progress_entry.dict()
         progress_dict["date"] = datetime.combine(progress_dict["date"], datetime.min.time())
-        
+        set = {}
+        if progress_input.progress_percentage >=100:
+            set =  {
+                    "current_progress": progress_input.progress_percentage,
+                    "updated_at": datetime.utcnow(),
+                    "status": "completed"
+                }
+        else :
+            set = {
+                    "current_progress": progress_input.progress_percentage,
+                    "updated_at": datetime.utcnow()
+                }
         print(progress_entry)
         result = await db.Goals.update_one(
             {"id": goal_id},
             {
                 "$push": {"progress_history":progress_dict},
-                "$set": {
-                    "current_progress": progress_input.progress_percentage,
-                    "updated_at": datetime.utcnow()
-                }
+                "$set": set
             }
         )
         
@@ -2398,93 +2422,3 @@ async def delete_goal(goal_id: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error deleting goal: {str(e)}")
-
-@app.post("/goals/bulk/")
-async def create_bulk_goals(goals_input: List[CreateGoalInput]):
-    try:
-        created_goals = []
-        
-        for goal_input in goals_input:
-            unique_id = await generate_unique_id(db.Goals, "GOAL")
-            
-            goal_dict = goal_input.dict()
-            goal_dict["id"] = unique_id
-            goal_dict["created_at"] = datetime.utcnow()
-            goal_dict["updated_at"] = datetime.utcnow()
-            
-            created_goals.append(goal_dict)
-        
-        result = await db.Goals.insert_many(created_goals)
-        
-        return {
-            "message": f"Successfully created {len(created_goals)} goals",
-            "goal_ids": [goal["id"] for goal in created_goals]
-        }
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error creating bulk goals: {str(e)}")
-
-@app.get("/goals/search/")
-async def search_goals(
-    q: str,
-    category: Optional[str] = None,
-    department: Optional[str] = None,
-    status: Optional[str] = None,
-    limit: int = 20
-):
-    try:
-        query = {
-            "$or": [
-                {"name": {"$regex": q, "$options": "i"}},
-                {"target_metric": {"$regex": q, "$options": "i"}},
-                {"responsible_department": {"$regex": q, "$options": "i"}}
-            ]
-        }
-        
-        if category:
-            query["goal_category"] = category
-        if department:
-            query["responsible_department"] = department
-        if status:
-            query["status"] = status
-        
-        cursor = db.Goals.find(query).limit(limit).sort("created_at", -1)
-        goals = await cursor.to_list(length=limit)
-        
-        goal_summaries = []
-        for goal in goals:
-            milestones_completed = sum(1 for m in goal.get("milestones", []) if m.get("completed", False))
-            total_milestones = len(goal.get("milestones", []))
-            
-            summary = GoalSummary(
-                id=goal["id"],
-                name=goal["name"],
-                goal_category=goal["goal_category"],
-                current_progress=goal["current_progress"],
-                responsible_department=goal["responsible_department"],
-                deadline=goal["deadline"],
-                success_probability=goal["success_probability"],
-                status=goal["status"],
-                milestones_completed=milestones_completed,
-                total_milestones=total_milestones
-            )
-            goal_summaries.append(summary)
-        
-        return {
-            "results": goal_summaries,
-            "total_found": len(goal_summaries),
-            "search_term": q
-        }
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error searching goals: {str(e)}")
-
-@app.get("/goals/check-id/{goal_id}")
-async def check_id_availability(goal_id: str):
-    try:
-        existing = await db.Goals.find_one({"id": goal_id})
-        return {
-            "id": goal_id,
-            "available": existing is None,
-            "exists": existing is not None
-        }
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error checking ID: {str(e)}")

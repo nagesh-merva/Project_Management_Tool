@@ -24,6 +24,7 @@ import { useState, useEffect } from "react"
 import EmployeeAnalyticsCard from "../components/Analytics/EmployeeAnalyticsCard"
 import DepartmentAnalyticsCard from "../components/Analytics/DepartmentAnalyticsCard"
 import GoalTrackingCard from "../components/Analytics/GoalTrackingCard"
+import CreateGoalModal from "../components/Analytics/Goals/CreateGoalModel"
 import ProjectAnalyticsCard from "../components/Analytics/ProjectAnalyticsCard"
 import SalesFinanceCard from "../components/Analytics/SalesFinanceCard"
 import Loading from "../components/Loading"
@@ -40,6 +41,7 @@ export default function Analytics() {
     const [goalsData, setGoalsData] = useState([])
     const [goalsDashboard, setGoalsDashboard] = useState({})
     const [goalsLoading, setGoalsLoading] = useState(false)
+    const [showCreateGoalModal, setShowCreateGoalModal] = useState(false)
     const [goalsFilter, setGoalsFilter] = useState({
         category: '',
         department: '',
@@ -285,7 +287,7 @@ export default function Analytics() {
 
             if (response.ok) {
                 const data = await response.json()
-                console.log(data)
+                // console.log(data)
                 setGoalsData(data)
             } else {
                 console.error('Failed to fetch goals:', response.statusText)
@@ -306,7 +308,7 @@ export default function Analytics() {
 
             if (response.ok) {
                 const data = await response.json()
-                console.log(data)
+                // console.log(data)
                 setGoalsDashboard(data)
             } else {
                 console.error('Failed to fetch goals dashboard:', response.statusText)
@@ -315,6 +317,13 @@ export default function Analytics() {
             console.error('Error fetching goals dashboard:', err)
         }
     }
+
+    const handleGoalCreated = (newGoal) => {
+        alert('Goal created successfully :', newGoal.name)
+        FetchGoalsData()
+        FetchGoalsDashboard()
+    }
+
 
     const handleGoalFilterChange = (filterType, value) => {
         setGoalsFilter(prev => ({
@@ -462,7 +471,7 @@ export default function Analytics() {
             <div className="ml-auto">
                 <button
                     onClick={() => {
-                        alert('Navigate to create goal page')
+                        setShowCreateGoalModal(true)
                     }}
                     className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
@@ -658,10 +667,8 @@ export default function Analytics() {
             </div>
         )
     }
-
     return (
         <div className="relative h-full min-h-screen w-full flex flex-col bg-gray-100 min-w-[800px]">
-
             <button
                 className="fixed top-4 left-4 z-50 md:hidden bg-white p-2 rounded shadow"
                 onClick={() => setNavOpen(!navOpen)}
@@ -750,6 +757,13 @@ export default function Analytics() {
                     </div>
                 </>)}
             </div>
+            {showCreateGoalModal && (
+                <CreateGoalModal 
+                    isOpen={showCreateGoalModal}
+                    onClose={() => setShowCreateGoalModal(false)}
+                    onGoalCreated={handleGoalCreated}
+                />
+            )}
         </div>
     )
 

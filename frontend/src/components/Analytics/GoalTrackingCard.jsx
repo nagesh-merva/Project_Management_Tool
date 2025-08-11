@@ -20,51 +20,6 @@ import EditGoalModal from './Goals/EditGoalModel'
 import GoalDetailsModal from './Goals/GoalDetailsModel'
 import { useMainContext } from '../../context/MainContext'
 
-const api = {
-    async updateGoal(goalId, updateData) {
-        const response = await fetch(`http://127.0.0.1:8000/goals/${goalId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updateData)
-        })
-        if (!response.ok) throw new Error('Failed to update goal')
-        return response.json()
-    },
-
-    async addProgress(goalId, progressData) {
-        const response = await fetch(`http://127.0.0.1:8000/goals/progress/`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ goal_id: goalId, ...progressData })
-        })
-        if (!response.ok) throw new Error('Failed to add progress')
-        return response.json();
-    },
-
-    async updateMilestone(goalId, milestoneName, updateData) {
-        const response = await fetch(`http://127.0.0.1:8000/goals/milestones/`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                goal_id: goalId,
-                milestone_name: milestoneName,
-                ...updateData
-            })
-        })
-        if (!response.ok) throw new Error('Failed to update milestone')
-        return response.json()
-    },
-
-    async deleteGoal(goalId) {
-        const response = await fetch(`http://127.0.0.1:8000/goals/${goalId}`, {
-            method: 'DELETE'
-        })
-        if (!response.ok) throw new Error('Failed to delete goal')
-        return response.json()
-    }
-}
-
-
 const GoalTrackingCard = ({ goal }) => {
     const [editModalOpen, setEditModalOpen] = useState(false)
     const [progressModalOpen, setProgressModalOpen] = useState(false)
@@ -157,7 +112,7 @@ const GoalTrackingCard = ({ goal }) => {
                 body: JSON.stringify(updateData)
             })
             const data = await response.json()
-            if (!response.ok) throw new Error('Failed to update Goal', data.message || data.detail)
+            if (!response.ok) alert('Failed to update Goal', data.message || data.detail)
             if (response.ok) alert("sucessfully updated the Goal")
             setGoalData(data)
             setEditModalOpen(false)
@@ -178,7 +133,7 @@ const GoalTrackingCard = ({ goal }) => {
                 body: JSON.stringify(progressData)
             })
 
-            if (!response.ok) throw new Error('Failed to update goal')
+            if (!response.ok) alert('Failed to update goal')
 
             const data = await response.json()
 
@@ -202,18 +157,31 @@ const GoalTrackingCard = ({ goal }) => {
     }
 
     const handleMilestoneUpdate = async (goalId, milestoneName, updateData) => {
+        console.log("Goal-id ",goalId,"\nMilestone ", milestoneName,"\nUpdated data", updateData)
         try {
-            await api.updateMilestone(goalId, milestoneName, updateData)
-            const updatedMilestones = processedGoalData.milestones.map(milestone => {
-                if (milestone.name === milestoneName) {
-                    return { ...milestone, ...updateData }
-                }
-                return milestone
+            const response = await fetch(`http://127.0.0.1:8000/goals/milestones/`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    goal_id: goalId,
+                    milestone_name: milestoneName,
+                    completed:true
+                })
             })
-            setGoalData(prev => ({
-                ...prev,
-                milestones: updatedMilestones
-            }))
+            if (!response.ok) alert('Failed to update milestone')
+            if(response.ok) {   
+                const updatedMilestones = processedGoalData.milestones.map(milestone => {
+                    if (milestone.name === milestoneName) {
+                        return { ...milestone, ...updateData }
+                    }
+                    return milestone
+                })
+                setGoalData(prev => ({
+                    ...prev,
+                    milestones: updatedMilestones
+                }))
+                alert("Updated Status Sucessfully!")
+            }
         } catch (error) {
             console.error('Error updating milestone:', error)
             throw error
@@ -223,7 +191,11 @@ const GoalTrackingCard = ({ goal }) => {
     const handleDeleteGoal = async () => {
         if (window.confirm('Are you sure you want to delete this goal? This action cannot be undone.')) {
             try {
-                await api.deleteGoal(goalData.id)
+                const response = await fetch(`http://127.0.0.1:8000/goals/${goalData.id}`, {
+                    method: 'DELETE'
+                })
+                if (!response.ok) throw new Error('Failed to delete goal')
+                if(response.ok) alert("Sucessfully deleted the goal")
             } catch (error) {
                 console.error('Error deleting goal:', error)
                 alert('Failed to delete goal. Please try again.')

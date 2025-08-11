@@ -3,15 +3,17 @@ from typing import List, Optional, Literal
 from datetime import datetime, date
 
 class Milestone(BaseModel):
+    id : str
     name: str
     completed: bool = False
     due_date: date
     completion_date: Optional[date] = None
 
 class Risk(BaseModel):
+    id :str
     description: str
-    level: Literal["Low", "Medium", "High"]
-    mitigation: str
+    level: Literal["low", "medium", "high"]
+    mitigation: Optional[str] = None
 
 class ProgressEntry(BaseModel):
     date: date
