@@ -21,7 +21,7 @@ export default function Reports() {
     { title: "Department", value: 26, percentage: 0, icon: <DockIcon className="text-purple-600" /> },
     { title: "This Month", value: 156, percentage: 39, icon: <DockIcon className="text-green-600" /> },]
   const data2 = [
-    { type: "Departmental", title: "Department Performance", icon: <DockIcon />, desc: "Comprehensive analysis of departmental productivity, resource allocation, and performance metrics across all teams.", time: "2024-04-22T23:52:00.000+00:00", link: "https://www.figma.com/design/1wowRmkUI68qVPtKi8pXzu/PROJECT_MANAGEMENT_TOOL?node-id=681-1125&t=NrzttYjOZcowEX6d-0" }
+    { type: "Departmental", title: "Department Performance", bg: "bg-purple-200", icon: <DockIcon />, desc: "Comprehensive analysis of departmental productivity, resource allocation, and performance metrics across all teams.", time: "2024-04-22T23:52:00.000+00:00", link: "https://www.figma.com/design/1wowRmkUI68qVPtKi8pXzu/PROJECT_MANAGEMENT_TOOL?node-id=681-1125&t=NrzttYjOZcowEX6d-0" }
   ]
 
   return (
@@ -71,7 +71,7 @@ export default function Reports() {
                 <Available_Header />
                 <div className="flex space-x-5">
                   {data2.map((items, index) => (
-                    <ReportBox key={index} type={items.type} title={items.title} desc={items.desc} icon={items.icon} time={items.time} link={items.link} />
+                    <ReportBox key={index} type={items.type} title={items.title} desc={items.desc} icon={items.icon} time={items.time} link={items.link} bg={items.bg} />
                   ))}
                 </div>
               </div>
