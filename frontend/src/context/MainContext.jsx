@@ -98,14 +98,18 @@ export const MainProvider = ({ children }) => {
         }
     }
 
+    // console.log(loggedIn.logged)
+
     useEffect(() => {
-        const cached = sessionStorage.getItem("all-emps")
-        if (cached || cached !== null) {
-            setAllEmployees(JSON.parse(cached))
-        } else {
-            fetchEmployees()
+        if(loggedIn.logged){
+            const cached = sessionStorage.getItem("all-emps")
+            if (cached || cached !== null) {
+                setAllEmployees(JSON.parse(cached))
+            } else {
+                fetchEmployees()
+            }
         }
-    }, [])
+    }, [loggedIn])
 
     return (
         <MainContext.Provider

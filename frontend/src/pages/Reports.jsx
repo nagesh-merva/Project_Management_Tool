@@ -15,6 +15,7 @@ export default function Reports() {
 
   const [navOpen, setNavOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [allReports, setAllReports] = useState([])
   const data = [
     { title: "Total Reports", value: 8, percentage: 12, icon: <DockIcon className="text-blue-700" /> },
     { title: "Active Projects", value: 14, percentage: 32, icon: <DockIcon className="text-red-600" /> },
@@ -23,6 +24,31 @@ export default function Reports() {
   const data2 = [
     { type: "Departmental", title: "Department Performance", icon: <DockIcon />, desc: "Comprehensive analysis of departmental productivity, resource allocation, and performance metrics across all teams.", time: "2024-04-22T23:52:00.000+00:00", link: "https://www.figma.com/design/1wowRmkUI68qVPtKi8pXzu/PROJECT_MANAGEMENT_TOOL?node-id=681-1125&t=NrzttYjOZcowEX6d-0" }
   ]
+
+  useEffect(() => {
+    GetReports()
+  }, [])
+
+  const GetReports = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/all-reports`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+
+      })
+      const data = await response.json()
+      if (response.status === 201 || response.status === 200) {
+        setAllReports(data)
+      }
+    }
+    catch (err) {
+      console.error(err)
+    }
+    finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="relative h-full w-full flex flex-col bg-gray-100 min-w-[800px]">
@@ -69,9 +95,9 @@ export default function Reports() {
                   ))}
                 </div>
                 <Available_Header />
-                <div className="flex space-x-5">
-                  {data2.map((items, index) => (
-                    <ReportBox key={index} type={items.type} title={items.title} desc={items.desc} icon={items.icon} time={items.time} link={items.link} />
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 ">
+                  {allReports.map((items, index) => (
+                    <ReportBox key={index} type={items.type} title={items.report_name} desc={items.description} time={items.uploaded_on} link={items.document_link} isOpen={items.is_open} />
                   ))}
                 </div>
               </div>
