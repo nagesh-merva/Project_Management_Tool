@@ -15,6 +15,7 @@ class ReportType(str, Enum):
 
 class ReportCreate(BaseModel):
     report_name: str = Field(...)
+    department : str = Field(...)
     type: ReportType = Field(...)
     description: Optional[str] = Field(None)
     uploaded_by: str = Field(...)
@@ -24,6 +25,7 @@ class ReportCreate(BaseModel):
 class Report(ReportCreate):
     report_id: str = Field(...)
     uploaded_on: datetime = Field(default_factory=datetime.utcnow)
+    department: Optional[str] = None
 
 class ReportMetrics(BaseModel):
     total_reports: int

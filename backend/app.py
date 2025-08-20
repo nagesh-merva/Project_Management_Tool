@@ -2458,6 +2458,7 @@ async def add_report(data: ReportCreate):
             "report_id": f"RPT_{uuid.uuid4().hex[:8]}",
             "report_name": data.report_name,
             "type": data.type.value,
+            "department" : data.department,
             "description": data.description,
             "uploaded_by": data.uploaded_by,
             "document_link": str(data.document_link) if data.document_link else None, 
@@ -2476,6 +2477,8 @@ async def get_all_reports():
     try:
         cursor = db.Reports.find()
         reports_raw = await cursor.to_list(length=None)
+        
+        print(cursor)
 
         reports = [
             Report(
@@ -2484,6 +2487,7 @@ async def get_all_reports():
                 type=ReportType(doc["type"]),
                 description=doc.get("description"),
                 uploaded_by=doc["uploaded_by"],
+                department=doc["department"],
                 document_link=doc.get("document_link"),
                 is_open=doc["is_open"],
                 uploaded_on=doc["uploaded_on"]

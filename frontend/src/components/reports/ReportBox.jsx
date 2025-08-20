@@ -60,13 +60,13 @@ function getReportIcon(type) {
     return <IconComponent color={textColor} className={`w-5 h-5 text-[${textColor}]`} />
 }
 
-const ReportBox = ({ type, title, desc, time, link, isOpen }) => {
+const ReportBox = ({ dept, type, title, desc, time, link, isOpen }) => {
     const bgColor = typeColors[type.toLowerCase()] || "#6347FF"
 
     return (
         <div
             className="rounded-xl border-2 shadow-md p-4 w-60 h-80 flex flex-col justify-between hover:scale-105 transition-transform"
-            style={{ backgroundColor: `${bgColor}50`, color: "#fff",borderColor:bgColor }}
+            style={{ backgroundColor: `${bgColor}50`, color: "#fff", borderColor: bgColor }}
         >
             <div>
                 <div className="flex justify-between items-center">
@@ -76,13 +76,14 @@ const ReportBox = ({ type, title, desc, time, link, isOpen }) => {
                     </span>
                 </div>
                 <div className="mt-4 text-gray-800 place-self-start">
+                    <p className="text-sm opacity-90 mt-1">{dept.toLowerCase() || ""}</p>
                     <h2 className="text-lg font-semibold">{title}</h2>
                     <p className="text-sm opacity-90 mt-1">{desc}</p>
                 </div>
             </div>
             <div className="flex justify-between items-center mt-6 text-gray-800">
                 <div className="flex items-center space-x-2">
-                    <span className={`w-3 h-3 ${isOpen ? "bg-green-500":"bg-red-500"} rounded-full`}></span>
+                    <span className={`w-3 h-3 ${isOpen ? "bg-green-500" : "bg-red-500"} rounded-full`}></span>
                     <span className="text-[10px]">Updated {getTimeAgo(time)}</span>
                 </div>
                 <Link
