@@ -16,15 +16,6 @@ export default function Reports() {
   const [navOpen, setNavOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [allReports, setAllReports] = useState([])
-  const data = [
-    { title: "Total Reports", value: 8, percentage: 12, icon: <DockIcon className="text-blue-700" /> },
-    { title: "Active Projects", value: 14, percentage: 32, icon: <DockIcon className="text-red-600" /> },
-    { title: "Department", value: 26, percentage: 0, icon: <DockIcon className="text-purple-600" /> },
-    { title: "This Month", value: 156, percentage: 39, icon: <DockIcon className="text-green-600" /> },]
-  const data2 = [
-    { type: "Departmental", title: "Department Performance", icon: <DockIcon />, desc: "Comprehensive analysis of departmental productivity, resource allocation, and performance metrics across all teams.", time: "2024-04-22T23:52:00.000+00:00", link: "https://www.figma.com/design/1wowRmkUI68qVPtKi8pXzu/PROJECT_MANAGEMENT_TOOL?node-id=681-1125&t=NrzttYjOZcowEX6d-0" }
-  ]
-
   useEffect(() => {
     GetReports()
   }, [])
@@ -49,6 +40,24 @@ export default function Reports() {
       setLoading(false)
     }
   }
+
+  const totalReports  =  allReports?.length || 0
+  const totalOpen = allReports?.filter(r => r.is_open)?.length || 0
+  const thisMonth = allReports?.filter(r => {
+      const created = new Date(r.uploaded_on)
+      const now = new Date()
+      return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear()
+  })?.length || 0
+
+  const data = [
+    { title: "Total Reports", value:totalReports, percentage: 12, icon: <DockIcon className="text-blue-700" /> },
+    { title: "Active Projects", value: totalOpen, percentage: 32, icon: <DockIcon className="text-red-600" /> },
+    { title: "Reports Type", value: 8, percentage: 0, icon: <DockIcon className="text-purple-600" /> },
+    { title: "This Month", value: thisMonth, percentage: 39, icon: <DockIcon className="text-green-600" /> },]
+
+  const sortedReports = allReports?.slice().sort((a, b) => 
+      new Date(b.uploaded_on).getTime() - new Date(a.uploaded_on).getTime()
+    ) || []
 
   return (
     <div className="relative h-full w-full flex flex-col bg-gray-100 min-w-[800px]">
@@ -95,8 +104,8 @@ export default function Reports() {
                   ))}
                 </div>
                 <Available_Header />
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 ">
-                  {allReports.map((items, index) => (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 ">
+                  {sortedReports.map((items, index) => (
                     <ReportBox key={index} type={items.type} title={items.report_name} desc={items.description} time={items.uploaded_on} link={items.document_link} isOpen={items.is_open} />
                   ))}
                 </div>
