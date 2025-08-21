@@ -51,20 +51,24 @@ const Departments = [
 
 const policies = [
     {
+        name: "Policies",
+        link: "/docs/policies"
+    },
+    {
         name: "Legal Docs",
-        link: "/legaldocs"
+        link: "/docs/legal-docs"
     },
     {
         name: "Templates",
-        link: "/template"
+        link: "/docs/templates"
     },
     {
         name: "Workflow",
-        link: "/workflow"
+        link: "/docs/workflow"
     },
     {
         name: "Guidelines",
-        link: "/guidelines"
+        link: "/docs/guidelines"
     }
 ]
 

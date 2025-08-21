@@ -11,6 +11,7 @@ import ClientsList from "./pages/ClientsList"
 import ClientDetails from "./pages/ClientDetails"
 import Reports from "./pages/reports"
 import Analytics from "./pages/Analytics"
+import Policies from "./pages/Policies"
 
 function ProtectedRoute({ children }) {
   const { loggedIn } = useMainContext()
@@ -36,6 +37,7 @@ function App() {
         <Route path="/clients" element={<ClientsList />} />
         <Route path="/clients/:clientid" element={<ClientDetails />} />
         <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+        <Route path="/docs/:doctype" element={<ProtectedRoute><Policies /></ProtectedRoute>} />
       </Routes>
     </div>
   )

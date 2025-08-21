@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
-import { Menu, X, DockIcon, Plus } from "lucide-react"
+import { Menu, X, DockIcon, Plus, Filter } from "lucide-react"
 import Header from "../components/header"
 import Navigation from "../components/Navigation/Navigation"
-import EmployeeDetails from "../components/Departments/EmployeeDetails"
 import Loading from "../components/Loading"
 import Reports_Header from "../components/reports/Reports_Header"
 import SetsDiv from "../components/reports/SetsDiv"
@@ -11,7 +9,7 @@ import Available_Header from "../components/reports/Available_Header"
 import ReportBox from "../components/reports/ReportBox"
 import { useMainContext } from "../context/MainContext"
 import PopupForm from "../components/Home/PopUpForm"
-
+import FilterSidebar from "../components/reports/FilterSidebar"
 
 export default function Reports() {
   const { emp } = useMainContext()
@@ -19,6 +17,7 @@ export default function Reports() {
   const [loading, setLoading] = useState(false)
   const [allReports, setAllReports] = useState([])
   const [showPopup, setShowPopup] = useState(false)
+  const [filterOpen, setFilterOpen] = useState(false)
   const [fields, setFields] = useState([
     {
       name: "uploaded_by",
@@ -122,15 +121,22 @@ export default function Reports() {
     { title: "Total Reports", value: totalReports, percentage: 12, icon: <DockIcon className="text-blue-700" /> },
     { title: "Active Projects", value: totalOpen, percentage: 32, icon: <DockIcon className="text-red-600" /> },
     { title: "Reports Type", value: 8, percentage: 0, icon: <DockIcon className="text-purple-600" /> },
-    { title: "This Month", value: thisMonth, percentage: 39, icon: <DockIcon className="text-green-600" /> },]
+    { title: "This Month", value: thisMonth, percentage: 39, icon: <DockIcon className="text-green-600" /> },
+    { title: "Reporting Departments", value: 5, percentage: 39, icon: <DockIcon className="text-green-600" /> },]
 
   const sortedReports = allReports?.slice().sort((a, b) =>
     new Date(b.uploaded_on).getTime() - new Date(a.uploaded_on).getTime()
   ) || []
 
+  const [filteredReports, setFilteredReports] = useState(sortedReports)
+
+  const handleFilterChange = (filtered) => {
+    setFilteredReports(filtered)
+  }
+
   return (
     <>
-      <div className="relative h-full w-full flex flex-col bg-gray-100 min-w-[800px]">
+      <div className="relative h-full w-full flex flex-col bg-gray-100 min-w-[500px]">
         <button
           className="fixed top-4 left-4 z-50 md:hidden bg-white p-2 rounded shadow"
           onClick={() => setNavOpen(!navOpen)}
@@ -166,19 +172,26 @@ export default function Reports() {
                 <Loading />
               ) : (
                 <div className="text-gray-700 text-lg font-semibold ">
-                  <div className="flex">
+                  <div className="flex justify-between items-center max-w-5xl">
                     <Reports_Header />
                     <button onClick={() => setShowPopup(true)} className=" absolute right-5 top-5 px-5 py-1.5 bg-btncol rounded-full flex items-center justify-center text-white hover:scale-95 transition-transform"><Plus /> <p className="hidden lg:block">New Report</p></button>
+                    <button
+                      onClick={() => setFilterOpen(!filterOpen)}
+                      className="flex items-center h-fit gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors "
+                    >
+                      <Filter size={16} />
+                      Filters
+                    </button>
                   </div>
 
-                  <div className="flex space-x-5">
+                  <div className="flex space-x-3">
                     {data.map((item, index) => (
                       <SetsDiv key={index} title={item.title} value={item.value} percentage={item.percentage} icon={item.icon} />
                     ))}
                   </div>
                   <Available_Header />
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 ">
-                    {sortedReports.map((items, index) => (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 ">
+                    {filteredReports.map((items, index) => (
                       <ReportBox key={index} dept={items.department} type={items.type} title={items.report_name} desc={items.description} time={items.uploaded_on} link={items.document_link} isOpen={items.is_open} />
                     ))}
                   </div>
@@ -188,6 +201,12 @@ export default function Reports() {
           </div>
         </div>
       </div>
+      <FilterSidebar
+        isOpen={filterOpen}
+        onClose={() => setFilterOpen(false)}
+        allReports={allReports}
+        onFilterChange={handleFilterChange}
+      />
       <PopupForm
         isVisible={showPopup}
         onClose={() => setShowPopup(false)}

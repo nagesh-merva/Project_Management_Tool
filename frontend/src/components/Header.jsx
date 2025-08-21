@@ -2,7 +2,7 @@
 import { Menu, Search, User } from "lucide-react"
 import { useMainContext } from "../context/MainContext"
 
-function Header() {
+function Header({ value, onChange }) {
   const { logout } = useMainContext()
 
   const handleLogout = () => {
@@ -25,7 +25,9 @@ function Header() {
         >
           <input
             type="text"
+            value={value}
             placeholder="Hinted search text"
+            onChange={onChange}
             className="bg-transparent outline-none w-full text-gray-600 placeholder-gray-500"
           />
           <button className="ml-3 text-gray-600 hover:text-purple-600">
