@@ -1,7 +1,6 @@
-import React, { useState } from "react"
-import { Routes, Route, useParams, Navigate } from "react-router-dom"
+
+import { Routes, Route, Navigate } from "react-router-dom"
 import Homepage from "./pages/Index"
-import Dashboard from "./pages/Dashboard"
 import ProjectsPage from "./pages/projects"
 import Singleproject from "./pages/Singleproject"
 import Department from "./pages/Department"
@@ -12,6 +11,7 @@ import ClientDetails from "./pages/ClientDetails"
 import Reports from "./pages/reports"
 import Analytics from "./pages/Analytics"
 import Policies from "./pages/Policies"
+import Dashboard from "./pages/Dashboard"
 
 function ProtectedRoute({ children }) {
   const { loggedIn } = useMainContext()

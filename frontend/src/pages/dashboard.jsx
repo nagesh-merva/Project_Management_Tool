@@ -8,7 +8,7 @@ import Message from "../components/Home/Message"
 import { Menu, X } from "lucide-react"
 import MyEmpStats from "../components/Home/MyEmpStats"
 
-export default function Dashboard() {
+const Dashboard = () => {
     const [navOpen, setNavOpen] = useState(false)
 
     return (
@@ -57,3 +57,5 @@ export default function Dashboard() {
         </div>
     )
 }
+
+export default Dashboard
