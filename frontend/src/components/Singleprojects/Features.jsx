@@ -61,7 +61,7 @@ const Features = ({ features }) => {
                 isVisible={showPopup}
                 onClose={() => setShowPopup(false)}
                 formTitle="Add New Feature"
-                endpoint="http://127.0.0.1:8000/add-feature"
+                endpoint="https://project-management-tool-uh55.onrender.com/add-feature"
                 fields={fields}
             />
         </>

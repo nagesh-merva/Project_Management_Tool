@@ -25,7 +25,7 @@ import PopupForm from '../Home/PopUpForm'
 const EmployeeDetails = ({ emp }) => {
     const [notifications, setNotifications] = useState([])
     const [employeeData, setEmployeeData] = useState(emp)
-    const [showDocPopup, setShowDocPopup] = useState(false);
+    const [showDocPopup, setShowDocPopup] = useState(false)
 
     React.useEffect(() => {
         setEmployeeData(emp)
@@ -53,7 +53,7 @@ const EmployeeDetails = ({ emp }) => {
             delete updateData.emp_id;
         }
         try {
-            const response = await fetch(`http://127.0.0.1:8000/employee/update?emp_id=${empId}`, {
+            const response = await fetch(`https://project-management-tool-uh55.onrender.com/employee/update?emp_id=${empId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -185,7 +185,7 @@ const EmployeeDetails = ({ emp }) => {
         {
             name: 'role',
             label: 'Role',
-            type: 'text',
+            type: 'display',
             icon: Award,
             placeholder: 'Enter role'
         },
@@ -281,7 +281,7 @@ const EmployeeDetails = ({ emp }) => {
         }
     ]
 
-    console.log(employeeData.emp_documents)
+    // console.log(employeeData.emp_documents)
 
     const empDocumentsFields = [
         {
@@ -338,7 +338,7 @@ const EmployeeDetails = ({ emp }) => {
             />
 
             <div className="max-w-6xl mx-auto">
-                <EmployeeHeader emp={employeeData} />
+                <EmployeeHeader employee={employeeData} />
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <DynamicSection
@@ -441,10 +441,10 @@ const EmployeeDetails = ({ emp }) => {
                 isVisible={showDocPopup}
                 onClose={() => setShowDocPopup(false)}
                 formTitle="Upload Employee Document"
-                endpoint="http://127.0.0.1:8000/add-emp-documents"
+                endpoint="https://project-management-tool-uh55.onrender.com/add-emp-documents"
                 fields={empDocumentFields}
                 onSuccess={() => {
-                    setShowDocPopup(false);
+                    setShowDocPopup(false)
                 }}
             />
         </div>

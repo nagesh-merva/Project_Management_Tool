@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useParams } from "react-router-dom"
 import { BarChartBig, TrendingUp, Calendar, Target, Activity } from "lucide-react"
-import { differenceInCalendarDays, parseISO } from "date-fns"
+import { differenceInCalendarDays, parseISO, isValid, addDays } from "date-fns"
 import ManageProjectForm from "./ManageProjectForm"
 
 const COLORS = {
@@ -16,6 +16,29 @@ const STATUS_COLORS = {
     not_started: "bg-blue-100 text-blue-800 border-blue-200",
 }
 
+const parseDate = (dateInput) => {
+    if (!dateInput) return null
+
+    let date
+    if (typeof dateInput === 'string') {
+        if (dateInput.includes('T')) {
+            date = parseISO(dateInput)
+        } else {
+            date = new Date(dateInput)
+        }
+    } else {
+        date = new Date(dateInput)
+    }
+
+    return isValid(date) ? date : null
+}
+
+const getWeekNumber = (targetDate, baseDate) => {
+    if (!targetDate || !baseDate) return null
+    const days = differenceInCalendarDays(targetDate, baseDate)
+    return Math.floor(days / 7) + 1
+}
+
 const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
     const { id } = useParams()
     const [weeks, setWeeks] = useState([])
@@ -24,46 +47,110 @@ const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
     const [stats, setStats] = useState({ completed: 0, inProgress: 0, notStarted: 0, total: 0 })
     const [isInitialized, setInitialized] = useState(false)
     const [showForm, setShowForm] = useState(false)
+    const [timelineData, setTimelineData] = useState([])
+
+    const [isDragging, setIsDragging] = useState(false)
+    const [dragStart, setDragStart] = useState({ x: 0, scrollLeft: 0 })
+    const timelineRef = useRef(null)
 
     useEffect(() => {
+        if (!projectPhases || projectPhases.length === 0) return
+
         let maxWeeks = 0
         let completedCount = 0
         let inProgressCount = 0
         let notStartedCount = 0
         let totalCount = 0
+        const processedData = []
 
-        const baseStartDate = (projectPhases && projectPhases[0] && projectPhases[0].subphases && projectPhases[0].subphases[0] && projectPhases[0].subphases[0].start_date)
-            ? projectPhases[0].subphases[0].start_date
-            : new Date()
+        let earliestDate = null
+        let latestDate = null
 
-        projectPhases?.forEach(phase => {
+        projectPhases.forEach(phase => {
             phase.subphases.forEach(sub => {
-                const start = sub.start_date
-                const end = sub.closed_date ? sub.closed_date : new Date()
-                const duration = Math.ceil(differenceInCalendarDays(end, start) / 7) || 1
+                const startDate = parseDate(sub.start_date)
+                const endDate = parseDate(sub.closed_date)
 
-                const startWeek = Math.ceil(differenceInCalendarDays(start, baseStartDate) / 7) + 1
-                const endWeek = sub.closed_date
-                    ? Math.ceil(differenceInCalendarDays(sub.closed_date, baseStartDate) / 7) + 1
-                    : startWeek + 2
+                if (startDate) {
+                    if (!earliestDate || startDate < earliestDate) {
+                        earliestDate = startDate
+                    }
+                }
 
-                if (endWeek > maxWeeks) maxWeeks = endWeek
-
-                if (sub.status === "completed") completedCount++
-                else if (sub.status === "in_progress") inProgressCount++
-                else notStartedCount++
-                totalCount++
+                const relevantEndDate = endDate || (startDate ? addDays(startDate, 14) : new Date())
+                if (!latestDate || relevantEndDate > latestDate) {
+                    latestDate = relevantEndDate
+                }
             })
         })
 
-        const allWeeks = []
+        if (!earliestDate) {
+            earliestDate = new Date()
+        }
+        if (!latestDate) {
+            latestDate = addDays(earliestDate, 84)
+        }
+
+        maxWeeks = Math.max(getWeekNumber(latestDate, earliestDate) || 12, 12);
+
+        projectPhases.forEach((phase) => {
+            const phaseData = {
+                ...phase,
+                subphases: []
+            }
+
+            phase.subphases.forEach((sub) => {
+                const startDate = parseDate(sub.start_date)
+                const endDate = parseDate(sub.closed_date)
+
+                let startWeek = null
+                let endWeek = null
+                let duration = 2
+
+                if (startDate) {
+                    startWeek = getWeekNumber(startDate, earliestDate)
+
+                    if (endDate) {
+                        endWeek = getWeekNumber(endDate, earliestDate)
+                        duration = Math.max(endWeek - startWeek + 1, 1)
+                    } else {
+                        endWeek = startWeek + 1
+                        duration = 2
+                    }
+                } else {
+                    startWeek = null
+                    endWeek = null
+                }
+
+                const processedSub = {
+                    ...sub,
+                    startWeek,
+                    endWeek,
+                    duration,
+                    startDate,
+                    endDate
+                }
+
+                phaseData.subphases.push(processedSub)
+
+                if (sub.status === "completed") completedCount++
+                else if (sub.status === "in_progress") inProgressCount++
+                else notStartedCount++;
+                totalCount++
+            })
+
+            processedData.push(phaseData)
+        })
+
+        const allWeeks = [];
         for (let i = 1; i <= maxWeeks; i++) {
             allWeeks.push(`W${i}`)
         }
 
         setWeeks(allWeeks)
-        setProgress(Math.floor((completedCount / totalCount) * 100))
-        setPredicted(Math.min(progress + 20, 100))
+        setTimelineData(processedData)
+        setProgress(Math.floor((completedCount / totalCount) * 100));
+        setPredicted(Math.min(progress + 20, 100));
         setStats({
             completed: completedCount,
             inProgress: inProgressCount,
@@ -73,9 +160,46 @@ const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
         setInitialized(projectPhases && projectPhases.length > 0)
     }, [projectPhases, progress])
 
-    useEffect(() => {
+    const handleMouseDown = (e) => {
+        if (!timelineRef.current) return
 
-    }, [projectPhases])
+        setIsDragging(true)
+        setDragStart({
+            x: e.pageX,
+            scrollLeft: timelineRef.current.scrollLeft
+        })
+
+        e.preventDefault()
+    }
+
+    const handleMouseMove = (e) => {
+        if (!isDragging || !timelineRef.current) return
+
+        e.preventDefault()
+        const x = e.pageX
+        const deltaX = x - dragStart.x
+        timelineRef.current.scrollLeft = dragStart.scrollLeft - deltaX
+    }
+
+    const handleMouseUp = () => {
+        setIsDragging(false)
+    }
+
+    const handleMouseLeave = () => {
+        setIsDragging(false)
+    }
+
+    useEffect(() => {
+        if (isDragging) {
+            document.addEventListener('mousemove', handleMouseMove)
+            document.addEventListener('mouseup', handleMouseUp)
+
+            return () => {
+                document.removeEventListener('mousemove', handleMouseMove)
+                document.removeEventListener('mouseup', handleMouseUp)
+            }
+        }
+    }, [isDragging, dragStart])
 
     const toggleForm = () => setShowForm(prev => !prev)
 
@@ -85,27 +209,9 @@ const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
     const isVeryCompact = totalSubphases > 12
     const needsScroll = totalSubphases > 7
 
-    // if (!projectPhases || projectPhases.length === 0) {
-    //     return (
-    //         <div className="w-2/5 md:w-2/3 bg-white rounded-xl shadow-xl p-8" style={{ maxHeight: '1185px' }}>
-    //             <button onClick={toggleForm} className={`${isVeryCompact ? 'px-2 py-1 text-sm' : 'px-3 py-1.5'} bg-btncol hover:bg-btncol/40 text-white rounded-lg transition-all duration-200 backdrop-blur-sm`}>
-    //                 <Activity size={16} className="inline mr-2" />
-    //                 Add Development Cycle
-    //             </button>
-    //             <div className="text-center space-y-4">
-    //                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
-    //                     <BarChartBig className="text-gray-400" size={32} />
-    //                 </div>
-    //                 <h3 className="text-lg font-medium text-gray-900">No Project Data</h3>
-    //                 <p className="text-gray-500">No project phase data available to display.</p>
-    //             </div>
-    //         </div>
-    //     )
-    // }
-
     if (showForm || !projectPhases || projectPhases.length === 0) {
         return (
-            <div className="w-full max-w-4xl mx-auto bg-white p-6 rounded-xl shadow-md">
+            <div className="w-2/5 md:w-2/3 max-w-4xl mx-auto bg-white p-6 rounded-xl shadow-md pb-20 ">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold text-gray-800">Manage Project</h2>
                     <button
@@ -120,15 +226,14 @@ const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
                     projectPhases={projectPhases}
                     isInitialized={isInitialized}
                     setInitialized={setInitialized}
+                    overallProgress={currentProgress}
                 />
             </div>
         )
     }
 
     return (
-        <div
-            className="w-2/5 md:w-2/3 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden flex flex-col max-h-full"
-        >
+        <div className="w-2/5 md:w-2/3 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden flex flex-col max-h-full">
             <div className={`${isVeryCompact ? 'p-3' : isCompact ? 'p-4' : 'p-4'} text-black flex-shrink-0`}>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -146,6 +251,7 @@ const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
                     </button>
                 </div>
             </div>
+
             <div className={`${isVeryCompact ? 'p-1 px-4' : isCompact ? 'p-2 px-6' : 'p-2 px-8'} space-y-4 flex-1 overflow-hidden flex flex-col`}>
                 <div className={`grid grid-cols-4 ${isVeryCompact ? 'gap-2' : 'gap-4'} flex-shrink-0`}>
                     <div className={`bg-green-50 border border-green-200 rounded-lg ${isVeryCompact ? 'p-1.5' : 'p-2'} text-center`}>
@@ -165,6 +271,7 @@ const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
                         <div className={`${isVeryCompact ? 'text-xs' : 'text-xs'} text-gray-700 font-medium`}>Total Phases</div>
                     </div>
                 </div>
+
                 <div className={`space-y-${isVeryCompact ? '2' : '4'} flex-shrink-0`}>
                     <div className={`space-y-${isVeryCompact ? '1' : '3'}`}>
                         <div className="flex items-center justify-between">
@@ -173,7 +280,7 @@ const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
                                 <span className={`${isVeryCompact ? 'text-xs' : 'text-sm'} font-semibold text-gray-700`}>Current Progress</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className={`${isVeryCompact ? 'text-lg' : 'text-2xl'} font-bold text-green-600`}>{currentProgress}%</span>
+                                <span className={`${isVeryCompact ? 'text-lg' : 'text-2xl'} font-bold text-green-600`}>{Math.round(currentProgress, 2)}%</span>
                             </div>
                         </div>
                         <div className="relative">
@@ -201,7 +308,7 @@ const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
                                 <span className={`${isVeryCompact ? 'text-xs' : 'text-sm'} font-semibold text-gray-700`}>Predicted Completion</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className={`${isVeryCompact ? 'text-lg' : 'text-2xl'} font-bold text-purple-600`}>{predicted}%</span>
+                                <span className={`${isVeryCompact ? 'text-lg' : 'text-2xl'} font-bold text-purple-600`}>{Math.round(predicted, 2)}%</span>
                                 <span className={`${isVeryCompact ? 'text-xs' : 'text-xs'} text-gray-500 bg-gray-100 px-2 py-1 rounded-full`}>Est.</span>
                             </div>
                         </div>
@@ -229,10 +336,23 @@ const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
                     <div className="flex items-center gap-2 p-3 flex-shrink-0">
                         <Calendar className="text-gray-600" size={isVeryCompact ? 16 : 18} />
                         <h3 className={`font-semibold text-gray-800 ${isVeryCompact ? 'text-sm' : 'text-base'}`}>Project Timeline</h3>
+                        <div className={`ml-auto text-gray-500 ${isVeryCompact ? 'text-xs' : 'text-sm'} flex items-center gap-1`}>
+                            <span>🖱️</span>
+                            <span>Click & drag to scroll</span>
+                        </div>
                     </div>
 
-                    <div className={`${needsScroll ? 'overflow-auto' : 'overflow-hidden'} flex-1 custom-scrollbar`}>
-                        <div className="min-w-[600px]">
+                    <div
+                        className={`${needsScroll ? 'overflow-auto' : 'overflow-hidden'} flex-1 custom-scrollbar ${isDragging ? 'cursor-grabbing' : 'cursor-grab'} select-none`}
+                        ref={timelineRef}
+                        onMouseDown={handleMouseDown}
+                        onMouseLeave={handleMouseLeave}
+                        style={{
+                            scrollbarWidth: 'thin',
+                            scrollbarColor: '#9CA3AF #F3F4F6'
+                        }}
+                    >
+                        <div className="min-w-[600px] pointer-events-none">
                             <div className="flex mb-1">
                                 <div className={`w-48 flex-shrink-0 ${isVeryCompact ? 'p-2' : 'p-3'} bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold rounded-l-lg`}>
                                     <span className={isVeryCompact ? 'text-xs' : 'text-sm'}>Phase / Task</span>
@@ -246,40 +366,42 @@ const ProjectProgressChart = ({ projectPhases, currentProgress }) => {
                                 </div>
                             </div>
                             <div className={`space-y-${isVeryCompact ? '0.5' : '1'}`}>
-                                {projectPhases.map((phase, phaseIdx) => (
+                                {timelineData.map((phase, phaseIdx) => (
                                     <div key={`phase-${phaseIdx}`} className={`space-y-${isVeryCompact ? '0.5' : '1'}`}>
                                         <div className="flex">
                                             <div className={`w-48 flex-shrink-0 ${isVeryCompact ? 'p-1.5' : 'p-2'} bg-gradient-to-r from-gray-700 to-gray-800 ${isVeryCompact ? 'text-xs' : 'text-sm'} text-white font-bold rounded-lg`}>
                                                 {phase.parent_phase.toUpperCase()}
                                             </div>
                                         </div>
-                                        {phase.subphases.map((sub, subIdx) => {
-                                            const baseStart = projectPhases[0].subphases[0]?.start_date
-                                            const startWeek = Math.ceil(differenceInCalendarDays(sub.start_date, baseStart) / 7) + 1
-                                            const endWeek = sub.closed_date
-                                                ? Math.ceil(differenceInCalendarDays(sub.closed_date, baseStart) / 7) + 1
-                                                : startWeek + 2
-
-                                            return (
-                                                <div key={`subphase-${phaseIdx}-${subIdx}`} className="flex hover:bg-white transition-colors duration-200 rounded-lg">
-                                                    <div className={`w-48 flex-shrink-0 ${isVeryCompact ? 'p-1' : 'p-1.5'} bg-white border border-gray-200 rounded-l-lg`}>
-                                                        <div className={`${isVeryCompact ? 'text-xs' : 'text-sm'} font-medium text-gray-800 mb-1`}>{sub.subphase}</div>
-                                                        <span className={`inline-block px-2 py-0.5 rounded-full ${isVeryCompact ? 'text-[9px]' : 'text-[10px]'} font-medium border ${STATUS_COLORS[sub.status]}`}>
-                                                            {sub.status.replace('_', ' ')}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex flex-1 bg-white border-t border-r border-b border-gray-200 rounded-r-lg">
-                                                        {weeks.map((week, idx) => (
-                                                            <div key={idx} className={`flex-1 min-w-[${isVeryCompact ? '28px' : '36px'}] ${isVeryCompact ? 'p-1' : 'p-2'} border-l border-gray-100 first:border-l-0 flex items-center justify-center`}>
-                                                                {idx + 1 >= startWeek && idx + 1 <= endWeek && (
-                                                                    <div className={`w-full ${isVeryCompact ? 'h-4' : 'h-6'} rounded-md ${COLORS[sub.status]} shadow-sm`}></div>
-                                                                )}
-                                                            </div>
-                                                        ))}
-                                                    </div>
+                                        {phase.subphases.map((sub, subIdx) => (
+                                            <div key={`subphase-${phaseIdx}-${subIdx}`} className="flex hover:bg-white transition-colors duration-200 rounded-lg">
+                                                <div className={`w-48 flex-shrink-0 ${isVeryCompact ? 'p-1' : 'p-1.5'} bg-white border border-gray-200 rounded-l-lg`}>
+                                                    <div className={`${isVeryCompact ? 'text-xs' : 'text-sm'} font-medium text-gray-800 mb-1`}>{sub.subphase}</div>
+                                                    <span className={`inline-block px-2 py-0.5 rounded-full ${isVeryCompact ? 'text-[9px]' : 'text-[10px]'} font-medium border ${STATUS_COLORS[sub.status]}`}>
+                                                        {sub.status.replace('_', ' ')}
+                                                    </span>
                                                 </div>
-                                            )
-                                        })}
+                                                <div className="flex flex-1 bg-white border-t border-r border-b border-gray-200 rounded-r-lg relative">
+                                                    {weeks.map((week, weekIdx) => (
+                                                        <div key={weekIdx} className={`flex-1 min-w-[${isVeryCompact ? '28px' : '36px'}] ${isVeryCompact ? 'p-1' : 'p-2'} border-l border-gray-100 first:border-l-0 relative`}>
+                                                        </div>
+                                                    ))}
+                                                    {sub.startWeek && sub.endWeek && (
+                                                        <div
+                                                            className="absolute top-1/2 transform -translate-y-1/2"
+                                                            style={{
+                                                                left: `${((sub.startWeek - 1) / weeks.length) * 100}%`,
+                                                                width: `${((sub.endWeek - sub.startWeek + 1) / weeks.length) * 100}%`,
+                                                            }}
+                                                        >
+                                                            <div className={`${isVeryCompact ? 'h-4' : 'h-6'} rounded-lg ${COLORS[sub.status]} shadow-sm mx-1 relative overflow-hidden`}>
+                                                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 ))}
                             </div>

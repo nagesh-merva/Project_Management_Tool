@@ -14,7 +14,7 @@ export default function ProjectsDashboard() {
     const [showPopup, setShowPopup] = useState(false)
     const { allEmps, emp } = useMainContext()
     const isAdmin = emp.role === "Admin" || emp.role === "Manager" || emp.role === "Founder" || emp.role === "Co-Founder"
-    const url = isAdmin ? `http://127.0.0.1:8000/get-projects?role=${emp.role}` : `http://127.0.0.1:8000/get-project-empid?emp_id=${emp.emp_id}`
+    const url = isAdmin ? `https://project-management-tool-uh55.onrender.com/get-projects?role=${emp.role}` : `https://project-management-tool-uh55.onrender.com/get-project-empid?emp_id=${emp.emp_id}`
 
     const [fields, setFields] = useState([
         {
@@ -64,7 +64,7 @@ export default function ProjectsDashboard() {
 
     const getAllClients = async () => {
         try {
-            const response = await fetch("http://127.0.0.1:8000/clients/briefs", {
+            const response = await fetch("https://project-management-tool-uh55.onrender.com/clients/briefs", {
                 method: "GET",
             })
 
@@ -117,9 +117,9 @@ export default function ProjectsDashboard() {
                 const issued = []
                 const completed = []
                 for (let i = 0; i < data.length; i++) {
-                    if (data[i].status === "active") {
+                    if (data[i].status === "active" || data[i].status === "delayed") {
                         actives.push(data[i])
-                    } else if (data[i].status === "issued") {
+                    } else if (data[i].status === "issued" || data[i].status == "inactive") {
                         issued.push(data[i])
                     } else {
                         completed.push(data[i])
@@ -204,7 +204,7 @@ export default function ProjectsDashboard() {
                 isVisible={showPopup}
                 onClose={() => setShowPopup(false)}
                 formTitle="Add New Project"
-                endpoint="http://127.0.0.1:8000/add-project"
+                endpoint="https://project-management-tool-uh55.onrender.com/add-project"
                 fields={fields}
             />
         </>

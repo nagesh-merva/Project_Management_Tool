@@ -28,7 +28,7 @@ function Singleproject() {
     const GetFullProj = async () => {
         setLoading(true)
         try {
-            const response = await fetch(`http://127.0.0.1:8000/get-project?project_id=${id}`, {
+            const response = await fetch(`https://project-management-tool-uh55.onrender.com/get-project?project_id=${id}`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
             })
@@ -85,7 +85,7 @@ function Singleproject() {
                     <>
                         <Header />
                         <div className="w-full h-full space-y-5">
-                            <Brief clientDetails={projectDetails.client_details} projBrief={projectDetails.descp} status={projectDetails.status} start={projectDetails.start_date} deadline={projectDetails.deadline} />
+                            <Brief clientDetails={projectDetails.client_details} project_name={projectDetails.project_name} projBrief={projectDetails.descp} status={projectDetails.status} start={projectDetails.start_date} deadline={projectDetails.deadline} quickLinks={projectDetails.quick_links} />
                             <div className="w-full h-80 flex ">
                                 <Teammember members={projectDetails.team_members} />
                                 <Features features={projectDetails.features} />

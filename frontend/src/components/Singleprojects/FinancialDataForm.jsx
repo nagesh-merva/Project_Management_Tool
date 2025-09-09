@@ -25,26 +25,38 @@ const FinancialDataForm = ({ isVisible, onClose, existingData, onSubmit }) => {
 
     // console.log(existingData)
 
-    const profitMargin = (budget && revenue)
-        ? parseFloat(((revenue - budget) / revenue) * 100).toFixed(2)
-        : ""
-
     const handleSubmit = async (e) => {
         e.preventDefault()
         setLoading(true)
         try {
+            const filteredCosts = costs
+                .map(c => {
+                    const copy = { ...c }
+                    if (!copy.id) delete copy.id
+                    return copy
+                })
+                .filter(c =>
+                    c.title?.trim() &&
+                    c.calc_brief?.trim() &&
+                    c.cost !== "" &&
+                    c.cost !== null &&
+                    c.cost !== undefined
+                );
 
-            const filteredCosts = costs.map((c) => {
-                const copy = { ...c }
-                if (!copy.id) delete copy.id
-                return copy
-            })
-
-            const filteredSpenditure = spenditure.map((s) => {
-                const copy = { ...s }
-                if (!copy.id) delete copy.id
-                return copy
-            })
+            const filteredSpenditure = spenditure
+                .map(s => {
+                    const copy = { ...s };
+                    if (!copy.id) delete copy.id
+                    copy.cost = parseFloat(copy.cost)
+                    return copy
+                })
+                .filter(s =>
+                    s.month?.trim() &&
+                    s.dept?.trim() &&
+                    s.cost !== "" &&
+                    s.cost !== null &&
+                    s.cost !== undefined
+                )
 
             const payload = {
                 project_id,
@@ -59,7 +71,6 @@ const FinancialDataForm = ({ isVisible, onClose, existingData, onSubmit }) => {
             console.log(payload)
             await onSubmit(payload)
             window.location.reload()
-
         } catch (e) {
             console.error(e)
         } finally {
@@ -67,7 +78,6 @@ const FinancialDataForm = ({ isVisible, onClose, existingData, onSubmit }) => {
             onClose()
         }
     }
-
 
     const updateCost = (index, key, value) => {
         const updated = [...costs]

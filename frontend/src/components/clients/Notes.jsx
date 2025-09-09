@@ -36,7 +36,7 @@ const Notes = ({ notes }) => {
                 isVisible={showPopup}
                 onClose={() => setShowPopup(false)}
                 formTitle="Add a Note"
-                endpoint="http://127.0.0.1:8000/add-client-notes"
+                endpoint="https://project-management-tool-uh55.onrender.com/add-client-notes"
                 fields={fields}
             />
         </>

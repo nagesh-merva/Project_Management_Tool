@@ -1,7 +1,6 @@
-import React, { useState } from "react"
-import { Routes, Route, useParams, Navigate } from "react-router-dom"
+
+import { Routes, Route, Navigate } from "react-router-dom"
 import Homepage from "./pages/Index"
-import Dashboard from "./pages/Dashboard"
 import ProjectsPage from "./pages/projects"
 import Singleproject from "./pages/Singleproject"
 import Department from "./pages/Department"
@@ -11,6 +10,8 @@ import ClientsList from "./pages/ClientsList"
 import ClientDetails from "./pages/ClientDetails"
 import Reports from "./pages/reports"
 import Analytics from "./pages/Analytics"
+import Policies from "./pages/Policies"
+import Dashboard from "./pages/Dashboard"
 
 function ProtectedRoute({ children }) {
   const { loggedIn } = useMainContext()
@@ -36,6 +37,7 @@ function App() {
         <Route path="/clients" element={<ClientsList />} />
         <Route path="/clients/:clientid" element={<ClientDetails />} />
         <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+        <Route path="/docs/:doctype" element={<ProtectedRoute><Policies /></ProtectedRoute>} />
       </Routes>
     </div>
   )

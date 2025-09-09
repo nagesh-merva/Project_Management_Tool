@@ -76,7 +76,7 @@ const Teammember = ({ members }) => {
                 isVisible={showPopup}
                 onClose={() => setShowPopup(false)}
                 formTitle="Add Team Member"
-                endpoint="http://127.0.0.1:8000/add-team-member"
+                endpoint="https://project-management-tool-uh55.onrender.com/add-team-member"
                 fields={fields}
             />
         </>

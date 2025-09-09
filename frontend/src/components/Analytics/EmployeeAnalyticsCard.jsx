@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
     User,
     Briefcase,
@@ -8,10 +8,41 @@ import {
     Calendar,
     FileText,
     Award,
+    X,
 } from 'lucide-react'
 
 const EmployeeAnalyticsCard = ({ employee }) => {
     const [showDetails, setShowDetails] = useState(false)
+
+    // console.log(employee)
+
+    useEffect(() => {
+        if (showDetails) {
+            document.body.style.overflow = 'hidden'
+        } else {
+            document.body.style.overflow = 'unset'
+        }
+
+        return () => {
+            document.body.style.overflow = 'unset'
+        }
+    }, [showDetails])
+
+    useEffect(() => {
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                setShowDetails(false)
+            }
+        }
+
+        if (showDetails) {
+            document.addEventListener('keydown', handleEscape)
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleEscape)
+        }
+    }, [showDetails])
 
     const getPerformanceColor = (score) => {
         if (score >= 8) return 'text-green-600 bg-green-100'
@@ -25,8 +56,15 @@ const EmployeeAnalyticsCard = ({ employee }) => {
         return 'bg-red-500'
     }
 
-    return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-300">
+    const maxSalary = Math.max(...(employee.PromotionHistory?.map(s => s.salary) || [1]))
+    const points = employee.PromotionHistory?.map((entry, index) => {
+        const x = (index / (employee.PromotionHistory?.length - 1)) * 100
+        const y = 100 - (entry.salary / maxSalary) * 100
+        return { ...entry, x, y }
+    }) || []
+
+    const CardContent = ({ isModal = false }) => (
+        <div className={`bg-white rounded-xl shadow-sm border border-gray-100 ${isModal ? 'w-full max-w-4xl mx-auto my-8' : ''} p-6 hover:shadow-md transition-all duration-300`}>
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
@@ -37,13 +75,27 @@ const EmployeeAnalyticsCard = ({ employee }) => {
                         <p className="text-sm text-gray-600">{employee.id}</p>
                     </div>
                 </div>
-                <button
-                    onClick={() => setShowDetails(!showDetails)}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                >
-                    {showDetails ? 'Less' : 'Details'}
-                </button>
+                <div className="flex items-center gap-2">
+                    {isModal && (
+                        <button
+                            onClick={() => setShowDetails(false)}
+                            className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                            aria-label="Close details"
+                        >
+                            <X size={20} />
+                        </button>
+                    )}
+                    {!isModal && (
+                        <button
+                            onClick={() => setShowDetails(!showDetails)}
+                            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        >
+                            Details
+                        </button>
+                    )}
+                </div>
             </div>
+
             <div className="flex items-center gap-4 mb-4">
                 <div className="flex items-center gap-2">
                     <Briefcase className="text-gray-400" size={16} />
@@ -54,6 +106,7 @@ const EmployeeAnalyticsCard = ({ employee }) => {
                     <span className="text-sm text-gray-600">{employee.department}</span>
                 </div>
             </div>
+
             <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="text-center p-3 bg-blue-50 rounded-lg">
                     <div className="flex items-center justify-center gap-1 mb-1">
@@ -70,20 +123,22 @@ const EmployeeAnalyticsCard = ({ employee }) => {
                     <p className="text-lg font-bold text-green-600">{employee.completedProjects}</p>
                 </div>
             </div>
+
             <div className="mb-4">
                 <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-gray-700">Performance Score</span>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPerformanceColor(employee.performanceScore)}`}>
-                        {employee.performanceScore}/10
+                        {employee.performanceScore}/5
                     </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
                         className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${employee.performanceScore * 10}%` }}
+                        style={{ width: `${employee.performanceScore * 20}%` }}
                     ></div>
                 </div>
             </div>
+
             <div className="mb-4">
                 <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-gray-700">Attendance</span>
@@ -96,10 +151,11 @@ const EmployeeAnalyticsCard = ({ employee }) => {
                     ></div>
                 </div>
             </div>
-            {showDetails && (
-                <div className="border-t border-gray-100 pt-4 space-y-4">
+
+            {(showDetails || isModal) && (
+                <div className="border-t border-gray-100 pt-4 space-y-6">
                     <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                        <h4 className="text-sm font-medium text-gray-700 mb-4 flex items-center gap-2">
                             <TrendingUp className="text-green-600" size={16} />
                             Salary Trend
                         </h4>
@@ -116,31 +172,61 @@ const EmployeeAnalyticsCard = ({ employee }) => {
                                 </div>
                             ))}
                         </div>
+                        {points.length > 1 && (
+                            <div className="bg-gray-50 rounded-lg p-4">
+                                <div className="w-full h-40 relative">
+                                    <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
+                                        <polyline
+                                            fill="none"
+                                            stroke="#10B981"
+                                            strokeWidth="2"
+                                            points={points.map(p => `${p.x},${p.y}`).join(" ")}
+                                        />
+                                        {points.map((p, i) => (
+                                            <circle key={i} cx={p.x} cy={p.y} r="2.5" fill="#10B981" />
+                                        ))}
+                                    </svg>
+                                </div>
+                                <div className="mt-4 grid grid-cols-3 gap-2 text-xs text-gray-600">
+                                    {points.map((p, i) => (
+                                        <div key={i} className="text-center">
+                                            <div className="font-medium">{new Date(p.date).toLocaleDateString()}</div>
+                                            <div className="text-green-600">₹{p.salary.toLocaleString()}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
-                    <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                            <Award className="text-purple-600" size={16} />
-                            Last Promotion
-                        </span>
-                        <span className="text-sm text-gray-600">{employee.lastPromotion}</span>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                            <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                <Award className="text-purple-600" size={16} />
+                                Last Promotion
+                            </span>
+                            <span className="text-sm text-gray-600">{employee.PromotionHistory[0]?.role}</span>
+                            <span className="text-sm text-gray-600">{employee.PromotionHistory[0]?.date.split("T")[0]}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                            <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                <Calendar className="text-orange-600" size={16} />
+                                Leaves Taken
+                            </span>
+                            <span className="text-sm text-gray-600">{employee.leavesTaken} days</span>
+                        </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                            <Calendar className="text-orange-600" size={16} />
-                            Leaves Taken
-                        </span>
-                        <span className="text-sm text-gray-600">{employee.leavesTaken} days</span>
-                    </div>
+
                     <div>
-                        <span className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-2">
+                        <span className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-3">
                             <FileText className="text-blue-600" size={16} />
                             Documents
                         </span>
-                        <div className="flex gap-2">
-                            {employee.documents.map((doc, index) => (
+                        <div className="flex flex-wrap gap-2">
+                            {(employee.documents || []).map((doc, index) => (
                                 <button
                                     key={index}
-                                    className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs hover:bg-blue-200 transition-colors"
+                                    className="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200 transition-colors"
                                 >
                                     {doc}
                                 </button>
@@ -151,6 +237,23 @@ const EmployeeAnalyticsCard = ({ employee }) => {
             )}
         </div>
     )
-}
 
+    return (
+        <>
+            {!showDetails && <CardContent />}
+            {showDetails && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-start justify-center overflow-y-auto"
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) {
+                            setShowDetails(false)
+                        }
+                    }}
+                >
+                    <CardContent isModal={true} />
+                </div>
+            )}
+        </>
+    )
+}
 export default EmployeeAnalyticsCard

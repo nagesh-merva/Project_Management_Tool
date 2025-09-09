@@ -1,22 +1,28 @@
+from bson import ObjectId
 from fastapi import FastAPI, HTTPException, Depends,Body ,UploadFile , File,Form
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import BackgroundTasks
 from motor.motor_asyncio import AsyncIOMotorClient
-from models.dept import Department, EmpPerformanceMetrics ,EmployeeInput, EmployeeSummary,EmployeeResponse,EmployeesByDeptResponse ,EmpDocuments ,Employee
+from models.reports import Report, ReportCreate , ReportType
+from models.dept import Department, EmpPerformanceMetrics ,EmployeeInput, EmployeeSummary,EmployeeResponse,EmployeesByDeptResponse ,EmpDocuments ,Employee ,PromotionInput
 from models.updatesAndtask import  UpdateTask,AddComment
 from models.project import Project,AddProjectRequest ,QuickLinks ,SRS ,FinancialData,PerformanceMetrics,ProjectPhaseUpdate
 from models.clients import Client, ClientMetrics, ClientDocuments, ContactPerson, ClientEngagement ,BasicClientInput,UpdateClientInput ,ClientDocuments ,ClientNote
+from models.goals import Goal, CreateGoalInput, UpdateGoalInput, AddProgressInput, AddMilestoneInput, UpdateMilestoneInput, AddAuditInput,GoalResponse, GoalSummary, ProgressEntry, AuditEntry, Milestone, Risk
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
+from calendar import monthrange
 from pydantic import EmailStr
 # from bson import ObjectId
 from jose import JWTError, jwt # type: ignore
-from datetime import datetime, timedelta,date ,timezone
+from datetime import datetime, timedelta,date ,timezone ,time
 import firebase_admin # type: ignore
 from firebase_admin import credentials, storage # type: ignore
 import os
 import tempfile
 from dotenv import load_dotenv
 import random
+import string
 import uuid
 
 load_dotenv()
@@ -221,7 +227,8 @@ async def add_employee(
         current_projects=[],
         emergency_contact=emergency_contact,
         bank_account_number=bank_account_number,
-        bank_ifsc=bank_ifsc
+        bank_ifsc=bank_ifsc,
+        promotion_record=[]
     )
 
     await db.Employees.insert_one(employee.dict())
@@ -314,6 +321,92 @@ async def add_emp_documents(emp_id: str = Form(...), file: UploadFile = File(...
         raise HTTPException(status_code=404, detail="Employee not found.")
 
     return {"message": "Document added successfully.", "doc_url": doc_url}
+
+# ================== Employee Dashboard Metrics =======================
+@app.get("/dashboard-metrics")
+async def emp_dashboard_metrics(emp_id: str):
+    if not emp_id:
+        raise HTTPException(status_code=400, detail="Employee Id Required")
+    
+    employee = await db.Employees.find_one({"emp_id": emp_id})
+    
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    from datetime import datetime
+    joined_date = employee.get("joined_on")
+    if isinstance(joined_date, dict) and "$date" in joined_date:
+        joined_date = datetime.fromisoformat(joined_date["$date"].replace("Z", "+00:00"))
+    elif isinstance(joined_date, str):
+        joined_date = datetime.fromisoformat(joined_date.replace("Z", "+00:00"))
+    else:
+        joined_date = joined_date if joined_date else datetime.now()
+    
+    years_of_service = round((datetime.now() - joined_date).days / 365.25, 1)
+    
+    metrics = {
+        "completedProjects": employee.get("performance_metrics", {}).get("completed_projects", 0),
+        "performanceRating": employee.get("performance_metrics", {}).get("ratings", 0.0),
+        "activeProjects": len(employee.get("current_projects", [])),
+        "leavesTaken": employee.get("leaves_taken", 0),
+        "yearsOfService": years_of_service,
+        "monthlySalary": employee.get("salary_monthly", 0)
+    }
+    
+    return {
+        "success": True,
+        "data": metrics,
+        "message": "Dashboard metrics retrieved successfully"
+    }
+    
+# ================== add Employee promotion =======================
+@app.post("/add-emp-promotion")
+async def add_emp_promotion(data: PromotionInput):
+    employee = await db.Employees.find_one({"emp_id": data.emp_id})
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+
+    prev_role = employee["role"]
+    prev_salary = employee["salary_monthly"]
+    joined_on = employee["joined_on"]
+
+    if not employee.get("promotion_record") or employee.get("promotion_record") == []:
+        working_as_from = datetime.combine(joined_on.date(), datetime.min.time())
+    else:
+        working_as_from = datetime.combine(date.today(), datetime.min.time())
+
+    promotion_entry = {
+        "prev_role": prev_role,
+        "prev_salary": prev_salary,
+        "working_as_from": working_as_from
+    }
+
+    if not employee.get("promotion_record"):
+        update_data = {
+            "$set": {
+                "role": data.role,
+                "salary_monthly": data.salary,
+                "promotion_record": [promotion_entry]
+            }
+        }
+    else:
+        update_data = {
+            "$set": {
+                "role": data.role,
+                "salary_monthly": data.salary
+            },
+            "$push": {
+                "promotion_record": promotion_entry
+            }
+        }
+        
+    print("Promoting employee with id ",data.emp_id ," to " ,update_data)
+    result = await db.Employees.update_one({"emp_id": data.emp_id}, update_data)
+
+    print("\n",result)
+
+    return {"message": "Promotion recorded successfully", "emp_id": data.emp_id}
+
 
 # ================= Get All Updates ====================
 @app.get("/get-updates")
@@ -512,6 +605,12 @@ async def get_projects_byid(emp_id:str):
 
     async for project in projects_cursor:
         project["_id"] = str(project["_id"])  
+        try:
+            if project["deadline"] < datetime.now() and project["status"] == "active":
+                project["status"] = "delayed"
+        except ValueError:
+            print("Invalid deadline format:", project["deadline"])
+            project["status"] = "unknown"
 
         projects.append({
             "project_id": project["project_id"],
@@ -604,6 +703,15 @@ async def get_project(project_id: str):
 
     if not project:
         raise HTTPException(status_code=404, detail="Project not found.")
+    
+    try:
+        # print(project["deadline"] > datetime.now(), project["deadline"], datetime.now())
+        if project["deadline"] < datetime.now() and project["status"] == "active":
+            project["status"] = "delayed"
+    except ValueError:
+        print("Invalid deadline format:", project["deadline"])
+        project["status"] = "unknown"
+
 
     project["_id"] = str(project["_id"])
     return project
@@ -614,7 +722,6 @@ async def get_active_projects(emp_id: str):
     if not emp_id:
         raise HTTPException(status_code=400, detail="Employee ID is required.")
 
-    # Find all active projects where emp_id is assigned in any feature
     projects_cursor = db.Projects.find({
         "status": "active",
         "team_members.emp_id": emp_id
@@ -645,22 +752,67 @@ async def edit_project_brief(data: dict):
     project_id = data.get("project_id")
     if not project_id:
         raise HTTPException(status_code=400, detail="Project ID is required.")
+    
+    project = await db.Projects.find_one({"project_id": project_id})
+    
+    if not project:
+        raise HTTPException(status_code=400, detail="Project doesnt exist, error finding project!.")
 
     update_fields = {}
+    
+    # print(data)
 
     if "descp" in data and data["descp"]:
         update_fields["descp"] = data["descp"]
+    
     if "deadline" in data and data["deadline"]:
-        update_fields["deadline"] = data["deadline"]
+        try:
+            update_fields["deadline"] = datetime.fromisoformat(data["deadline"].replace("Z", "+00:00"))
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format")
+
     if "status" in data and data["status"]:
+        if data["status"] == "completed":
+            for emp in project["team_members"]:
+                db.Employees.update_one(
+                    {"emp_id": emp["emp_id"]},
+                    {"$pull": {"current_projects": project_id}}
+                )
+                # print("removed ",project_id," from ", emp["emp_id"])
         update_fields["status"] = data["status"]
+
+    quick_links_updates = {}
+    
+    if "code_resource_base" in data:
+        if data["code_resource_base"]:
+            quick_links_updates["quick_links.code_resource_base"] = data["code_resource_base"]
+        else:
+            quick_links_updates["quick_links.code_resource_base"] = None
+    
+    if "live_demo" in data:
+        if data["live_demo"]:
+            quick_links_updates["quick_links.live_demo"] = data["live_demo"]
+        else:
+            quick_links_updates["quick_links.live_demo"] = None
+    
+    if quick_links_updates:
+        update_fields.update(quick_links_updates)
 
     if not update_fields:
         raise HTTPException(status_code=400, detail="No valid fields provided to update.")
 
+    set_fields = {k: v for k, v in update_fields.items() if v is not None}
+    unset_fields = {k: "" for k, v in update_fields.items() if v is None}
+    
+    update_operations = {}
+    if set_fields:
+        update_operations["$set"] = set_fields
+    if unset_fields:
+        update_operations["$unset"] = unset_fields
+
     updated = await db.Projects.update_one(
         {"project_id": project_id},
-        {"$set": update_fields}
+        update_operations
     )
 
     if updated.modified_count == 0:
@@ -863,21 +1015,26 @@ async def manage_maintenance_reports(
     project_id: str = Form(...),
     title: str = Form(...),
     descp: str = Form(...),
+    type: str = Form(...),
     file: UploadFile = File(...)
 ):
-    if not project_id or not title or not descp:
+    if not project_id or not title or not descp or not type:
+        print("hit not included")
         raise HTTPException(status_code=400, detail="project_id, title, and descp are required.")
-    
-    # file_id = await fs_bucket.upload_from_stream(file.filename, await file.read())
 
-    # gridfs_link = f"/files/{str(file_id)}"
+    if type != "Maintenance" and type != "Issue":
+        print("hit type")
+        raise HTTPException(status_code=400, detail="Unvalid report type submitted.")
+    
+    doc_url = await upload_file_to_firebase(file, folder=f"PMT/ProjectReports/{project_id}")
 
     report_entry = {
         "id": f"MAINT{random.randint(1000,9999)}",
         "title": title,
         "descp": descp,
+        "type": type,
         "issued_date": datetime.utcnow(),
-        # "doc_link": gridfs_link 
+        "doc_link": doc_url 
     }
 
     updated = await db.Projects.update_one(
@@ -888,7 +1045,7 @@ async def manage_maintenance_reports(
     if updated.modified_count == 0:
         raise HTTPException(status_code=404, detail="Project not found or report not added.")
 
-    return {"message": f"Maintenance report '{title}' added to project {project_id}.", "doc_link": "gridfs_link"}
+    return {"message": f"Maintenance report '{title}' added to project {project_id}."}
 
 #================= manage hosting details by project_id  ============================
 @app.post("/manage-hostings")
@@ -949,8 +1106,11 @@ async def get_phases_project(project_id: str):
         raise HTTPException(status_code=404, detail="No phases found for this project.")
     
     phases = []
-    for phase in project_phases:
-        phases.append(phase["parent_phase"] if "parent_phase" in phase else "")
+    for Parentphase in project_phases:
+        subphases = Parentphase.get("subphases")
+        for phase in subphases:
+            # print(phase)
+            phases.append(phase.get("subphase") if "subphase" in phase else "")
     return phases
 
 
@@ -962,6 +1122,8 @@ async def add_template(data: dict):
     department = data.get("department")
     phase = data.get("phase")
     fields = data.get("fields")
+
+    print(data)
 
     if not project_id or not template_name or not department or not phase or not fields:
         raise HTTPException(status_code=400, detail="All fields are required.")
@@ -998,6 +1160,23 @@ async def add_template(data: dict):
         "department": department,
         "phase": phase
     }
+    
+    await db.Projects.update_one(
+        {
+            "project_id": project_id,
+            "project_status.subphases.subphase": phase
+        },
+        {
+            "$set": {
+                "project_status.$[parent].subphases.$[sub].status": "in_progress",
+                "project_status.$[parent].subphases.$[sub].start_date" : datetime.now()
+            }
+        },
+        array_filters=[
+            {"parent.subphases.subphase": phase},
+            {"sub.subphase": phase}
+        ]
+    )
 
     updated = await db.Projects.update_one(
         {"project_id": project_id},
@@ -1009,9 +1188,61 @@ async def add_template(data: dict):
 
     return {"message": f"Template '{template_name}' added to project {project_id}."}
 
-#================= Mark the Remark fields of a template  ============================
+#================= fucntion to update subphases status based on templates  ============================
+async def update_subphase_status_background(project_id: str):
+    try:
+        project = await db.Projects.find_one({"project_id": project_id})
+        if not project:
+            return
+
+        templates = project.get("templates", [])
+        project_status = project.get("project_status", [])
+
+        templates_by_phase = {}
+        for template in templates:
+            phase = template.get("phase")
+            if phase:
+                if phase not in templates_by_phase:
+                    templates_by_phase[phase] = []
+                templates_by_phase[phase].append(template)
+
+        for parent_phase in project_status:
+            parent_phase_name = parent_phase.get("parent_phase")
+            subphases = parent_phase.get("subphases", [])
+            
+            for subphase in subphases:
+                subphase_name = subphase.get("subphase")
+                current_status = subphase.get("status")
+                
+                if current_status == "completed":
+                    continue
+                
+                if subphase_name in templates_by_phase:
+                    subphase_templates = templates_by_phase[subphase_name]
+                    
+                    all_verified = all(template.get("verified", False) for template in subphase_templates)
+                    
+                    if all_verified and len(subphase_templates) > 0:
+                        await db.Projects.update_one(
+                            {"project_id": project_id},
+                            {
+                                "$set": {
+                                    f"project_status.$[parent].subphases.$[sub].status": "completed",
+                                    f"project_status.$[parent].subphases.$[sub].closed_date": datetime.utcnow()
+                                }
+                            },
+                            array_filters=[
+                                {"parent.parent_phase": parent_phase_name},
+                                {"sub.subphase": subphase_name}
+                            ]
+                        )
+
+    except Exception as e:
+        print(f"Error updating subphase status: {str(e)}")
+
+#================================ Route to mark the template remarks ==========================
 @app.post("/mark-template-remarks")
-async def mark_template_remarks(data: dict):
+async def mark_template_remarks(data: dict,background_tasks: BackgroundTasks):
     project_id = data.get("project_id")
     template_id = data.get("template_id")
     verified_ids = data.get("verified_ids")
@@ -1019,28 +1250,26 @@ async def mark_template_remarks(data: dict):
     if not project_id or not template_id or not verified_ids:
         raise HTTPException(status_code=400, detail="project_id, template_id, and verified_ids are required.")
 
-    project = await db.Projects.find_one({"project_id": project_id})
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found.")
-
-    templates = project.get("templates", [])
-    template_index = None
-    for i, template in enumerate(templates):
-        if template.get("id") == template_id:
-            template_index = i
-            break
-
-    if template_index is None:
-        raise HTTPException(status_code=404, detail="Template not found.")
-
-
     for field_id in verified_ids:
-        update_path = f"templates.{template_index}.fields.$[field].remark"
-        db.Projects.update_one(
-            {"project_id": project_id},
-            {"$set": {update_path: True}},
-            array_filters=[{"field.id": field_id}]
+        await db.Projects.update_one(
+            {"project_id": project_id, "templates.id": template_id},
+            {"$set": {"templates.$[template].fields.$[field].remark": True}},
+            array_filters=[
+                {"template.id": template_id},
+                {"field.id": field_id}
+            ]
         )
+
+    project = await db.Projects.find_one({"project_id": project_id})
+    template = next((t for t in project.get("templates", []) if t["id"] == template_id), None)
+    
+    if template and all(field.get("remark") is True for field in template.get("fields", [])):
+        await db.Projects.update_one(
+            {"project_id": project_id, "templates.id": template_id},
+            {"$set": {"templates.$.verified": True}}
+        )
+
+    background_tasks.add_task(update_subphase_status_background, project_id)
 
     return {"message": f"Remark fields updated for template {template_id} in project {project_id}."}
 
@@ -1056,6 +1285,8 @@ async def manage_financial_data(data: dict):
         raise HTTPException(status_code=404, detail="Project not found.")
 
     financial_data = project.get("financial_data", {})
+    
+    print(data)
 
     total_budget = data.get("total_budget", financial_data.get("total_budget"))
     expected_revenue = data.get("expected_revenue", financial_data.get("expected_revenue"))
@@ -1068,7 +1299,6 @@ async def manage_financial_data(data: dict):
         except Exception:
             profit_margin = None
 
-    # Update client's total_billed in metrics
     client_details = project.get("client_details", {})
     client_name = client_details.get("name")
     if client_name:
@@ -1166,7 +1396,7 @@ async def add_project_phases(data: ProjectPhaseUpdate):
             sub_dict = {
                 "subphase": sub.subphase,
                 "status": "not_started", 
-                "start_date": sub.start_date if sub.start_date else None,
+                "start_date": None,
                 "closed_date": None,
                 "remarks": sub.remarks or ""
             }
@@ -1206,16 +1436,21 @@ async def update_project_phases(data: ProjectPhaseUpdate):
     project = db.Projects.find_one({"project_id": data.project_id})
 
     if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+        raise HTTPException(status_code=404, detail="Project not found",message ="Project not found")
 
     updated_status = []
+    completed = 0
+    subphases =0 
     for phase in data.phases:
         updated_subphases = []
         for sub in phase.subphases:
+            subphases+=1
             start_date = datetime.fromisoformat(sub.start_date) if sub.start_date else None
             closed_date = datetime.fromisoformat(sub.closed_date) if sub.closed_date else None
 
             status = infer_status(start_date, closed_date)
+            if status == "completed" : completed+=1
+            elif status == "in_progress" : completed += 0.5
             updated_subphases.append({
                 "subphase": sub.subphase,
                 "status": status,
@@ -1227,10 +1462,13 @@ async def update_project_phases(data: ProjectPhaseUpdate):
             "parent_phase": phase.parent_phase,
             "subphases": updated_subphases
         })
+        
+    
+    progress = ((completed / subphases * 100) if subphases > 0 and completed > 0 else 5)
 
     result = await db.Projects.update_one(
         {"project_id": data.project_id},
-        {"$set": {"project_status": updated_status}}
+        {"$set": {"project_status": updated_status ,"progress":progress}}
     )
 
     if result.modified_count == 0:
@@ -1374,7 +1612,7 @@ async def add_client_documents(
     client_id: str = Form(...),
     file: UploadFile = File(...)
 ):
-    #print("📥 Received request to add client document")
+    #print("Received request to add client document")
 
     if not client_id:
         raise HTTPException(status_code=400, detail="Client ID is required.")
@@ -1397,21 +1635,21 @@ async def add_client_documents(
     existing_documents = client.get("documents", [])
     if not existing_documents:
         random_id = f"CDOC{random.randint(1000, 9999)}"
-        #print("📄 No existing documents, assigned ID:", random_id)
+        #print("No existing documents, assigned ID:", random_id)
     else:
         existing_ids = [doc["id"] for doc in existing_documents if "id" in doc]
         while True:
             random_id = f"CDOC{random.randint(1000, 9999)}"
             if random_id not in existing_ids:
-                #print("✅ Unique document ID generated:", random_id)
+                #print("Unique document ID generated:", random_id)
                 break
 
     try:
-        #print("📤 Uploading document...")
+        #print("Uploading document...")
         doc_link = await upload_file_to_firebase(file, folder=f"PMT/clients/{client['brand_name']}/documents")
-        #print("✅ Upload successful")
+        #print("Upload successful")
     except Exception as e:
-        #print("❌ Upload failed:", str(e))
+        #print("Upload failed:", str(e))
         raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
 
 
@@ -1431,7 +1669,7 @@ async def add_client_documents(
     if result.modified_count == 0:
         raise HTTPException(status_code=500, detail="Document not added to the client.")
 
-    return {"message": f"✅ Document '{doc_name}' added to client {client_id}.",}
+    return {"message": f"Document '{doc_name}' added to client {client_id}.",}
 
 # ============= Add client notes =================
 @app.post("/add-client-notes")
@@ -1469,6 +1707,9 @@ async def overviewData():
     current_month = now.month
     current_year = now.year
 
+    prev_month = current_month - 1 if current_month > 1 else 12
+    prev_year = current_year if current_month > 1 else current_year - 1
+
     employees_cursor = db.Employees.find({"status": "Active"}, {"_id": 0})
     employees = await employees_cursor.to_list(length=None)
     total_employees = len(employees)
@@ -1482,19 +1723,27 @@ async def overviewData():
 
     completed_projects_cursor = db.Projects.find({"status": "completed"}, {"_id": 0})
     completed_projects = await completed_projects_cursor.to_list(length=None)
-    revenue = sum(
-        project.get("financial_data", {}).get("expected_revenue", 0)
-        for project in completed_projects
-        if isinstance(project.get("deadline"), datetime)
-        and project["deadline"].month == current_month
-        and project["deadline"].year == current_year
-    )
+
+    current_revenue = 0
+    previous_revenue = 0
+
+    for project in completed_projects:
+        deadline = project.get("deadline")
+        if isinstance(deadline, datetime):
+            if deadline.month == current_month and deadline.year == current_year:
+                current_revenue += project.get("financial_data", {}).get("expected_revenue", 0)
+            elif deadline.month == prev_month and deadline.year == prev_year:
+                previous_revenue += project.get("financial_data", {}).get("expected_revenue", 0)
 
     fresh_metrics = {
         "total_employees": total_employees,
         "active_projects": count_active_projects,
-        "monthly_completed_project_revenue": revenue,
+        "monthly_completed_project_revenue": current_revenue,
         "total_emp_performance": Total_performance
+    }
+
+    previous_metrics = {
+        "monthly_completed_project_revenue": previous_revenue
     }
 
     analytics_doc = await db.Analytics.find_one({"type": "overview_data"})
@@ -1512,8 +1761,8 @@ async def overviewData():
 
             if month_diff >= 2:
                 updated_data[key] = {
-                    "previous_value": existing.get("current_value"),
-                    "previous_calculated": existing.get("current_calculated"),
+                    "previous_value": previous_metrics.get(key, existing.get("current_value")),
+                    "previous_calculated": datetime(prev_year, prev_month, monthrange(prev_year, prev_month)[1]),
                     "current_value": new_value,
                     "current_calculated": now
                 }
@@ -1526,8 +1775,8 @@ async def overviewData():
                 }
         else:
             updated_data[key] = {
-                "previous_value": new_value,
-                "previous_calculated": now,
+                "previous_value": previous_metrics.get(key),
+                "previous_calculated": datetime(prev_year, prev_month, monthrange(prev_year, prev_month)[1]),
                 "current_value": new_value,
                 "current_calculated": now
             }
@@ -1540,6 +1789,7 @@ async def overviewData():
 
     return updated_data
 
+#=============== Get Department Performance data ===============================
 @app.get("/dept-performance-analytics")
 async def dept_performance_analytics():
     departments_cursor = db.Departments.find({}, {"_id": 0})
@@ -1591,7 +1841,7 @@ async def dept_performance_analytics():
         dept_tasks = [
             t for t in all_tasks
             if any(member.get("emp_id") in dept_emp_ids for member in t.get("members_assigned", []))
-        ]
+        ][:250]
 
         completed_tasks = sum(1 for t in dept_tasks if t.get("status") == "done")
         total_tasks = len(dept_tasks)
@@ -1620,3 +1870,667 @@ async def dept_performance_analytics():
         })
 
     return result
+
+#=============== Get Employees data ===============================
+@app.get("/employee-analytics")
+async def get_employee_analytics():
+    employees_cursor = db.Employees.find({"status": "Active"}, {"_id": 0})
+    employees = await employees_cursor.to_list(length=None)
+    
+    analytics_data = []
+
+    for emp in employees:
+        emp_id = emp.get("emp_id")
+        emp_name = emp.get("emp_name")
+        role = emp.get("role")
+        department = emp.get("emp_dept")
+        performance = emp.get("performance_metrics", {})
+        salary_account = emp.get("salary_account", [])
+        emp_documents = emp.get("emp_documents", [])
+        
+        promotion_history = []
+
+        for record in emp.get("promotion_record", []):
+            promotion_history.append({
+                "date": record["working_as_from"].strftime("%Y-%m-%d"),
+                "role": record["prev_role"]
+            })
+
+        promotion_history.sort(key=lambda x: x["date"])
+
+        analytics_data.append({
+            "id": emp_id,
+            "name": emp_name,
+            "role": role,
+            "department": department,
+            "totalProjects": len(emp.get("current_projects", [])) + performance.get("completed_projects", 0),
+            "completedProjects": performance.get("completed_projects", 0),
+            "performanceScore": round((performance.get("ratings", 0) or 0), 2), 
+            "attendance": 96,  
+            "salaryHistory": [entry["salary_paid"] for entry in salary_account],
+            "leavesTaken": emp.get("leaves_taken", 0),
+            "documents": [doc["doc_name"] for doc in emp_documents],
+            "PromotionHistory": promotion_history
+        })
+
+    return analytics_data
+
+#=============== Get Sales data ===============================
+@app.get("/analytics-sales-finance")
+async def generate_sales_finance_metrics():
+    clients = await db.Clients.find({}).to_list(length=None)
+    projects = await db.Projects.find({}).to_list(length=None)
+
+    total_revenue = 0
+    total_projects = 0
+    total_costs = 0
+    repeat_clients = 0
+    new_clients = 0
+    now = datetime.utcnow()
+
+    monthly_revenue_trend = {}
+    
+    for i in range(6):
+        month_date = now - timedelta(days=30 * i)
+        month_key = month_date.strftime("%Y-%m")
+        monthly_revenue_trend[month_key] = 0
+
+    client_stats = []
+
+    for client in clients:
+        metrics = client.get("metrics", {})
+        revenue = metrics.get("total_billed", 0)
+        project_count = metrics.get("total_projects", 0)
+        joined_date = client.get("engagement", {}).get("joined_date")
+
+        total_revenue += revenue
+        total_projects += project_count
+
+        if joined_date and (now - joined_date).days <= 90:
+            new_clients += 1
+
+        if project_count > 1:
+            repeat_clients += 1
+
+        client_stats.append({
+            "client_name": client["name"],
+            "total_billed": revenue,
+            "total_projects": project_count
+        })
+
+    avg_project_value = total_revenue / total_projects if total_projects > 0 else 0
+
+    project_completion = 0
+    delayed_projects = 0
+    total_duration = 0
+    roi_per_project = []
+    profit_margin_total = 0
+    this_month_revenue = 0
+    current_month_key = now.strftime("%Y-%m")
+
+    for project in projects:
+        status = project.get("status")
+        fin = project.get("financial_data") or {}
+        deadline = project.get("deadline")
+        
+        if status == "completed" and deadline:
+            expected_revenue = fin.get("expected_revenue", 0) or 0
+            project_month_key = deadline.strftime("%Y-%m")
+            
+            if project_month_key in monthly_revenue_trend:
+                monthly_revenue_trend[project_month_key] += expected_revenue
+            
+            if project_month_key == current_month_key:
+                this_month_revenue += expected_revenue
+
+        if status == "completed":
+            project_completion += 1
+
+        if deadline and deadline < now and status != "completed":
+            delayed_projects += 1
+
+        start_date = project.get("start_date")
+        if start_date and deadline:
+            duration = (deadline - start_date).days
+            total_duration += duration
+
+        cost = sum(
+            float(c.get("cost", 0) or 0)
+            for c in fin.get("spenditure_analysis", [])
+        )
+        total_costs += cost
+        expected_revenue = fin.get("expected_revenue", 0)
+        margin = fin.get("profit_margin", 0)
+
+        if cost > 0:
+            roi = (expected_revenue - cost) / cost
+            roi_per_project.append({
+                "project_id": project["project_id"],
+                "project_name": project["project_name"],
+                "client_name": project["client_details"]["name"], 
+                "roi": round(roi, 2),
+                "cost": cost
+            })
+
+        profit_margin_total += margin
+
+    sorted_months = sorted(monthly_revenue_trend.keys(), reverse=True)[:6]
+    monthly_trend_list = [monthly_revenue_trend[month] for month in reversed(sorted_months)]
+
+    completion_rate = (project_completion / len(projects)) * 100 if projects else 0
+    avg_duration = total_duration / len(projects) if projects else 0
+    avg_profit_margin = profit_margin_total / len(projects) if projects else 0
+
+    return {
+        "revenue": {
+            "total": total_revenue,
+            "total_this_month": this_month_revenue,
+            "monthlyTrend": monthly_trend_list, 
+            "monthlyTrendDict": monthly_revenue_trend,  
+            "avgProjectValue": avg_project_value,
+        },
+        "finance": {
+            "totalCost": total_costs,
+            "costToRevenueRatio": round(total_costs / total_revenue, 2) if total_revenue else 0,
+            "avgProfitMargin": round(avg_profit_margin, 2)
+        },
+        "clients": {
+            "total": len(clients),
+            "repeatClients": repeat_clients,
+            "newClientsThisQuarter": new_clients,
+            "topClientsByRevenue": sorted(client_stats, key=lambda x: x['total_billed'], reverse=True)[:5]
+        },
+        "projects": {
+            "total": len(projects),
+            "completionRate": round(completion_rate, 2),
+            "delayedProjects": delayed_projects,
+            "avgDurationDays": round(avg_duration, 2),
+            "roiPerProject": roi_per_project
+        }
+    }
+
+@app.get("/analytics-projects-data")
+async def get_project_metrics():
+    projects_cursor = db.Projects.find()
+    projects = await projects_cursor.to_list(length=None)
+
+    processed_projects = []
+
+    for project in projects:
+        start = project.get("start_date")
+        deadline = project.get("deadline")
+        progress = project.get("progress", 0)
+        financial = project.get("financial_data") or {}
+        spend = financial.get("spenditure_analysis", [])
+        team_size = len(project.get("team_members", []))
+        project_id = project.get("project_id")
+
+        actual_cost = 0
+        for entry in spend:
+            try:
+                actual_cost += int(entry["cost"])
+            except:
+                pass
+
+        budget = financial.get("total_budget", 0)
+        revenue = financial.get("expected_revenue", 0)
+        profitability = None
+        if budget:
+            profitability = round(((revenue - actual_cost) / budget) * 100, 2)
+
+        issues = project.get("issues_and_maintenance_reports", [])
+        issue_count = sum(1 for issue in issues if issue.get("type","") == "Issue") 
+
+        performanceMetrics =project.get("performance_metrics") or {}
+        client_satisfaction = performanceMetrics.get("stakeholder_satisfaction") or 2
+
+        roadblocks = project.get("roadblocks", [])
+
+        status = project.get("status", "unknown")
+
+        start_str = start.isoformat() if start else None
+        deadline_str = deadline.isoformat() if deadline else None
+
+        project_obj = {
+            "id": project_id,
+            "name": project.get("project_name"),
+            "current_phase": project.get("current_phase", ""),
+            "status": status,
+            "progress": progress,
+            "teamSize": team_size,
+            "budget": budget,
+            "actualCost": actual_cost,
+            "clientSatisfaction": client_satisfaction,
+            "profitability": profitability,
+            "issues": issue_count,
+            "startDate": start_str,
+            "dueDate": deadline_str,
+            "roadblocks": roadblocks,
+        }
+
+        processed_projects.append(project_obj)
+
+    return {"projectsData": processed_projects}
+
+
+#============================= GOALS ================================
+async def generate_unique_id(collection, prefix: str, length: int = 8) -> str:
+    while True:
+        random_part = ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
+        unique_id = f"{prefix}_{random_part}"
+        
+        existing = await collection.find_one({"id": unique_id})
+        if not existing:
+            return unique_id
+
+#=================== Create a new goal==============================
+@app.post("/goals/", response_model=GoalResponse)
+async def create_goal(goal_input: CreateGoalInput):
+    try:
+        unique_id = await generate_unique_id(db.Goals, "GOAL")
+
+        goal_dict = goal_input.dict()
+
+        # Convert top-level date
+        goal_dict["deadline"] = datetime.combine(goal_input.deadline, time.min) if goal_input.deadline else None
+
+        # Convert milestone dates
+        for m in goal_dict["milestones"]:
+            m["due_date"] = datetime.combine(m["due_date"], time.min) if m["due_date"] else None
+            m["completion_date"] = datetime.combine(m["completion_date"], time.min) if m["completion_date"] else None
+
+        goal_dict["id"] = unique_id
+        goal_dict["created_at"] = datetime.utcnow()
+        goal_dict["updated_at"] = datetime.utcnow()
+
+        goal_dict["id"] = unique_id
+        goal_dict["created_at"] = datetime.utcnow()
+        goal_dict["updated_at"] = datetime.utcnow()
+        goal_dict["current_progress"] = 0.0
+        goal_dict["progress_history"] = []
+        goal_dict["audit_history"] = []
+        goal_dict["status"] = "active"
+
+
+        result = await db.Goals.insert_one(goal_dict)
+        created_goal = await db.Goals.find_one({"id": unique_id})
+
+        return GoalResponse(**created_goal)
+    except Exception as e:
+        print(str(e))
+        raise HTTPException(status_code=400, detail=f"Error creating goal: {str(e)}")
+
+
+#==========================Get all goals with optional filters==========================
+@app.get("/goals/", response_model=List[GoalResponse])
+async def get_goals(
+    category: Optional[str] = None,
+    department: Optional[str] = None,
+    status: Optional[str] = None,
+    limit: int = 50,
+    skip: int = 0
+):
+    try:
+        query = {}
+        if category:
+            query["goal_category"] = category
+        if department:
+            query["responsible_department"] = department
+        if status:
+            query["status"] = status
+
+        cursor = db.Goals.find(query).skip(skip).limit(limit).sort("created_at", -1)
+        goals = await cursor.to_list(length=limit)
+
+        goal_responses = []
+        for goal in goals:
+            goal_responses.append(GoalResponse(
+                id=goal["id"],
+                name=goal.get("name"),
+                target_metric=goal.get("target_metric"),
+                goal_category=goal.get("goal_category"),
+                current_progress=goal.get("current_progress"),
+                responsible_department=goal.get("responsible_department"),
+                deadline=goal.get("deadline"),
+                success_probability=goal.get("success_probability"),
+                audit_period=goal.get("audit_period"),
+                milestones=goal.get("milestones", []),
+                risks=goal.get("risks", []),
+                progress_history=goal.get("progress_history", []),
+                audit_history=goal.get("audit_history", []),
+                created_at=goal.get("created_at"),
+                updated_at=goal.get("updated_at"),
+                created_by=goal.get("created_by"),
+                status=goal.get("status")
+            ))
+
+        return goal_responses
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error fetching goals: {str(e)}")
+
+#=========================Get dashboard analytics for goals===========================
+@app.get("/goals/analytics/dashboard")
+async def get_goals_dashboard():
+    try:
+        pipeline = [
+            {
+                "$group": {
+                    "_id": None,
+                    "total_goals": {"$sum": 1},
+                    "active_goals": {
+                        "$sum": {"$cond": [{"$eq": ["$status", "active"]}, 1, 0]}
+                    },
+                    "completed_goals": {
+                        "$sum": {"$cond": [{"$eq": ["$status", "completed"]}, 1, 0]}
+                    },
+                    "avg_progress": {"$avg": "$current_progress"},
+                    "avg_success_probability": {"$avg": "$success_probability"}
+                }
+            }
+        ]
+        
+        result = await db.Goals.aggregate(pipeline).to_list(length=1)
+        
+        if result:
+            stats = result[0]
+            del stats["_id"]
+        else:
+            stats = {
+                "total_goals": 0,
+                "active_goals": 0,
+                "completed_goals": 0,
+                "avg_progress": 0,
+                "avg_success_probability": 0
+            }
+        
+        category_pipeline = [
+            {
+                "$group": {
+                    "_id": "$goal_category",
+                    "count": {"$sum": 1},
+                    "avg_progress": {"$avg": "$current_progress"}
+                }
+            }
+        ]
+        
+        category_stats = await db.Goals.aggregate(category_pipeline).to_list(length=10)
+        
+        dept_pipeline = [
+            {
+                "$group": {
+                    "_id": "$responsible_department",
+                    "count": {"$sum": 1},
+                    "avg_progress": {"$avg": "$current_progress"}
+                }
+            }
+        ]
+        
+        dept_stats = await db.Goals.aggregate(dept_pipeline).to_list(length=20)
+        
+        return {
+            "overall_stats": stats,
+            "by_category": category_stats,
+            "by_department": dept_stats
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error fetching dashboard: {str(e)}")
+
+
+#======================Get a specific goal by ID===========================
+@app.get("/goals/{goal_id}", response_model=GoalResponse)
+async def get_goal_by_id(goal_id: str):
+    try:
+        goal = await db.Goals.find_one({"id": goal_id})
+        if not goal:
+            raise HTTPException(status_code=404, detail="Goal not found")
+        
+        return GoalResponse(**goal)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error fetching goal: {str(e)}")
+
+#=======================Update a goal============================
+@app.put("/goals/{goal_id}", response_model=GoalResponse)
+async def update_goal(goal_id: str, update_input: UpdateGoalInput):
+    try:
+        update_data = {
+            k: (datetime.combine(v, datetime.min.time()) if isinstance(v, date) else v) for k, v in update_input.dict().items() if v is not None
+        }
+
+        if not update_data:
+            print("No data provided for update")
+            raise HTTPException(status_code=400, detail="No data provided for update")
+
+        update_data["updated_at"] = datetime.utcnow()
+
+        result = await db.Goals.update_one(
+            {"id": goal_id},
+            {"$set": update_data}
+        )
+
+        if result.matched_count == 0:
+            print("Goal not found")
+            raise HTTPException(status_code=404, detail="Goal not found")
+
+        updated_goal = await db.Goals.find_one({"id": goal_id})
+        return GoalResponse(**updated_goal)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error updating goal: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Error updating goal: {str(e)}")
+
+#======================Add progress entry to a goal==============================
+@app.post("/goals/progress/")
+async def add_progress(progress_input: AddProgressInput):
+    print(progress_input)
+    try:
+        goal_id = progress_input.goal_id
+        
+        progress_entry = ProgressEntry(
+            date=datetime.now().date(),
+            progress_percentage=progress_input.progress_percentage,
+            notes=progress_input.notes,
+            updated_by=progress_input.updated_by
+        )
+        progress_dict = progress_entry.dict()
+        progress_dict["date"] = datetime.combine(progress_dict["date"], datetime.min.time())
+        set = {}
+        if progress_input.progress_percentage >=100:
+            set =  {
+                    "current_progress": progress_input.progress_percentage,
+                    "updated_at": datetime.utcnow(),
+                    "status": "completed"
+                }
+        else :
+            set = {
+                    "current_progress": progress_input.progress_percentage,
+                    "updated_at": datetime.utcnow()
+                }
+        print(progress_entry)
+        result = await db.Goals.update_one(
+            {"id": goal_id},
+            {
+                "$push": {"progress_history":progress_dict},
+                "$set": set
+            }
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Goal not found")
+        
+        return {"message": "Progress added successfully", "goal_id": goal_id , "data":progress_dict}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error adding progress: {str(e)}")
+
+#=======================Add milestone to a goal============================
+@app.post("/goals/milestones/")
+async def add_milestone(milestone_input: AddMilestoneInput):
+    try:
+        goal_id = milestone_input.goal_id
+        
+        result = await db.Goals.update_one(
+            {"id": goal_id},
+            {
+                "$push": {"milestones": milestone_input.milestone.dict()},
+                "$set": {"updated_at": datetime.utcnow()}
+            }
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Goal not found")
+        
+        return {"message": "Milestone added successfully", "goal_id": goal_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error adding milestone: {str(e)}")
+
+#======================== Update milestone status =============================
+@app.put("/goals/milestones/")
+async def update_milestone(milestone_update: UpdateMilestoneInput):
+    try:
+        goal_id = milestone_update.goal_id
+        
+        update_fields = {
+            "milestones.$.completed": milestone_update.completed,
+        }
+        
+        if milestone_update.completion_date:
+            update_fields["milestones.$.completion_date"] = milestone_update.completion_date
+        
+        result = await db.Goals.update_one(
+            {
+                "id": goal_id,
+                "milestones.name": milestone_update.milestone_name
+            },
+            {
+                "$set": {
+                    **update_fields,
+                    "updated_at": datetime.utcnow()
+                }
+            }
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Goal or milestone not found")
+        
+        return {"message": "Milestone updated successfully", "goal_id": goal_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error updating milestone: {str(e)}")
+
+
+#=====================Add audit entry to a goal==========================
+@app.post("/goals/audit/")
+async def add_audit_entry(audit_input: AddAuditInput):
+    try:
+        goal_id = audit_input.goal_id
+        
+        goal = await db.Goals.find_one({"id": goal_id})
+        if not goal:
+            raise HTTPException(status_code=404, detail="Goal not found")
+        
+        milestones = goal.get("milestones", [])
+        milestones_completed = sum(1 for m in milestones if m.get("completed", False))
+        total_milestones = len(milestones)
+        
+        audit_entry = AuditEntry(
+            audit_date=date.today(),
+            auditor=audit_input.auditor,
+            current_progress=audit_input.current_progress,
+            milestones_completed=milestones_completed,
+            total_milestones=total_milestones,
+            success_probability=audit_input.success_probability,
+            notes=audit_input.notes,
+            recommendations=audit_input.recommendations,
+            risks_identified=audit_input.risks_identified
+        )
+        
+        result = await db.Goals.update_one(
+            {"id": goal_id},
+            {
+                "$push": {"audit_history": audit_entry.dict()},
+                "$set": {
+                    "current_progress": audit_input.current_progress,
+                    "success_probability": audit_input.success_probability,
+                    "updated_at": datetime.utcnow()
+                }
+            }
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Goal not found")
+        
+        return {"message": "Audit entry added successfully", "goal_id": goal_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error adding audit entry: {str(e)}")
+
+#====================Delete a goal==============================
+@app.delete("/goals/{goal_id}")
+async def delete_goal(goal_id: str):
+    try:
+        result = await db.Goals.delete_one({"id": goal_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Goal not found")
+        
+        return {"message": "Goal deleted successfully", "goal_id": goal_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error deleting goal: {str(e)}")
+
+@app.post("/add-report", response_model=Report)
+async def add_report(data: ReportCreate):
+    try:
+        report_doc = {
+            "report_id": f"RPT_{uuid.uuid4().hex[:8]}",
+            "report_name": data.report_name,
+            "type": data.type.value,
+            "department" : data.department,
+            "description": data.description,
+            "uploaded_by": data.uploaded_by,
+            "document_link": str(data.document_link) if data.document_link else None, 
+            "is_open": data.is_open,
+            "uploaded_on": datetime.utcnow()
+        }
+
+        await db.Reports.insert_one(report_doc)
+        return Report(**report_doc)
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error creating report: {str(e)}")
+
+@app.get("/all-reports", response_model=List[Report])
+async def get_all_reports():
+    try:
+        cursor = db.Reports.find()
+        reports_raw = await cursor.to_list(length=None)
+
+        reports = [
+            Report(
+                report_id=doc["report_id"],
+                report_name=doc["report_name"],
+                type=ReportType(doc["type"]),
+                description=doc.get("description"),
+                uploaded_by=doc["uploaded_by"],
+                department=doc["department"],
+                document_link=doc.get("document_link"),
+                is_open=doc["is_open"],
+                uploaded_on=doc["uploaded_on"]
+            )
+            for doc in reports_raw
+        ]
+
+        return reports
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching reports: {str(e)}")

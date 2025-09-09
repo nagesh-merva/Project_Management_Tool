@@ -31,6 +31,16 @@ export const MainProvider = ({ children }) => {
     // Loading state
     const [loading, setLoading] = useState(false)
 
+    // Analytics tab 
+    const [activeTab, setActiveTab] = useState(() => {
+        const stored = sessionStorage.getItem("analytics-tabs")
+        return stored ? stored : "overview"
+    });
+
+    useEffect(() => {
+        sessionStorage.setItem("analytics-tabs", activeTab)
+    }, [activeTab])
+
     // Sync emp to localStorage
     const setEmp = (empObj) => {
         setEmpState(empObj)
@@ -76,7 +86,7 @@ export const MainProvider = ({ children }) => {
 
     const fetchEmployees = async () => {
         try {
-            const response = await fetch('http://127.0.0.1:8000/all-employees')
+            const response = await fetch('https://project-management-tool-uh55.onrender.com/all-employees')
             const data = await response.json()
             if (response.ok) {
                 setAllEmployees(data)
@@ -88,14 +98,18 @@ export const MainProvider = ({ children }) => {
         }
     }
 
+    // console.log(loggedIn.logged)
+
     useEffect(() => {
-        const cached = sessionStorage.getItem("all-emps")
-        if (cached || cached !== null) {
-            setAllEmployees(JSON.parse(cached))
-        } else {
-            fetchEmployees()
+        if (loggedIn.logged) {
+            const cached = sessionStorage.getItem("all-emps")
+            if (cached || cached !== null) {
+                setAllEmployees(JSON.parse(cached))
+            } else {
+                fetchEmployees()
+            }
         }
-    }, [])
+    }, [loggedIn])
 
     return (
         <MainContext.Provider
@@ -109,7 +123,9 @@ export const MainProvider = ({ children }) => {
                 selectedDepartment,
                 setDepartment,
                 loggedIn,
-                LogIn
+                LogIn,
+                activeTab,
+                setActiveTab
             }}
         >
             {children}

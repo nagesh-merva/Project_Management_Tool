@@ -109,7 +109,7 @@ export default function Department() {
                     isVisible={showPopup}
                     onClose={() => setShowPopup(false)}
                     formTitle="Add New Employee"
-                    endpoint="http://127.0.0.1:8000/add-employee"
+                    endpoint="https://project-management-tool-uh55.onrender.com/add-employee"
                     fields={employeeFields}
                     onSuccess={handleSuccess}
                 />

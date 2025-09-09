@@ -16,21 +16,38 @@ import {
     Award,
     AlertTriangle,
     Hammer,
-    SquarePercent
+    SquarePercent,
+    Plus,
+    Filter,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import EmployeeAnalyticsCard from "../components/Analytics/EmployeeAnalyticsCard"
 import DepartmentAnalyticsCard from "../components/Analytics/DepartmentAnalyticsCard"
 import GoalTrackingCard from "../components/Analytics/GoalTrackingCard"
+import CreateGoalModal from "../components/Analytics/Goals/CreateGoalModel"
 import ProjectAnalyticsCard from "../components/Analytics/ProjectAnalyticsCard"
 import SalesFinanceCard from "../components/Analytics/SalesFinanceCard"
 import Loading from "../components/Loading"
+import { useMainContext } from "../context/MainContext"
 
 export default function Analytics() {
     const [navOpen, setNavOpen] = useState(false)
-    const [activeTab, setActiveTab] = useState('overview')
+    const { activeTab, setActiveTab } = useMainContext()
     const [searchTerm, setSearchTerm] = useState('')
     const [loading, setLoading] = useState(false)
+    const [employeesData, setEmployeesData] = useState([])
+    const [salesData, setSalesData] = useState({})
+    const [projectsData, setProjectsData] = useState([])
+    const [goalsData, setGoalsData] = useState([])
+    const [goalsDashboard, setGoalsDashboard] = useState({})
+    const [goalsLoading, setGoalsLoading] = useState(false)
+    const [showCreateGoalModal, setShowCreateGoalModal] = useState(false)
+    const [goalsFilter, setGoalsFilter] = useState({
+        category: '',
+        department: '',
+        status: ''
+    })
+
     const [departmentsData, setDepartmentsData] = useState([
         {
             id: "SALES",
@@ -98,15 +115,37 @@ export default function Analytics() {
     ])
 
     useEffect(() => {
-        setLoading(true)
-        FetchOverviewData()
-        FetchDeptData()
-        setLoading(false)
+        const fetchData = async () => {
+            setLoading(true)
+            await Promise.all([
+                FetchOverviewData(),
+                FetchDeptData(),
+                FetchEmpsData(),
+                FetchSalesData(),
+                FetchProjectsData()
+            ])
+            setLoading(false)
+        }
+        fetchData()
     }, [])
+
+    useEffect(() => {
+        if (activeTab === 'goals') {
+            FetchGoalsData()
+            FetchGoalsDashboard()
+        }
+    }, [activeTab, goalsFilter])
+
+    const formatCurrency = (amount) => {
+        if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(1)}Cr`
+        if (amount >= 100000) return `₹${(amount / 100000).toFixed(1)}L`
+        if (amount >= 1000) return `₹${(amount / 1000).toFixed(1)}K`
+        return `₹${amount.toLocaleString()}`
+    }
 
     const FetchOverviewData = async () => {
         try {
-            const response = await fetch("http://127.0.0.1:8000/overview-analytics-data", {
+            const response = await fetch("https://project-management-tool-uh55.onrender.com/overview-analytics-data", {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
             })
@@ -123,12 +162,12 @@ export default function Analytics() {
 
                     let percentChange = 0;
                     if (typeof prev === 'number' && prev !== 0) {
-                        percentChange = ((curr - prev) / prev) * 100  // [ change - 1 ]* curr /100
+                        percentChange = ((curr - prev) / prev) * 100
                     }
 
                     let formattedValue = curr;
                     if (stat.type === 'monthly_completed_project_revenue') {
-                        formattedValue = `₹${(curr / 100000).toFixed(1)}L`
+                        formattedValue = formatCurrency(curr)
                     } else if (stat.type === 'total_emp_performance') {
                         formattedValue = `${curr.toFixed(1)}/5`
                     }
@@ -152,7 +191,7 @@ export default function Analytics() {
 
     const FetchDeptData = async () => {
         try {
-            const response = await fetch("http://127.0.0.1:8000/dept-performance-analytics", {
+            const response = await fetch("https://project-management-tool-uh55.onrender.com/dept-performance-analytics", {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
             })
@@ -174,172 +213,132 @@ export default function Analytics() {
         }
     }
 
-    const employeesData = [
-        {
-            id: 'EMP001',
-            name: 'John Doe',
-            role: 'Senior Developer',
-            department: 'Development',
-            totalProjects: 12,
-            completedProjects: 10,
-            performanceScore: 8.5,
-            attendance: 95,
-            salaryHistory: [45000, 48000, 52000, 55000, 58000, 62000],
-            lastPromotion: '2023-06-15',
-            leavesTaken: 8,
-            documents: ['Resume', 'Contract', 'Performance Review']
-        },
-        {
-            id: 'EMP002',
-            name: 'Sarah Wilson',
-            role: 'UI/UX Designer',
-            department: 'Design',
-            totalProjects: 8,
-            completedProjects: 7,
-            performanceScore: 9.2,
-            attendance: 98,
-            salaryHistory: [40000, 42000, 45000, 48000, 52000],
-            lastPromotion: '2023-08-20',
-            leavesTaken: 5,
-            documents: ['Portfolio', 'Contract', 'Certifications']
-        },
-        {
-            id: 'EMP003',
-            name: 'Mike Johnson',
-            role: 'Sales Manager',
-            department: 'Sales',
-            totalProjects: 15,
-            completedProjects: 13,
-            performanceScore: 7.8,
-            attendance: 92,
-            salaryHistory: [50000, 53000, 56000, 60000, 65000],
-            lastPromotion: '2023-03-10',
-            leavesTaken: 12,
-            documents: ['Sales Reports', 'Contract', 'Training Certificates']
-        }
-    ]
+    const FetchEmpsData = async () => {
+        try {
+            const response = await fetch("https://project-management-tool-uh55.onrender.com/employee-analytics", {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+            })
 
-    const projectsData = [
-        {
-            id: 'PRJ001',
-            name: 'E-commerce Platform',
-            department: 'Development',
-            status: 'In Progress',
-            progress: 75,
-            teamSize: 6,
-            budget: 150000,
-            actualCost: 120000,
-            clientSatisfaction: 4.5,
-            profitability: 15,
-            issues: 3,
-            startDate: '2024-01-15',
-            dueDate: '2024-04-15',
-            roadblocks: ['API Integration Delays', 'Third-party Service Issues']
-        },
-        {
-            id: 'PRJ002',
-            name: 'Brand Redesign',
-            department: 'Design',
-            status: 'Completed',
-            progress: 100,
-            teamSize: 4,
-            budget: 80000,
-            actualCost: 75000,
-            clientSatisfaction: 4.8,
-            profitability: 25,
-            issues: 1,
-            startDate: '2023-11-01',
-            dueDate: '2024-01-31',
-            roadblocks: []
-        },
-        {
-            id: 'PRJ003',
-            name: 'Sales Campaign',
-            department: 'Sales',
-            status: 'Delayed',
-            progress: 60,
-            teamSize: 5,
-            budget: 100000,
-            actualCost: 85000,
-            clientSatisfaction: 4.2,
-            profitability: 8,
-            issues: 5,
-            startDate: '2024-02-01',
-            dueDate: '2024-03-31',
-            roadblocks: ['Budget Constraints', 'Resource Allocation Issues']
-        }
-    ]
+            const data = await response.json()
 
-    const salesData = {
-        totalDeals: 45,
-        monthlyRevenue: 850000,
-        quarterlyGrowth: 12.5,
-        costPerClient: 15000,
-        revenueTrend: [650000, 720000, 680000, 750000, 820000, 850000],
-        topClients: [
-            { name: 'TechCorp Inc.', region: 'North', revenue: 250000, projects: 3 },
-            { name: 'Global Solutions', region: 'East', revenue: 180000, projects: 2 },
-            { name: 'Innovation Labs', region: 'West', revenue: 150000, projects: 4 }
-        ],
-        salesByRegion: [
-            { region: 'North', sales: 320000 },
-            { region: 'South', sales: 280000 },
-            { region: 'East', sales: 150000 },
-            { region: 'West', sales: 100000 }
-        ],
-        pendingInvoices: 8,
-        pendingAmount: 125000,
-        pendingClearances: 3
+            if (response.status === 200 || response.status === 201) {
+                setEmployeesData(data)
+            }
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setLoading(false)
+        }
     }
 
-    const goalsData = [
-        {
-            name: 'Increase Revenue by 25%',
-            targetMetric: '₹10M Annual Revenue',
-            currentProgress: 68,
-            responsibleDepartment: 'Sales',
-            deadline: '2024-12-31',
-            successProbability: 75,
-            milestones: [
-                { name: 'Q1 Target', completed: true, dueDate: '2024-03-31' },
-                { name: 'Q2 Target', completed: true, dueDate: '2024-06-30' },
-                { name: 'Q3 Target', completed: false, dueDate: '2024-09-30' },
-                { name: 'Q4 Target', completed: false, dueDate: '2024-12-31' }
-            ],
-            risks: [
-                {
-                    description: 'Market Competition',
-                    level: 'Medium',
-                    mitigation: 'Enhanced marketing strategy and competitive pricing'
-                },
-                {
-                    description: 'Resource Constraints',
-                    level: 'Low',
-                    mitigation: 'Planned hiring and training programs'
-                }
-            ]
-        },
-        {
-            name: 'Improve Client Satisfaction',
-            targetMetric: '4.8/5 Average Rating',
-            currentProgress: 85,
-            responsibleDepartment: 'All',
-            deadline: '2024-06-30',
-            successProbability: 90,
-            milestones: [
-                { name: 'Feedback System', completed: true, dueDate: '2024-01-31' },
-                { name: 'Process Improvement', completed: true, dueDate: '2024-03-31' },
-                { name: 'Training Program', completed: false, dueDate: '2024-05-31' }
-            ],
-            risks: [
-                {
-                    description: 'Staff Turnover',
-                    level: 'Low',
-                    mitigation: 'Employee retention programs and competitive benefits'
-                }
-            ]
+    const FetchSalesData = async () => {
+        try {
+            const response = await fetch("https://project-management-tool-uh55.onrender.com/analytics-sales-finance", {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+            })
+
+            const data = await response.json()
+
+            if (response.status === 200 || response.status === 201) {
+                setSalesData(data)
+            }
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setLoading(false)
         }
-    ]
+    }
+
+    const FetchProjectsData = async () => {
+        try {
+            const response = await fetch("https://project-management-tool-uh55.onrender.com/analytics-projects-data", {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+            })
+
+            const data = await response.json()
+
+            if (response.status === 200 || response.status === 201) {
+                setProjectsData(data.projectsData)
+            }
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const FetchGoalsData = async () => {
+        try {
+            setGoalsLoading(true)
+            const queryParams = new URLSearchParams()
+
+            if (goalsFilter.category) queryParams.append('category', goalsFilter.category)
+            if (goalsFilter.department) queryParams.append('department', goalsFilter.department)
+            if (goalsFilter.status) queryParams.append('status', goalsFilter.status)
+            queryParams.append('limit', '50')
+
+            const response = await fetch(`https://project-management-tool-uh55.onrender.com/goals/?${queryParams}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+            })
+
+            if (response.ok) {
+                const data = await response.json()
+                // console.log(data)
+                setGoalsData(data)
+            } else {
+                console.error('Failed to fetch goals:', response.statusText)
+            }
+        } catch (err) {
+            console.error('Error fetching goals:', err)
+        } finally {
+            setGoalsLoading(false)
+        }
+    }
+
+    const FetchGoalsDashboard = async () => {
+        try {
+            const response = await fetch("https://project-management-tool-uh55.onrender.com/goals/analytics/dashboard", {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+            })
+
+            if (response.ok) {
+                const data = await response.json()
+                // console.log(data)
+                setGoalsDashboard(data)
+            } else {
+                console.error('Failed to fetch goals dashboard:', response.statusText)
+            }
+        } catch (err) {
+            console.error('Error fetching goals dashboard:', err)
+        }
+    }
+
+    const handleGoalCreated = (newGoal) => {
+        alert('Goal created successfully :', newGoal.name)
+        FetchGoalsData()
+        FetchGoalsDashboard()
+    }
+
+
+    const handleGoalFilterChange = (filterType, value) => {
+        setGoalsFilter(prev => ({
+            ...prev,
+            [filterType]: value
+        }))
+    }
+
+    const clearGoalsFilters = () => {
+        setGoalsFilter({
+            category: '',
+            department: '',
+            status: ''
+        })
+    }
 
     const tabs = [
         { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -350,11 +349,137 @@ export default function Analytics() {
         { id: 'goals', label: 'Goals', icon: Target }
     ]
 
-
-
     const filteredEmployees = employeesData.filter(emp =>
         emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.department.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+
+    const filteredGoals = goalsData.filter(goal =>
+        goal.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        goal.responsible_department.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+
+    const renderGoalsDashboardStats = () => {
+        if (!goalsDashboard.overall_stats) return null
+
+        const stats = goalsDashboard.overall_stats
+        return (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-gray-600">Total Goals</p>
+                            <p className="text-2xl font-bold text-gray-900">{stats.total_goals}</p>
+                        </div>
+                        <Target className="text-blue-600" size={24} />
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-gray-600">Active Goals</p>
+                            <p className="text-2xl font-bold text-green-600">{stats.active_goals}</p>
+                        </div>
+                        <TrendingUp className="text-green-600" size={24} />
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-gray-600">Completed</p>
+                            <p className="text-2xl font-bold text-blue-600">{stats.completed_goals}</p>
+                        </div>
+                        <CheckCircle className="text-blue-600" size={24} />
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-gray-600">Avg Progress</p>
+                            <p className="text-2xl font-bold text-purple-600">{stats.avg_progress?.toFixed(1)}%</p>
+                        </div>
+                        <BarChart3 className="text-purple-600" size={24} />
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-gray-600">Success Rate</p>
+                            <p className="text-2xl font-bold text-orange-600">{stats.avg_success_probability?.toFixed(1)}%</p>
+                        </div>
+                        <Award className="text-orange-600" size={24} />
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    const renderGoalsFilters = () => (
+        <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-white rounded-lg border border-gray-200">
+            <div className="flex items-center gap-2">
+                <Filter className="text-gray-600" size={16} />
+                <span className="text-sm font-medium text-gray-700">Filters:</span>
+            </div>
+
+            <select
+                value={goalsFilter.category}
+                onChange={(e) => handleGoalFilterChange('category', e.target.value)}
+                className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+                <option value="">All Categories</option>
+                <option value="yearly">Yearly</option>
+                <option value="6months">6 Months</option>
+                <option value="quarterly">Quarterly</option>
+            </select>
+
+            <select
+                value={goalsFilter.department}
+                onChange={(e) => handleGoalFilterChange('department', e.target.value)}
+                className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+                <option value="">All Departments</option>
+                <option value="SALES">Sales</option>
+                <option value="DESIGN">Design</option>
+                <option value="DEV">Development</option>
+                <option value="Maintenance">Maintenance</option>
+                <option value="ADMIN">Company</option>
+            </select>
+
+            <select
+                value={goalsFilter.status}
+                onChange={(e) => handleGoalFilterChange('status', e.target.value)}
+                className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+                <option value="paused">Paused</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+
+            <button
+                onClick={clearGoalsFilters}
+                className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 underline"
+            >
+                Clear All
+            </button>
+
+            <div className="ml-auto">
+                <button
+                    onClick={() => {
+                        setShowCreateGoalModal(true)
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                    <Plus size={16} />
+                    New Goal
+                </button>
+            </div>
+        </div>
     )
 
     const renderTabContent = () => {
@@ -466,17 +591,37 @@ export default function Analytics() {
 
             case 'sales':
                 return (
-                    <div className="max-w-4xl mx-auto">
+                    <div className="max-w-7xl mx-auto">
                         <SalesFinanceCard salesData={salesData} />
                     </div>
                 )
 
             case 'goals':
                 return (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {goalsData.map((goal, index) => (
-                            <GoalTrackingCard key={index} goal={goal} />
-                        ))}
+                    <div className="space-y-6">
+                        {renderGoalsDashboardStats()}
+                        {renderGoalsFilters()}
+
+                        {goalsLoading ? (
+                            <div className="flex justify-center py-8">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                            </div>
+                        ) : (
+                            <>
+                                {filteredGoals.length === 0 ? (
+                                    <div className="text-center py-8">
+                                        <Target className="mx-auto text-gray-400 mb-4" size={48} />
+                                        <p className="text-gray-500">No goals found matching your criteria</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        {filteredGoals.map((goal) => (
+                                            <GoalTrackingCard key={goal.id} goal={goal} />
+                                        ))}
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </div>
                 )
 
@@ -485,10 +630,45 @@ export default function Analytics() {
         }
     }
 
+    if (loading) {
+        return (
+            <div className="relative h-full min-h-screen w-full flex flex-col bg-gray-100 min-w-[800px]">
+                <button
+                    className="fixed top-4 left-4 z-50 md:hidden bg-white p-2 rounded shadow"
+                    onClick={() => setNavOpen(!navOpen)}
+                    aria-label="Toggle navigation"
+                >
+                    {navOpen ? <X size={32} /> : <Menu size={32} />}
+                </button>
 
+                <div
+                    className={`
+                        fixed top-0 left-0 h-full w-[30%] z-40 transition-transform duration-300
+                        ${navOpen ? "translate-x-0" : "-translate-x-full"}
+                        md:fixed md:top-0 md:left-0 md:h-full md:w-[13%] md:z-40 md:translate-x-0 md:block
+                    `}
+                >
+                    <Navigation />
+                </div>
+
+                {navOpen && (
+                    <div
+                        className="fixed inset-0 bg-black bg-opacity-30 z-30 md:hidden"
+                        onClick={() => setNavOpen(false)}
+                    />
+                )}
+
+                <div className="w-full md:w-[87%] h-full pt-20 flex place-self-end justify-center transition-all duration-300">
+                    <Header />
+                    <div className="md:px-10 w-full h-full min-h-svh">
+                        <Loading />
+                    </div>
+                </div>
+            </div>
+        )
+    }
     return (
         <div className="relative h-full min-h-screen w-full flex flex-col bg-gray-100 min-w-[800px]">
-
             <button
                 className="fixed top-4 left-4 z-50 md:hidden bg-white p-2 rounded shadow"
                 onClick={() => setNavOpen(!navOpen)}
@@ -535,7 +715,7 @@ export default function Analytics() {
                                             <Download size={16} />
                                             Export
                                         </button>
-                                        <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                        <button onClick={() => window.location.reload()} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                                             <RefreshCw size={16} />
                                             Refresh
                                         </button>
@@ -558,7 +738,7 @@ export default function Analytics() {
                                         ))}
                                     </div>
 
-                                    {(activeTab === 'employees' || activeTab === 'projects') && (
+                                    {(activeTab === 'employees' || activeTab === 'projects' || activeTab === 'goals') && (
                                         <div className="relative">
                                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                                             <input
@@ -577,6 +757,13 @@ export default function Analytics() {
                     </div>
                 </>)}
             </div>
+            {showCreateGoalModal && (
+                <CreateGoalModal
+                    isOpen={showCreateGoalModal}
+                    onClose={() => setShowCreateGoalModal(false)}
+                    onGoalCreated={handleGoalCreated}
+                />
+            )}
         </div>
     )
 

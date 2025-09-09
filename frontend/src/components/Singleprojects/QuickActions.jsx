@@ -10,29 +10,14 @@ import {
 import { useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import PopupForm from "../Home/PopUpForm"
+import { useMainContext } from "../../context/MainContext"
 
 const QuickActions = ({ links }) => {
     const navigate = useNavigate()
     const [showPopup, setShowPopup] = useState(false)
     const { id } = useParams()
-    const [fields, setFields] = useState([
-        {
-            name: "project_id",
-            type: "stored",
-            value: id
-        },
-        {
-            name: "linkname",
-            type: "text",
-            optional: false,
-        },
-        {
-            name: "link",
-            type: "text",
-            optional: false
-        }
-
-    ])
+    const { emp } = useMainContext()
+    const [fields, setFields] = useState()
     const issuesrec = () => {
         setShowPopup(true)
         navigate("/view", {
@@ -45,17 +30,69 @@ const QuickActions = ({ links }) => {
     }
 
     const tasksrec = () => {
-        setShowPopup(true)
-        navigate("/view", {
-            state: {
-                fields: Taskss,
-                title: "Task Information",
-                subtitle: "Enter All details",
+        setFields([
+            {
+                name: "title",
+                type: "text",
+                optional: false
             },
-        })
+            {
+                name: "brief",
+                type: "textarea"
+            },
+            {
+                name: "created_by",
+                type: "stored",
+                value: emp.emp_id
+            },
+            {
+                name: "deadline",
+                type: "date",
+                allowPastDate: false
+            },
+            {
+                name: "members_assigned",
+                type: "select",
+                multi: true,
+                fields: []
+            },
+            {
+                name: "proj_id",
+                type: "text",
+                optional: true
+            }
+        ])
+        setShowPopup(true)
     }
 
     const updatesrec = () => {
+        setFields([
+            {
+                name: "title",
+                type: "text",
+                optional: false
+            },
+            {
+                name: "brief",
+                type: "textarea"
+            },
+            {
+                name: "update_by",
+                type: "stored",
+                value: emp.emp_id
+            },
+            {
+                name: "to",
+                type: "select",
+                fields: [],
+                multi: true
+            },
+            {
+                name: "link",
+                type: "text",
+                optional: true
+            }
+        ])
         setShowPopup(true)
         navigate("/view", {
             state: {
@@ -92,6 +129,30 @@ const QuickActions = ({ links }) => {
         }
     ]
 
+    const addAction = () => {
+        setFields(
+            [
+                {
+                    name: "project_id",
+                    type: "stored",
+                    value: id
+                },
+                {
+                    name: "linkname",
+                    type: "text",
+                    optional: false,
+                },
+                {
+                    name: "link",
+                    type: "text",
+                    optional: false
+                }
+
+            ]
+        )
+        setShowPopup(true)
+    }
+
     return (
         <>
             <div className="h-2/5 w-full flex flex-col gap-2 bg-gray-50 rounded-lg shadow-lg p-4 ">
@@ -100,7 +161,7 @@ const QuickActions = ({ links }) => {
                         <FastForward className="h-5 w-7" />
                         <h1 className="font-semibold text-base">Quick Actions</h1>
                     </div>
-                    <button onClick={() => setShowPopup(true)} className="px-3 py-1.5 bg-btncol hover:bg-btncol/40 text-white rounded-lg transition-all duration-200 backdrop-blur-sm ">
+                    <button onClick={addAction} className="px-3 py-1.5 bg-btncol hover:bg-btncol/40 text-white rounded-lg transition-all duration-200 backdrop-blur-sm ">
                         <Activity size={16} className="inline mr-2" />
                         Update
                     </button>
@@ -116,7 +177,7 @@ const QuickActions = ({ links }) => {
                                     : "bg-white text-slate-700 hover:bg-gray-100 border-gray-400"
                                 }`}
                         >
-                            <div className="w-0 md:w-1/5 lg:w-1/6 xl:w-3/12 h-full"></div>
+                            <div className="w-0 md:w-1/5 lg:w-1/6 xl:w-2/12 h-full"></div>
                             {action.icon}
                             {action.label}
                         </button>
@@ -127,7 +188,7 @@ const QuickActions = ({ links }) => {
                 isVisible={showPopup}
                 onClose={() => setShowPopup(false)}
                 formTitle="Manage Quick Actions"
-                endpoint="http://127.0.0.1:8000/manage-quick-actions"
+                endpoint="https://project-management-tool-uh55.onrender.com/manage-quick-actions"
                 fields={fields}
             />
         </>

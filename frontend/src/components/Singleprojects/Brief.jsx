@@ -1,11 +1,12 @@
+import { Calendar, Timer, SquarePen, CheckCircle, AlertCircle, Pause, Globe, SquareDashedBottomCode } from "lucide-react"
+import { useState } from "react"
+import PopupForm from "../Home/PopUpForm"
+import { useParams } from "react-router-dom"
 
-import { Calendar, Timer, SquarePen } from "lucide-react";
-import { useState } from "react";
-import PopupForm from "../Home/PopUpForm";
-import { useParams } from "react-router-dom";
-const Brief = ({ clientDetails, projBrief, status, start, deadline }) => {
+const Brief = ({ clientDetails, project_name, projBrief, status, start, deadline, quickLinks }) => {
     const [showPopup, setShowPopup] = useState(false)
     const { id } = useParams()
+
     const [fields, setFields] = useState([
         {
             name: "project_id",
@@ -14,7 +15,18 @@ const Brief = ({ clientDetails, projBrief, status, start, deadline }) => {
         },
         {
             name: "descp",
-            type: "textarea"
+            type: "textarea",
+            optional: true
+        },
+        {
+            name: "code_resource_base",
+            type: "text",
+            optional: true
+        },
+        {
+            name: "live_demo",
+            type: "text",
+            optional: true
         },
         {
             name: "status",
@@ -24,61 +36,133 @@ const Brief = ({ clientDetails, projBrief, status, start, deadline }) => {
                 { name: "inactive", value: "inactive" },
                 { name: "completed", value: "completed" }
             ],
-            multi: false
+            multi: false,
+            optional: true
         },
         {
             name: "deadline",
             type: "date",
-            allowPastDate: false
+            allowPastDate: false,
+            optional: true
         },
     ])
+
+    console.log(quickLinks)
+
     const editclientdetails = () => {
-        setShowPopup(true);
+        setShowPopup(true)
     }
+
+    const getStatusConfig = (status) => {
+        const configs = {
+            active: {
+                color: 'bg-green-100 text-green-800',
+                icon: CheckCircle,
+                label: 'Active'
+            },
+            inactive: {
+                color: 'bg-gray-100 text-gray-600',
+                icon: Pause,
+                label: 'Inactive'
+            },
+            completed: {
+                color: 'bg-blue-100 text-blue-800',
+                icon: CheckCircle,
+                label: 'Completed'
+            },
+            delayed: {
+                color: 'bg-red-100 text-red-800',
+                icon: AlertCircle,
+                label: 'Delayed'
+            },
+            uncomplete: {
+                color: 'bg-orange-100 text-orange-800',
+                icon: AlertCircle,
+                label: 'Incomplete'
+            }
+        }
+        return configs[status] || configs.inactive
+    }
+
+    const statusConfig = getStatusConfig(status)
+    const StatusIcon = statusConfig.icon
+
     return (
         <>
-            <div className="w-full h-fit rounded-lg bg-gray-50 drop-shadow-xl">
-                <div className="flex h-fit items-center justify-between">
-                    <div className="flex items-center mx-6 my-3 space-x-5">
-                        <h1 className=" text-xl font-semibold">{clientDetails?.name}</h1>
-                        {/* {clientDetails.logo ? (
-                        <img src={clientDetails.logo} alt="client logo" />
-                    ) : ( */}
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xl font-bold">
-                            {clientDetails?.name[0]}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                        {clientDetails?.logo ? (
+                            <img
+                                src={clientDetails.logo}
+                                alt="client logo"
+                                className="w-10 h-10 rounded-full object-cover"
+                            />
+                        ) : (
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                                {clientDetails?.name?.[0] || 'C'}
+                            </div>
+                        )}
+                        <div>
+                            <h1 className="font-semibold text-gray-900">{clientDetails?.name || 'Client Name'}</h1>
+                            <p className="text-sm text-gray-500">{project_name || 'Project Name'}</p>
                         </div>
-                        {/* )} */}
                     </div>
-                    <div className="flex mx-4">
-                        <button className="mx-4 my-3 px-10 py-2 flex items-center bg-green-200 rounded-3xl text-nowrap h-8 w-34 text-green-600 group group-hover:scale-95 hover:bg-btncol/80 transition-all font-normal">
-                            <h1 className="font-semibold group-hover:text-white transition-colors">{status}</h1>
-                        </button>
-
-                        <SquarePen onClick={() => editclientdetails()} color="#6347FF" className="h-7 w-7 mt-4 mr-1 hover:scale-95 transition-transform" />
+                    <div className="flex items-center gap-2">
+                        <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${statusConfig.color}`}>
+                            <StatusIcon size={12} />
+                            {statusConfig.label}
+                        </span>
+                        <div className="flex h-auto items-center justify-between">
+                            <div className="flex place-self-end">
+                                <button
+                                    onClick={editclientdetails}
+                                    className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                                >
+                                    <SquarePen size={20} />
+                                </button>
+                                <div className="w-px h-6 bg-black"></div>
+                                <a href={quickLinks?.code_resource_base} target="_blank" rel="noopener noreferrer">
+                                    <button className="p-1 rounded-lg hover:bg-gray-100/50 hover:scale-105 transition-all">
+                                        <SquareDashedBottomCode size={20} color="#47FF72" />
+                                    </button>
+                                </a>
+                                <div className="w-px h-6 bg-black"></div>
+                                <a href={quickLinks?.live_demo} target="_blank" rel="noopener noreferrer">
+                                    <button className="p-1 rounded-lg hover:bg-gray-100/50 hover:scale-105 transition-all">
+                                        <Globe color="#0C098C" size={20} />
+                                    </button>
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div className="w-4/5 mt-3 mb-6 mr-20 ml-6 font-medium text-gray-400">
-                    <p>{projBrief}</p>
-                </div>
-                <div className="flex justify-between">
-                    <div className="flex justify-center">
-                        <Calendar alt="" className="h-5 w-5 ml-6  mr-2" />
-                        <p className="font-semibold">Start: {start?.split("T")[0]}</p>
+                {projBrief && (
+                    <div className="mb-3">
+                        <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded">{projBrief}</p>
                     </div>
-                    <div className="flex justify-center mr-9 ml-1 pb-4">
-                        <Timer className="h-5 w-5 ml-9 mr-3" />
-                        <p className="font-semibold">Deadline: {deadline?.split("T")[0]}</p>
+                )}
+                <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 text-gray-600">
+                        <Calendar size={14} />
+                        <span>Start: {start?.split("T")[0]}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-600">
+                        <Timer size={14} />
+                        <span>Due: {deadline?.split("T")[0]}</span>
                     </div>
                 </div>
             </div>
+
             <PopupForm
                 isVisible={showPopup}
                 onClose={() => setShowPopup(false)}
                 formTitle="Edit Project brief"
-                endpoint="http://127.0.0.1:8000/edit-project-brief"
+                endpoint="https://project-management-tool-uh55.onrender.com/edit-project-brief"
                 fields={fields}
             />
         </>
     )
 }
+
 export default Brief

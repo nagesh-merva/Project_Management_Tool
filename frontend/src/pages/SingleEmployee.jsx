@@ -11,18 +11,18 @@ export default function SingleEmployee() {
     const [navOpen, setNavOpen] = useState(false)
     const [emp, setEmp] = useState({})
     const [loading, setLoading] = useState(false)
-    console.log(id)
+    // console.log(id)
 
     useEffect(() => {
         GetEmployee()
     }, [id])
 
-    console.log(emp)
+    // console.log(emp)
 
     const GetEmployee = async () => {
         setLoading(true)
         try {
-            const response = await fetch(`http://127.0.0.1:8000/employee?emp_id=${id}`, {
+            const response = await fetch(`https://project-management-tool-uh55.onrender.com/employee?emp_id=${id}`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
 

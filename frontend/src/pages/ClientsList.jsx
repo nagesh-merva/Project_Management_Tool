@@ -103,7 +103,7 @@ const ClientsList = () => {
             setLoading(true)
             try {
                 const response = await fetch(
-                    "http://127.0.0.1:8000/clients/briefs",
+                    "https://project-management-tool-uh55.onrender.com/clients/briefs",
                     {
                         method: "GET",
                         headers: { "Content-Type": "application/json" },
@@ -333,7 +333,7 @@ const ClientsList = () => {
                 isVisible={showPopup}
                 onClose={() => setShowPopup(false)}
                 formTitle="Add New Client"
-                endpoint="http://127.0.0.1:8000/clients/add"
+                endpoint="https://project-management-tool-uh55.onrender.com/clients/add"
                 fields={fields}
             />
         </>

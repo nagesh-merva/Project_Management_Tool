@@ -15,15 +15,14 @@ const CreateTemplateForm = ({ project_id, close }) => {
     const fetchData = async () => {
       setLoading(true)
       try {
-        const deptPromise = fetch("http://127.0.0.1:8000/all-dept-brief").then(res => res.json())
+        const deptPromise = fetch("https://project-management-tool-uh55.onrender.com/all-dept-brief").then(res => res.json())
         const phasePromise = project_id
-          ? fetch(`http://127.0.0.1:8000/all-phases?project_id=${project_id}`).then(res => res.json())
+          ? fetch(`https://project-management-tool-uh55.onrender.com/all-phases?project_id=${project_id}`).then(res => res.json())
           : Promise.resolve([])
 
         const [deptData, phaseData] = await Promise.all([deptPromise, phasePromise])
         setDepartments(deptData)
         setPhases(phaseData)
-        window.location.reload()
       } catch (err) {
         console.error("Failed to fetch data", err)
       } finally {
@@ -50,18 +49,26 @@ const CreateTemplateForm = ({ project_id, close }) => {
       phase: phase,
       fields: checklistItems,
     }
+
+
+    if (payload.fields.length === 0) {
+      alert("Please add atleast 1 field.")
+      return
+    }
+
     try {
-      const res = await fetch("http://localhost:8000/add-new-template", {
+      const res = await fetch("https://project-management-tool-uh55.onrender.com/add-new-template", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
       if (res.ok) {
-        alert("Template Saved Successfully");
-        setTemplateName("");
-        setDepartment("");
-        setPhase("");
-        setChecklistItems([]);
+        alert("Template Saved Successfully")
+        setTemplateName("")
+        setDepartment("")
+        setPhase("")
+        setChecklistItems([])
+        window.location.reload()
       } else {
         alert("Failed to save template");
       }
@@ -79,7 +86,7 @@ const CreateTemplateForm = ({ project_id, close }) => {
       <div className="p-6 w-full max-w-3xl mx-auto bg-white rounded-xl shadow-lg">
         <div className="flex w-full justify-between items-center mb-4">
           <h2 className="text-2xl font-bold mb-4">Create Template</h2>
-          <X onClick={close} className="text-black cursor-pointer " />
+          <X onClick={() => close()} className="text-black cursor-pointer " />
         </div>
         {loading ? (
           <div className="flex justify-center items-center h-64">
