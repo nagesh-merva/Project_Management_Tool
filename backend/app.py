@@ -322,6 +322,43 @@ async def add_emp_documents(emp_id: str = Form(...), file: UploadFile = File(...
 
     return {"message": "Document added successfully.", "doc_url": doc_url}
 
+# ================== Employee Dashboard Metrics =======================
+@app.get("/dashboard-metrics")
+async def emp_dashboard_metrics(emp_id: str):
+    if not emp_id:
+        raise HTTPException(status_code=400, detail="Employee Id Required")
+    
+    employee = await db.Employees.find_one({"emp_id": emp_id})
+    
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    from datetime import datetime
+    joined_date = employee.get("joined_on")
+    if isinstance(joined_date, dict) and "$date" in joined_date:
+        joined_date = datetime.fromisoformat(joined_date["$date"].replace("Z", "+00:00"))
+    elif isinstance(joined_date, str):
+        joined_date = datetime.fromisoformat(joined_date.replace("Z", "+00:00"))
+    else:
+        joined_date = joined_date if joined_date else datetime.now()
+    
+    years_of_service = round((datetime.now() - joined_date).days / 365.25, 1)
+    
+    metrics = {
+        "completedProjects": employee.get("performance_metrics", {}).get("completed_projects", 0),
+        "performanceRating": employee.get("performance_metrics", {}).get("ratings", 0.0),
+        "activeProjects": len(employee.get("current_projects", [])),
+        "leavesTaken": employee.get("leaves_taken", 0),
+        "yearsOfService": years_of_service,
+        "monthlySalary": employee.get("salary_monthly", 0)
+    }
+    
+    return {
+        "success": True,
+        "data": metrics,
+        "message": "Dashboard metrics retrieved successfully"
+    }
+    
 # ================== add Employee promotion =======================
 @app.post("/add-emp-promotion")
 async def add_emp_promotion(data: PromotionInput):
@@ -2477,8 +2514,6 @@ async def get_all_reports():
     try:
         cursor = db.Reports.find()
         reports_raw = await cursor.to_list(length=None)
-        
-        print(cursor)
 
         reports = [
             Report(

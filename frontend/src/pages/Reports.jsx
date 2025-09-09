@@ -124,11 +124,13 @@ export default function Reports() {
     { title: "This Month", value: thisMonth, percentage: 39, icon: <DockIcon className="text-green-600" /> },
     { title: "Reporting Departments", value: 5, percentage: 39, icon: <DockIcon className="text-green-600" /> },]
 
-  const sortedReports = allReports?.slice().sort((a, b) =>
-    new Date(b.uploaded_on).getTime() - new Date(a.uploaded_on).getTime()
-  ) || []
-
-  const [filteredReports, setFilteredReports] = useState(sortedReports)
+  const [filteredReports, setFilteredReports] = useState([])
+  useEffect(() => {
+    const sorted = allReports
+      ?.slice()
+      .sort((a, b) => new Date(b.uploaded_on).getTime() - new Date(a.uploaded_on).getTime()) || []
+    setFilteredReports(sorted)
+  }, [allReports])
 
   const handleFilterChange = (filtered) => {
     setFilteredReports(filtered)
@@ -136,27 +138,29 @@ export default function Reports() {
 
   return (
     <>
-      <div className="relative h-full w-full flex flex-col bg-gray-100 min-w-[500px]">
+      <div className="relative h-full w-full flex flex-col bg-gray-100">
+        {/* Mobile Nav Toggle */}
         <button
           className="fixed top-4 left-4 z-50 md:hidden bg-white p-2 rounded shadow"
           onClick={() => setNavOpen(!navOpen)}
           aria-label="Toggle navigation"
         >
-          {navOpen ? (
-            <X size={32} />
-          ) : (
-            <Menu size={32} />
-          )}
+          {navOpen ? <X size={28} /> : <Menu size={28} />}
         </button>
+
+        {/* Sidebar */}
         <div
           className={`
-                        fixed top-0 left-0 h-full w-[30%] z-40 transition-transform duration-300
-                        ${navOpen ? "translate-x-0" : "-translate-x-full"}
-                        md:fixed md:top-0 md:left-0 md:h-full md:w-[13%] md:z-40 md:translate-x-0 md:block
-                    `}
+      fixed top-0 left-0 h-full w-[70%] sm:w-[50%] md:w-[13%] z-40 
+      bg-white transition-transform duration-300
+      ${navOpen ? "translate-x-0" : "-translate-x-full"} 
+      md:translate-x-0 md:block
+    `}
         >
           <Navigation />
         </div>
+
+        {/* Backdrop for mobile nav */}
         {navOpen && (
           <div
             className="fixed inset-0 bg-black bg-opacity-30 z-30 md:hidden"
@@ -164,35 +168,65 @@ export default function Reports() {
           />
         )}
 
+        {/* Main Content */}
         <div className="w-full md:w-[87%] h-full pt-20 flex place-self-end justify-center transition-all duration-300">
           <Header />
-          <div className="pl-10 pr-7 w-full h-full">
+          <div className="px-4 sm:px-6 lg:px-10 w-full h-full">
             <div className="flex mb-4">
               {loading ? (
                 <Loading />
               ) : (
-                <div className="text-gray-700 text-lg font-semibold ">
-                  <div className="flex justify-between items-center max-w-5xl">
+                <div className="text-gray-700 text-lg font-semibold w-full">
+                  {/* Header + Actions */}
+                  <div className="flex flex-wrap gap-2 justify-between items-center w-full">
                     <Reports_Header />
-                    <button onClick={() => setShowPopup(true)} className=" absolute right-5 top-5 px-5 py-1.5 bg-btncol rounded-full flex items-center justify-center text-white hover:scale-95 transition-transform"><Plus /> <p className="hidden lg:block">New Report</p></button>
-                    <button
-                      onClick={() => setFilterOpen(!filterOpen)}
-                      className="flex items-center h-fit gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors "
-                    >
-                      <Filter size={16} />
-                      Filters
-                    </button>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setShowPopup(true)}
+                        className="px-4 py-2 bg-btncol rounded-full flex items-center justify-center text-white text-sm sm:text-base hover:scale-95 transition-transform"
+                      >
+                        <Plus size={18} className="mr-1" />
+                        <p className="hidden sm:block">New Report</p>
+                      </button>
+                      <button
+                        onClick={() => setFilterOpen(!filterOpen)}
+                        className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-full text-sm sm:text-base hover:bg-blue-700 transition-colors"
+                      >
+                        <Filter size={16} />
+                        Filters
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="flex space-x-3">
+                  {/* Stats */}
+                  <div className="flex flex-wrap gap-2 mt-4">
                     {data.map((item, index) => (
-                      <SetsDiv key={index} title={item.title} value={item.value} percentage={item.percentage} icon={item.icon} />
+                      <SetsDiv
+                        key={index}
+                        title={item.title}
+                        value={item.value}
+                        percentage={item.percentage}
+                        icon={item.icon}
+                      />
                     ))}
                   </div>
+
                   <Available_Header />
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 ">
+
+                  {/* Reports Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4">
                     {filteredReports.map((items, index) => (
-                      <ReportBox key={index} dept={items.department} type={items.type} title={items.report_name} desc={items.description} time={items.uploaded_on} link={items.document_link} isOpen={items.is_open} />
+                      <ReportBox
+                        key={index}
+                        dept={items.department}
+                        type={items.type}
+                        title={items.report_name}
+                        desc={items.description}
+                        time={items.uploaded_on}
+                        link={items.document_link}
+                        isOpen={items.is_open}
+                      />
                     ))}
                   </div>
                 </div>

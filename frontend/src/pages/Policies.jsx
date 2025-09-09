@@ -20,13 +20,6 @@ export default function Policies() {
         console.log(doctype)
     }, [doctype])
 
-    const navigationItems = [
-        { id: 'policies', label: 'Policies', icon: FileText },
-        { id: 'legal-docs', label: 'Legal Docs', icon: Scale },
-        { id: 'templates', label: 'Templates', icon: FileTemplate },
-        { id: 'workflow', label: 'Workflow', icon: Workflow },
-        { id: 'guidelines', label: 'Guidelines', icon: BookOpen },
-    ]
 
     const policyData = {
         policies: {

@@ -5,8 +5,8 @@ const CostBreakdowns = ({ Breakdowns }) => {
         <div className="w-full h-auto p-5 bg-white" >
             <div className="w-full grid grid-cols-2 gap-3">
                 {Breakdowns?.map((item, index) => (
-                    <div key={index} className=" w-full h-16 bg-maintenance  border-2 border-gray-200 rounded-xl flex justify-between gap-2">
-                        <div className=" flex justify-center gap-1 p-2">
+                    <div key={index} className=" w-full h-fit bg-maintenance  border-2 border-gray-200 rounded-xl flex justify-between gap-2">
+                        <div className="w-2/3 flex justify-start items-center gap-1 p-2">
                             <Network color="#000000" className="p-2 w-11 h-11 bg-btncol/70 rounded-lg border border-black" />
                             <div className="px-2 flex flex-col">
                                 <h1 className=" font-bold text-base  ">{item.title}</h1>

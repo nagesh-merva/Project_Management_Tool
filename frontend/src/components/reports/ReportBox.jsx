@@ -65,7 +65,7 @@ const ReportBox = ({ dept, type, title, desc, time, link, isOpen }) => {
 
     return (
         <div
-            className="rounded-xl border-2 shadow-md p-4 w-60 h-80 flex flex-col justify-between hover:scale-105 transition-transform"
+            className="rounded-xl border-2 shadow-md p-4 w-full min-w-60 h-80 flex flex-col justify-between hover:scale-105 transition-transform"
             style={{ backgroundColor: `${bgColor}50`, color: "#fff", borderColor: bgColor }}
         >
             <div>

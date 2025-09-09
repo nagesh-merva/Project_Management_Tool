@@ -6,6 +6,7 @@ import MyTask from "../components/Home/MyTask"
 import Activeproject from "../components/Home/Activeprojects"
 import Message from "../components/Home/Message"
 import { Menu, X } from "lucide-react"
+import MyEmpStats from "../components/Home/MyEmpStats"
 
 export default function Dashboard() {
     const [navOpen, setNavOpen] = useState(false)
@@ -47,8 +48,9 @@ export default function Dashboard() {
                         <MyTask />
                         <UpdateBar />
                     </div>
-                    <div className="h-[52%] w-full ">
+                    <div className="flex h-[52%] w-full space-x-4">
                         <Activeproject />
+                        <MyEmpStats />
                     </div>
                 </div>
             </div>
