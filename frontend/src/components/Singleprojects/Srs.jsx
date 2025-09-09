@@ -58,7 +58,7 @@ const Srs = ({ srs }) => {
                 isVisible={showPopup}
                 onClose={() => setShowPopup(false)}
                 formTitle="Update SRS & Requirements"
-                endpoint="http://127.0.0.1:8000/add-key-req"
+                endpoint="https://project-management-tool-uh55.onrender.com/add-key-req"
                 fields={fields}
             />
         </>

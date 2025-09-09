@@ -106,7 +106,7 @@ const GoalTrackingCard = ({ goal }) => {
 
     const handleSaveGoal = async (goalId, updateData) => {
         try {
-            const response = await fetch(`http://127.0.0.1:8000/goals/${goalId}`, {
+            const response = await fetch(`https://project-management-tool-uh55.onrender.com/goals/${goalId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updateData)
@@ -127,7 +127,7 @@ const GoalTrackingCard = ({ goal }) => {
         progressData["updated_by"] = emp.emp_name
 
         try {
-            const response = await fetch("http://127.0.0.1:8000/goals/progress/", {
+            const response = await fetch("https://project-management-tool-uh55.onrender.com/goals/progress/", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(progressData)
@@ -157,19 +157,19 @@ const GoalTrackingCard = ({ goal }) => {
     }
 
     const handleMilestoneUpdate = async (goalId, milestoneName, updateData) => {
-        console.log("Goal-id ",goalId,"\nMilestone ", milestoneName,"\nUpdated data", updateData)
+        console.log("Goal-id ", goalId, "\nMilestone ", milestoneName, "\nUpdated data", updateData)
         try {
-            const response = await fetch(`http://127.0.0.1:8000/goals/milestones/`, {
+            const response = await fetch(`https://project-management-tool-uh55.onrender.com/goals/milestones/`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     goal_id: goalId,
                     milestone_name: milestoneName,
-                    completed:true
+                    completed: true
                 })
             })
             if (!response.ok) alert('Failed to update milestone')
-            if(response.ok) {   
+            if (response.ok) {
                 const updatedMilestones = processedGoalData.milestones.map(milestone => {
                     if (milestone.name === milestoneName) {
                         return { ...milestone, ...updateData }
@@ -191,11 +191,11 @@ const GoalTrackingCard = ({ goal }) => {
     const handleDeleteGoal = async () => {
         if (window.confirm('Are you sure you want to delete this goal? This action cannot be undone.')) {
             try {
-                const response = await fetch(`http://127.0.0.1:8000/goals/${goalData.id}`, {
+                const response = await fetch(`https://project-management-tool-uh55.onrender.com/goals/${goalData.id}`, {
                     method: 'DELETE'
                 })
                 if (!response.ok) throw new Error('Failed to delete goal')
-                if(response.ok) alert("Sucessfully deleted the goal")
+                if (response.ok) alert("Sucessfully deleted the goal")
             } catch (error) {
                 console.error('Error deleting goal:', error)
                 alert('Failed to delete goal. Please try again.')

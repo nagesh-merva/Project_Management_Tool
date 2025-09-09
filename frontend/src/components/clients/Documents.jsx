@@ -56,7 +56,7 @@ const Documents = ({ documents }) => {
                 isVisible={showPopup}
                 onClose={() => setShowPopup(false)}
                 formTitle="Add a new Document"
-                endpoint="http://127.0.0.1:8000/add-client-documents"
+                endpoint="https://project-management-tool-uh55.onrender.com/add-client-documents"
                 fields={fields}
             />
         </>

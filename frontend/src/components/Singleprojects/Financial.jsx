@@ -54,7 +54,7 @@ const Financial = ({ FinancialData }) => {
             return
         }
         try {
-            const response = await fetch("http://127.0.0.1:8000/manage-financial-data", {
+            const response = await fetch("https://project-management-tool-uh55.onrender.com/manage-financial-data", {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),

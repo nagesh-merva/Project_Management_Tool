@@ -18,7 +18,7 @@ function MyTask() {
         setLoading(true)
         const emp = JSON.parse(localStorage.getItem("emp"))
         try {
-            const response = await fetch(`http://127.0.0.1:8000/get-tasks?emp_id=${emp.emp_id}`, {
+            const response = await fetch(`https://project-management-tool-uh55.onrender.com/get-tasks?emp_id=${emp.emp_id}`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
             })
@@ -49,7 +49,7 @@ function MyTask() {
 
         if (comment_text) {
             try {
-                const response = await fetch("http://127.0.0.1:8000/add-comment", {
+                const response = await fetch("https://project-management-tool-uh55.onrender.com/add-comment", {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
@@ -90,7 +90,7 @@ function MyTask() {
         if (!emp_id) return alert("Employee not found")
         setLoading(true)
         try {
-            const response = await fetch("http://127.0.0.1:8000/update-task-status", {
+            const response = await fetch("https://project-management-tool-uh55.onrender.com/update-task-status", {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",

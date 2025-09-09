@@ -17,7 +17,7 @@ const Employees = ({ selectedDepartment }) => {
         setLoading(true);
         try {
             const response = await fetch(
-                `http://127.0.0.1:8000/employees-bydept?dept=${selectedDepartment}`,
+                `https://project-management-tool-uh55.onrender.com/employees-bydept?dept=${selectedDepartment}`,
                 {
                     method: "GET",
                     headers: { "Content-Type": "application/json" },

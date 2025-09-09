@@ -25,7 +25,7 @@ const Maintenance = ({ MaintObj, HostingObj }) => {
     const [mntFields, setMntFields] = useState(
         {
             type: "maintenance",
-            endpoint: "http://127.0.0.1:8000/manage-maintenance-reports",
+            endpoint: "https://project-management-tool-uh55.onrender.com/manage-maintenance-reports",
             title: "Manage Maintenance And Reports",
             fields: [
                 {
@@ -40,16 +40,16 @@ const Maintenance = ({ MaintObj, HostingObj }) => {
 
                 },
                 {
-                    name : "type",
+                    name: "type",
                     type: "select",
-                    fields : [
+                    fields: [
                         {
-                            name : "Maintenance",
-                            value : "Maintenance"
+                            name: "Maintenance",
+                            value: "Maintenance"
                         },
                         {
-                            name : "Issue",
-                            value : "Issue"
+                            name: "Issue",
+                            value: "Issue"
                         }
                     ]
                 },
@@ -69,7 +69,7 @@ const Maintenance = ({ MaintObj, HostingObj }) => {
     )
     const [hostFields, setHostFields] = useState({
         type: "hosting",
-        endpoint: "http://127.0.0.1:8000/manage-hostings",
+        endpoint: "https://project-management-tool-uh55.onrender.com/manage-hostings",
         title: "Hosting Details",
         fields: [
             {

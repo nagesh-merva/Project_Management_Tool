@@ -158,7 +158,7 @@ const Brief = ({ clientDetails, project_name, projBrief, status, start, deadline
                 isVisible={showPopup}
                 onClose={() => setShowPopup(false)}
                 formTitle="Edit Project brief"
-                endpoint="http://127.0.0.1:8000/edit-project-brief"
+                endpoint="https://project-management-tool-uh55.onrender.com/edit-project-brief"
                 fields={fields}
             />
         </>

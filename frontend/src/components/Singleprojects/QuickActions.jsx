@@ -188,7 +188,7 @@ const QuickActions = ({ links }) => {
                 isVisible={showPopup}
                 onClose={() => setShowPopup(false)}
                 formTitle="Manage Quick Actions"
-                endpoint="http://127.0.0.1:8000/manage-quick-actions"
+                endpoint="https://project-management-tool-uh55.onrender.com/manage-quick-actions"
                 fields={fields}
             />
         </>

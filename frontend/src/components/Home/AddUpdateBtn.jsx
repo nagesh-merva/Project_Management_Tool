@@ -68,7 +68,7 @@ const AddUpdateButton = () => {
                 isVisible={showPopup}
                 onClose={() => setShowPopup(false)}
                 formTitle="Add New Update"
-                endpoint="http://127.0.0.1:8000/add-update"
+                endpoint="https://project-management-tool-uh55.onrender.com/add-update"
                 fields={fields}
             />
         </>

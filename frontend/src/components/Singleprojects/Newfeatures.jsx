@@ -9,7 +9,7 @@ const Newfeatures = ({ feature }) => {
         if (isVerified) return
         console.log('Verifying feature:', feature.id, 'for project:', id)
         try {
-            const response = await fetch('http://127.0.0.1:8000/verify-feature', {
+            const response = await fetch('https://project-management-tool-uh55.onrender.com/verify-feature', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ feature_id: feature.id, project_id: id })

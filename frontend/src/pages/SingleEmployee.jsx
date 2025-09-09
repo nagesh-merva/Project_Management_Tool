@@ -22,7 +22,7 @@ export default function SingleEmployee() {
     const GetEmployee = async () => {
         setLoading(true)
         try {
-            const response = await fetch(`http://127.0.0.1:8000/employee?emp_id=${id}`, {
+            const response = await fetch(`https://project-management-tool-uh55.onrender.com/employee?emp_id=${id}`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
 

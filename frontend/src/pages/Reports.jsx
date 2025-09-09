@@ -91,7 +91,7 @@ export default function Reports() {
   const GetReports = async () => {
     setLoading(true)
     try {
-      const response = await fetch(`http://127.0.0.1:8000/all-reports`, {
+      const response = await fetch(`https://project-management-tool-uh55.onrender.com/all-reports`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
 
@@ -245,7 +245,7 @@ export default function Reports() {
         isVisible={showPopup}
         onClose={() => setShowPopup(false)}
         formTitle="Add New Project"
-        endpoint="http://127.0.0.1:8000/add-report"
+        endpoint="https://project-management-tool-uh55.onrender.com/add-report"
         fields={fields}
       /></>
   )

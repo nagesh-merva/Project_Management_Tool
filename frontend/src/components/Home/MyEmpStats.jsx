@@ -21,7 +21,7 @@ export default function MyEmpStats() {
         try {
             setLoading(true)
 
-            const response = await fetch(`http://127.0.0.1:8000/dashboard-metrics?emp_id=${emp.emp_id}`, {
+            const response = await fetch(`https://project-management-tool-uh55.onrender.com/dashboard-metrics?emp_id=${emp.emp_id}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',

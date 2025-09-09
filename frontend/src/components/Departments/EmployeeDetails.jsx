@@ -53,7 +53,7 @@ const EmployeeDetails = ({ emp }) => {
             delete updateData.emp_id;
         }
         try {
-            const response = await fetch(`http://127.0.0.1:8000/employee/update?emp_id=${empId}`, {
+            const response = await fetch(`https://project-management-tool-uh55.onrender.com/employee/update?emp_id=${empId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -441,7 +441,7 @@ const EmployeeDetails = ({ emp }) => {
                 isVisible={showDocPopup}
                 onClose={() => setShowDocPopup(false)}
                 formTitle="Upload Employee Document"
-                endpoint="http://127.0.0.1:8000/add-emp-documents"
+                endpoint="https://project-management-tool-uh55.onrender.com/add-emp-documents"
                 fields={empDocumentFields}
                 onSuccess={() => {
                     setShowDocPopup(false)

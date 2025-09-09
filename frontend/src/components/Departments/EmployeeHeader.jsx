@@ -64,7 +64,7 @@ const EmployeeHeader = ({ employee }) => {
                 isVisible={showPopup}
                 onClose={() => setShowPopup(false)}
                 formTitle="Promote Employee"
-                endpoint="http://127.0.0.1:8000/add-emp-promotion"
+                endpoint="https://project-management-tool-uh55.onrender.com/add-emp-promotion"
                 fields={Fields}
                 onSuccess={() => {
                     setShowPopup(false)

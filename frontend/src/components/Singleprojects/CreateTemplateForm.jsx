@@ -15,9 +15,9 @@ const CreateTemplateForm = ({ project_id, close }) => {
     const fetchData = async () => {
       setLoading(true)
       try {
-        const deptPromise = fetch("http://127.0.0.1:8000/all-dept-brief").then(res => res.json())
+        const deptPromise = fetch("https://project-management-tool-uh55.onrender.com/all-dept-brief").then(res => res.json())
         const phasePromise = project_id
-          ? fetch(`http://127.0.0.1:8000/all-phases?project_id=${project_id}`).then(res => res.json())
+          ? fetch(`https://project-management-tool-uh55.onrender.com/all-phases?project_id=${project_id}`).then(res => res.json())
           : Promise.resolve([])
 
         const [deptData, phaseData] = await Promise.all([deptPromise, phasePromise])
@@ -57,7 +57,7 @@ const CreateTemplateForm = ({ project_id, close }) => {
     }
 
     try {
-      const res = await fetch("http://localhost:8000/add-new-template", {
+      const res = await fetch("https://project-management-tool-uh55.onrender.com/add-new-template", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

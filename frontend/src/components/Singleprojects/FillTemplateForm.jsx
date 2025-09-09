@@ -62,7 +62,7 @@ const FillTemplateForm = ({ template, close }) => {
         }
 
         try {
-            const res = await fetch("http://127.0.0.1:8000/mark-template-remarks", {
+            const res = await fetch("https://project-management-tool-uh55.onrender.com/mark-template-remarks", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

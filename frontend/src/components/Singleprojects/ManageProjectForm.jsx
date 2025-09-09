@@ -38,7 +38,7 @@ const ManageProjectForm = ({ projectId, projectPhases, isInitialized, setInitial
     setIsSaving(true)
     console.log(formData)
     try {
-      const response = await fetch('http://127.0.0.1:8000/add-initial-phases', {
+      const response = await fetch('https://project-management-tool-uh55.onrender.com/add-initial-phases', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -96,7 +96,7 @@ const ManageProjectForm = ({ projectId, projectPhases, isInitialized, setInitial
 
     console.log("project_id : ", projectId, "\nphases : ", editablePhases)
     try {
-      const response = await fetch('http://127.0.0.1:8000/update_project_phases', {
+      const response = await fetch('https://project-management-tool-uh55.onrender.com/update_project_phases', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

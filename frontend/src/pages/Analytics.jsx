@@ -145,7 +145,7 @@ export default function Analytics() {
 
     const FetchOverviewData = async () => {
         try {
-            const response = await fetch("http://127.0.0.1:8000/overview-analytics-data", {
+            const response = await fetch("https://project-management-tool-uh55.onrender.com/overview-analytics-data", {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
             })
@@ -191,7 +191,7 @@ export default function Analytics() {
 
     const FetchDeptData = async () => {
         try {
-            const response = await fetch("http://127.0.0.1:8000/dept-performance-analytics", {
+            const response = await fetch("https://project-management-tool-uh55.onrender.com/dept-performance-analytics", {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
             })
@@ -215,7 +215,7 @@ export default function Analytics() {
 
     const FetchEmpsData = async () => {
         try {
-            const response = await fetch("http://127.0.0.1:8000/employee-analytics", {
+            const response = await fetch("https://project-management-tool-uh55.onrender.com/employee-analytics", {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
             })
@@ -234,7 +234,7 @@ export default function Analytics() {
 
     const FetchSalesData = async () => {
         try {
-            const response = await fetch("http://127.0.0.1:8000/analytics-sales-finance", {
+            const response = await fetch("https://project-management-tool-uh55.onrender.com/analytics-sales-finance", {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
             })
@@ -253,7 +253,7 @@ export default function Analytics() {
 
     const FetchProjectsData = async () => {
         try {
-            const response = await fetch("http://127.0.0.1:8000/analytics-projects-data", {
+            const response = await fetch("https://project-management-tool-uh55.onrender.com/analytics-projects-data", {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
             })
@@ -280,7 +280,7 @@ export default function Analytics() {
             if (goalsFilter.status) queryParams.append('status', goalsFilter.status)
             queryParams.append('limit', '50')
 
-            const response = await fetch(`http://127.0.0.1:8000/goals/?${queryParams}`, {
+            const response = await fetch(`https://project-management-tool-uh55.onrender.com/goals/?${queryParams}`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
             })
@@ -301,7 +301,7 @@ export default function Analytics() {
 
     const FetchGoalsDashboard = async () => {
         try {
-            const response = await fetch("http://127.0.0.1:8000/goals/analytics/dashboard", {
+            const response = await fetch("https://project-management-tool-uh55.onrender.com/goals/analytics/dashboard", {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
             })
@@ -758,7 +758,7 @@ export default function Analytics() {
                 </>)}
             </div>
             {showCreateGoalModal && (
-                <CreateGoalModal 
+                <CreateGoalModal
                     isOpen={showCreateGoalModal}
                     onClose={() => setShowCreateGoalModal(false)}
                     onGoalCreated={handleGoalCreated}

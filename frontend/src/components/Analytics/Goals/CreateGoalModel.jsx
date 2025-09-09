@@ -3,7 +3,7 @@ import { X, Plus, Target, Calendar, Users, TrendingUp, AlertCircle } from 'lucid
 import { useMainContext } from "../../../context/MainContext"
 
 const CreateGoalModal = ({ isOpen, onClose, onGoalCreated }) => {
-    const {emp} = useMainContext()
+    const { emp } = useMainContext()
     const [formData, setFormData] = useState({
         name: '',
         target_metric: '',
@@ -59,7 +59,7 @@ const CreateGoalModal = ({ isOpen, onClose, onGoalCreated }) => {
     }
 
     const updateMilestone = (index, field, value) => {
-        setMilestones(prev => prev.map((milestone, i) => 
+        setMilestones(prev => prev.map((milestone, i) =>
             i === index ? { ...milestone, [field]: value } : milestone
         ))
     }
@@ -79,7 +79,7 @@ const CreateGoalModal = ({ isOpen, onClose, onGoalCreated }) => {
     }
 
     const updateRisk = (index, field, value) => {
-        setRisks(prev => prev.map((risk, i) => 
+        setRisks(prev => prev.map((risk, i) =>
             i === index ? { ...risk, [field]: value } : risk
         ))
     }
@@ -114,7 +114,7 @@ const CreateGoalModal = ({ isOpen, onClose, onGoalCreated }) => {
 
             console.log(goalData)
 
-            const response = await fetch('http://127.0.0.1:8000/goals/', {
+            const response = await fetch('https://project-management-tool-uh55.onrender.com/goals/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -159,7 +159,7 @@ const CreateGoalModal = ({ isOpen, onClose, onGoalCreated }) => {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onClose} />
-            
+
             <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto mx-4">
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
                     <div className="flex items-center gap-3">
@@ -305,7 +305,7 @@ const CreateGoalModal = ({ isOpen, onClose, onGoalCreated }) => {
                                 Add Milestone
                             </button>
                         </div>
-                        
+
                         {milestones.map((milestone, index) => (
                             <div key={milestone.id} className="bg-gray-50 rounded-lg p-4 mb-3">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

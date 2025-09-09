@@ -86,7 +86,7 @@ export const MainProvider = ({ children }) => {
 
     const fetchEmployees = async () => {
         try {
-            const response = await fetch('http://127.0.0.1:8000/all-employees')
+            const response = await fetch('https://project-management-tool-uh55.onrender.com/all-employees')
             const data = await response.json()
             if (response.ok) {
                 setAllEmployees(data)
@@ -101,7 +101,7 @@ export const MainProvider = ({ children }) => {
     // console.log(loggedIn.logged)
 
     useEffect(() => {
-        if(loggedIn.logged){
+        if (loggedIn.logged) {
             const cached = sessionStorage.getItem("all-emps")
             if (cached || cached !== null) {
                 setAllEmployees(JSON.parse(cached))
