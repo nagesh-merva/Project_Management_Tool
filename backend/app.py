@@ -47,7 +47,7 @@ ACCESS_TOKEN_EXPIRE_HOURS = 12
 
 FIREBASE_BUCKET_NAME = os.environ.get("FIREBASE_BUCKET_NAME")
 
-cred = credentials.Certificate("firebase-adminsdk.json")
+cred = credentials.Certificate("/etc/secrets/firebase-adminsdk.json")
 
 firebase_admin.initialize_app(cred, {
     'storageBucket': FIREBASE_BUCKET_NAME
