@@ -206,7 +206,7 @@ const EmployeeDetails = ({ emp }) => {
             name: 'salary_monthly',
             label: 'Monthly Salary',
             type: 'number',
-            format: (value) => `₹${value}`,
+            format: (value) => `₹${Math.round(value, 2)}`,
             specialAction: (
                 <div className="flex gap-1">
                     {[5, 10, 15].map(percentage => (

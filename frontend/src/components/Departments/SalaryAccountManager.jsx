@@ -6,7 +6,7 @@ const SalaryAccountManager = ({ employee, onUpdate }) => {
     const [showAccount, setShowAccount] = useState(false)
     const [isAddingRecord, setIsAddingRecord] = useState(false)
     const [newRecord, setNewRecord] = useState({
-        salary_paid: employee.salary_monthly || 0,
+        salary_paid: Math.round(employee.salary_monthly, 2) || 0,
         date: new Date().toISOString().split('T')[0],
         reference_id: '',
         working_days: 30
@@ -126,8 +126,8 @@ const SalaryAccountManager = ({ employee, onUpdate }) => {
                             </label>
                             <input
                                 type="number"
-                                value={newRecord.salary_paid}
-                                onChange={(e) => setNewRecord(prev => ({ ...prev, salary_paid: parseFloat(e.target.value) || 0 }))}
+                                value={newRecord.salary_paid.toFixed(2)}
+                                onChange={(e) => setNewRecord(prev => ({ ...prev, salary_paid: parseFloat(e.target.value).toFixed(2) || 0 }))}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                                 min="0"
                                 step="0.01"
