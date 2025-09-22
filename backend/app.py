@@ -1,5 +1,5 @@
 from bson import ObjectId
-from fastapi import FastAPI, HTTPException, Depends,Body ,UploadFile , File,Form
+from fastapi import FastAPI, HTTPException, Depends,Body, Response ,UploadFile , File,Form
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import BackgroundTasks
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -2534,3 +2534,12 @@ async def get_all_reports():
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching reports: {str(e)}")
+
+
+@app.head("/health")
+async def head_health_status():
+    headers = {
+        "X-App-Version": "1.0.0",
+        "X-Server-Time": datetime.utcnow().isoformat() + "Z"
+    }
+    return Response(status_code=200, headers=headers)
