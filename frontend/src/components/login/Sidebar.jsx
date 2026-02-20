@@ -1,15 +1,26 @@
 function Sidebar() {
     return (
         <div className="md:w-1/2 w-full min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black relative overflow-hidden flex justify-center items-center">
+            <div className="fixed top-4 left-1/4 transform -translate-x-1/4 z-50 bg-white shadow-lg rounded-lg px-6 py-4 text-gray-800 max-w-md w-[90%] border border-gray-200">
+                <h3 className="font-semibold text-lg mb-2 text-center">🔑 Demo Login Credentials</h3>
+                <div className="space-y-1 text-sm">
+                    <p><span className="font-semibold">Sales:</span> EMP1001 / <span className="font-mono">Rohit12</span></p>
+                    <p><span className="font-semibold">Admin:</span> EMP5001 / <span className="font-mono">Sneha12</span></p>
+                </div>
+                <p className="text-xs text-center mt-3 text-gray-500">💻 Best viewed on desktop screens</p>
+            </div>
             <div className="absolute inset-0">
                 <div className="absolute top-20 left-20 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
                 <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
                 <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '4s' }}></div>
                 <div className="absolute inset-0 opacity-5">
-                    <div className="absolute inset-0" style={{
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M0 0h40v40H0V0zm20 20h20v20H20V20z'/%3E%3C/g%3E%3C/svg%3E")`,
-                        backgroundSize: '40px 40px'
-                    }}></div>
+                    <div
+                        className="absolute inset-0"
+                        style={{
+                            backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M0 0h40v40H0V0zm20 20h20v20H20V20z'/%3E%3C/g%3E%3C/svg%3E")`,
+                            backgroundSize: '40px 40px'
+                        }}
+                    ></div>
                 </div>
             </div>
             <div className="relative z-10 w-4/5 h-4/5 max-w-lg">
