@@ -236,7 +236,7 @@ async def add_progress(progress_input: AddProgressInput):
         goal_id = progress_input.goal_id
         
         progress_entry = ProgressEntry(
-            date=datetime.now().date(),
+            date=datetime.now(timezone.utc).date(),
             progress_percentage=progress_input.progress_percentage,
             notes=progress_input.notes,
             updated_by=progress_input.updated_by

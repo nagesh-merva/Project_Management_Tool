@@ -2,6 +2,7 @@ import { Calendar, Timer, SquarePen, CheckCircle, AlertCircle, Pause, Globe, Squ
 import { useState } from "react"
 import PopupForm from "../Home/PopUpForm"
 import { useParams } from "react-router-dom"
+import { formatDate } from "../../utils/dateUtils"
 
 const Brief = ({ clientDetails, project_name, projBrief, status, start, deadline, quickLinks }) => {
     const [showPopup, setShowPopup] = useState(false)
@@ -145,11 +146,11 @@ const Brief = ({ clientDetails, project_name, projBrief, status, start, deadline
                 <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2 text-gray-600">
                         <Calendar size={14} />
-                        <span>Start: {start?.split("T")[0]}</span>
+                        <span>Start: {formatDate(start)}</span>
                     </div>
                     <div className="flex items-center gap-2 text-gray-600">
                         <Timer size={14} />
-                        <span>Due: {deadline?.split("T")[0]}</span>
+                        <span>Due: {formatDate(deadline)}</span>
                     </div>
                 </div>
             </div>

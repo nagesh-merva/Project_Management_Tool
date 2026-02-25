@@ -1,5 +1,6 @@
 import { PenTool, SquareDashedBottomCode, Globe } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import { formatDate } from "../../utils/dateUtils"
 
 const Actives = ({ project }) => {
     const {
@@ -35,8 +36,8 @@ const Actives = ({ project }) => {
                     <p className="text-sm text-gray-700">{`Current phase: ${current_phase}`}</p>
                 </div>
                 <div className="text-xs text-gray-400 text-right min-w-[110px]">
-                    <p>{`Start: ${start_date.split("T")[0]}`}</p>
-                    <p>{`Deadline: ${deadline.split("T")[0]}`}</p>
+                    <p>{`Start: ${formatDate(start_date)}`}</p>
+                    <p>{`Deadline: ${formatDate(deadline)}`}</p>
                 </div>
             </div>
 

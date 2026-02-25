@@ -2,6 +2,7 @@ import { useState } from 'react'
 import PopupForm from '../Home/PopUpForm';
 import { ExternalLink, FileText, Plus } from "lucide-react"
 import { useParams } from 'react-router-dom';
+import { formatDate } from "../../utils/dateUtils";
 
 const Documents = ({ documents }) => {
     const [showPopup, setShowPopup] = useState(false)
@@ -41,7 +42,7 @@ const Documents = ({ documents }) => {
                             </div>
                             <div className='flex flex-col items-end space-y-2'>
                                 <ExternalLink size={16} className="text-gray-400" />
-                                <span className="text-[10px] text-gray-500">{doc.uploaded_at?.split("T")[0]}</span>
+                                <span className="text-[10px] text-gray-500">{formatDate(doc.uploaded_at)}</span>
                             </div>
                         </a>
                     ))}

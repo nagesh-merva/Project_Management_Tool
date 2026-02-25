@@ -70,6 +70,7 @@ bucket = storage.bucket()
 # Initialize all defs modules with database and bucket
 auth.set_db(db)
 utils.set_bucket(bucket)
+utils.set_secret_key(SECRET_KEY)
 employees.set_db(db)
 departments.set_db(db)
 tasks_updates.set_db(db)

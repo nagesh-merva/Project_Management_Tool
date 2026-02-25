@@ -1,4 +1,5 @@
 import { Calendar } from "lucide-react"
+import { formatDate } from "../../utils/dateUtils"
 
 
 const EngagementInfo = ({ engagement }) => {
@@ -22,7 +23,7 @@ const EngagementInfo = ({ engagement }) => {
             <div className="space-y-3">
                 <div className="flex items-center justify-between">
                     <span className="text-gray-600">Joined Date</span>
-                    <span className="font-medium">{engagement.joined_date.split("T")[0]}</span>
+                    <span className="font-medium">{formatDate(engagement.joined_date)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                     <span className="text-gray-600">Source</span>

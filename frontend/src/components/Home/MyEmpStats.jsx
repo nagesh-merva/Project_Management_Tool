@@ -5,6 +5,7 @@ import { useMainContext } from "../../context/MainContext"
 
 export default function MyEmpStats() {
     const [loading, setLoading] = useState(false)
+    const [error, setError] = useState(null)
     const { emp } = useMainContext()
     const [metrics, setMetricsData] = useState(
         {

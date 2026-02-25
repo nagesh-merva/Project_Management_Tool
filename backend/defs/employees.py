@@ -1,5 +1,5 @@
 import random
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from typing import Optional, List
 from fastapi import HTTPException, UploadFile, File, Form
 from pydantic import EmailStr
@@ -221,9 +221,9 @@ async def get_emp_dashboard_metrics(emp_id: str):
     elif isinstance(joined_date, str):
         joined_date = datetime.fromisoformat(joined_date.replace("Z", "+00:00"))
     else:
-        joined_date = joined_date if joined_date else datetime.now()
+        joined_date = joined_date if joined_date else datetime.now(timezone.utc)
     
-    years_of_service = round((datetime.now() - joined_date).days / 365.25, 1)
+    years_of_service = round((datetime.now(timezone.utc) - joined_date).days / 365.25, 1)
     
     metrics = {
         "completedProjects": employee.get("performance_metrics", {}).get("completed_projects", 0),

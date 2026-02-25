@@ -8,6 +8,7 @@ import {
     TrendingUp,
     Clock,
 } from 'lucide-react'
+import { formatDate } from '../../utils/dateUtils'
 
 const ProjectAnalyticsCard = ({ project }) => {
     const getStatusColor = (status) => {
@@ -124,11 +125,11 @@ const ProjectAnalyticsCard = ({ project }) => {
             <div className="flex items-center justify-between text-xs text-gray-600">
                 <div className="flex items-center gap-1">
                     <Calendar size={12} />
-                    <span>Start: {project.startDate.split("T")[0]}</span>
+                    <span>Start: {formatDate(project.startDate)}</span>
                 </div>
                 <div className="flex items-center gap-1">
                     <Clock size={12} />
-                    <span>Deadline: {project.dueDate.split("T")[0]}</span>
+                    <span>Deadline: {formatDate(project.dueDate)}</span>
                 </div>
             </div>
             {project.roadblocks && project.roadblocks.length > 0 && (

@@ -10,6 +10,7 @@ import {
     Award,
     X,
 } from 'lucide-react'
+import { formatDate } from '../../utils/dateUtils'
 
 const EmployeeAnalyticsCard = ({ employee }) => {
     const [showDetails, setShowDetails] = useState(false)
@@ -206,7 +207,7 @@ const EmployeeAnalyticsCard = ({ employee }) => {
                                 Last Promotion
                             </span>
                             <span className="text-sm text-gray-600">{employee.PromotionHistory[0]?.role}</span>
-                            <span className="text-sm text-gray-600">{employee.PromotionHistory[0]?.date.split("T")[0]}</span>
+                            <span className="text-sm text-gray-600">{formatDate(employee.PromotionHistory[0]?.date)}</span>
                         </div>
                         <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
                             <span className="text-sm font-medium text-gray-700 flex items-center gap-2">

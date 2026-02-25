@@ -15,6 +15,7 @@ import {
     Target,
     FileText
 } from 'lucide-react'
+import { formatDate } from '../../utils/dateUtils'
 
 import EmployeeHeader from './EmployeeHeader'
 import DynamicSection from './DynamicSection'
@@ -302,7 +303,7 @@ const EmployeeDetails = ({ emp }) => {
                                 <span className="font-medium">{doc.doc_name}</span>
                                 <span className="font-thin text-xs">{doc.doc_type}</span>
                             </div>
-                            <span className="text-sm text-gray-500">{doc.uploaded_at?.split("T")[0]}</span>
+                            <span className="text-sm text-gray-500">{formatDate(doc.uploaded_at)}</span>
                         </a>
                     )) : (
                         <div className="text-gray-500 text-sm text-center mt-4">

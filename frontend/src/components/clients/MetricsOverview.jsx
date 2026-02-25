@@ -1,4 +1,5 @@
 import { TrendingUp } from "lucide-react"
+import { formatDate } from "../../utils/dateUtils"
 
 
 const MetricsOverview = ({ metrics }) => {
@@ -32,7 +33,7 @@ const MetricsOverview = ({ metrics }) => {
             <div className="mt-4 space-y-2">
                 <div className="flex items-center justify-between">
                     <span className="text-gray-600">Last Project</span>
-                    <span className="font-medium">{metrics.last_project_date?.split("T")[0]}</span>
+                    <span className="font-medium">{formatDate(metrics.last_project_date)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                     <span className="text-gray-600">Payment Status</span>

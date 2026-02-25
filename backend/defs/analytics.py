@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from calendar import monthrange
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
@@ -10,10 +10,37 @@ def set_db(database: AsyncIOMotorDatabase):
     db = database
 
 
+def parse_date_from_db(date_value):
+    """
+    Parse date from MongoDB format to Python datetime.
+    Handles: MongoDB $date dict, ISO strings, datetime objects
+    """
+    if not date_value:
+        return None
+    
+    try:
+        # If it's a MongoDB $date object (dict with $date key)
+        if isinstance(date_value, dict) and '$date' in date_value:
+            return datetime.fromisoformat(date_value['$date'].replace('Z', '+00:00'))
+        
+        # If it's a string, parse as ISO format
+        if isinstance(date_value, str):
+            return datetime.fromisoformat(date_value.replace('Z', '+00:00'))
+        
+        # If it's already a datetime object
+        if isinstance(date_value, datetime):
+            return date_value
+        
+        return None
+    except Exception as e:
+        print(f"Error parsing date: {e}")
+        return None
+
+
 # =============== Get Overview Data ===============================
 async def overview_analytics_data():
     """Get overview analytics data"""
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     current_month = now.month
     current_year = now.year
 
@@ -202,10 +229,12 @@ async def get_employee_analytics():
         promotion_history = []
 
         for record in emp.get("promotion_record", []):
-            promotion_history.append({
-                "date": record["working_as_from"].strftime("%Y-%m-%d"),
-                "role": record["prev_role"]
-            })
+            working_as_from = parse_date_from_db(record.get("working_as_from"))
+            if working_as_from:
+                promotion_history.append({
+                    "date": working_as_from.strftime("%Y-%m-%d"),
+                    "role": record["prev_role"]
+                })
 
         promotion_history.sort(key=lambda x: x["date"])
 
@@ -283,7 +312,7 @@ async def generate_sales_finance_metrics():
     for project in projects:
         status = project.get("status")
         fin = project.get("financial_data") or {}
-        deadline = project.get("deadline")
+        deadline = parse_date_from_db(project.get("deadline"))
         
         if status == "completed" and deadline:
             expected_revenue = fin.get("expected_revenue", 0) or 0
@@ -301,7 +330,7 @@ async def generate_sales_finance_metrics():
         if deadline and deadline < now and status != "completed":
             delayed_projects += 1
 
-        start_date = project.get("start_date")
+        start_date = parse_date_from_db(project.get("start_date"))
         if start_date and deadline:
             duration = (deadline - start_date).days
             total_duration += duration

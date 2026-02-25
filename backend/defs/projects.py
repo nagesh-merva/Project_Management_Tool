@@ -1,5 +1,5 @@
 import random
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from typing import Optional
 from fastapi import HTTPException, UploadFile, File, Form, BackgroundTasks
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -13,6 +13,33 @@ def set_db(database: AsyncIOMotorDatabase):
     """Initialize database from main app"""
     global db
     db = database
+
+
+def parse_date_from_db(date_value):
+    """
+    Parse date from MongoDB format to Python datetime.
+    Handles: MongoDB $date dict, ISO strings, datetime objects
+    """
+    if not date_value:
+        return None
+    
+    try:
+        # If it's a MongoDB $date object (dict with $date key)
+        if isinstance(date_value, dict) and '$date' in date_value:
+            return datetime.fromisoformat(date_value['$date'].replace('Z', '+00:00'))
+        
+        # If it's a string, parse as ISO format
+        if isinstance(date_value, str):
+            return datetime.fromisoformat(date_value.replace('Z', '+00:00'))
+        
+        # If it's already a datetime object
+        if isinstance(date_value, datetime):
+            return date_value
+        
+        return None
+    except Exception as e:
+        print(f"Error parsing date: {e}")
+        return None
 
 
 # ================= get all projects ====================
@@ -55,11 +82,12 @@ async def get_projects_byid(emp_id: str):
     async for project in projects_cursor:
         project["_id"] = str(project["_id"])  
         try:
-            if project["deadline"] < datetime.now() and project["status"] == "active":
+            deadline = parse_date_from_db(project["deadline"])
+            if deadline and deadline < datetime.now(timezone.utc) and project["status"] == "active":
                 project["status"] = "delayed"
-        except ValueError:
-            print("Invalid deadline format:", project["deadline"])
-            project["status"] = "unknown"
+        except (ValueError, TypeError) as e:
+            print(f"Invalid deadline format: {project['deadline']} - {e}")
+            project["status"] = project.get("status", "unknown")
 
         projects.append({
             "project_id": project["project_id"],
@@ -154,7 +182,8 @@ async def get_project(project_id: str):
         raise HTTPException(status_code=404, detail="Project not found.")
     
     try:
-        if project["deadline"] < datetime.now() and project["status"] == "active":
+        deadline = parse_date_from_db(project["deadline"])
+        if deadline and deadline < datetime.now(timezone.utc) and project["status"] == "active":
             project["status"] = "delayed"
     except ValueError:
         print("Invalid deadline format:", project["deadline"])
@@ -620,7 +649,7 @@ async def add_template(data: dict):
         {
             "$set": {
                 "project_status.$[parent].subphases.$[sub].status": "in_progress",
-                "project_status.$[parent].subphases.$[sub].start_date": datetime.now()
+                "project_status.$[parent].subphases.$[sub].start_date": datetime.now(timezone.utc)
             }
         },
         array_filters=[

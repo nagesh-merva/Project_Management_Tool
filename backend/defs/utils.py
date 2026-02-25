@@ -7,13 +7,18 @@ from jose import jwt
 
 # Firebase storage
 bucket = None
+SECRET_KEY = None
 
 def set_bucket(storage_bucket):
     """Initialize bucket from main app"""
     global bucket
     bucket = storage_bucket
 
-SECRET_KEY = os.environ.get("SECRET_KEY")
+def set_secret_key(secret_key: str):
+    """Initialize SECRET_KEY from main app"""
+    global SECRET_KEY
+    SECRET_KEY = secret_key
+
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 12
 
